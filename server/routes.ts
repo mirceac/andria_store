@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
-import { products, orders, orderItems } from "@db/schema";
+import { products, orders, orderItems, users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { createCheckoutSession } from "./stripe";
 
@@ -88,6 +88,38 @@ export function registerRoutes(app: Express): Server {
     });
 
     res.json(userOrders);
+  });
+
+  // Admin order management routes
+  app.get("/api/admin/orders", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+
+    const allOrders = await db.query.orders.findMany({
+      with: {
+        user: true,
+        items: {
+          with: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    res.json(allOrders);
+  });
+
+  app.patch("/api/admin/orders/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+
+    const { status } = req.body;
+    const [order] = await db
+      .update(orders)
+      .set({ status })
+      .where(eq(orders.id, parseInt(req.params.id)))
+      .returning();
+
+    if (!order) return res.sendStatus(404);
+    res.json(order);
   });
 
   // Stripe payment routes

@@ -1,8 +1,20 @@
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User } from "lucide-react";
+import {
+  ShoppingCart,
+  User,
+  Package,
+  ClipboardList,
+  Box,
+} from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -18,8 +30,32 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4">
           {user?.isAdmin && (
-            <Link href="/admin/products">
-              <Button variant="ghost">Admin</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">Admin</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/products">
+                    <Box className="mr-2 h-4 w-4" />
+                    Products
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/orders">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Orders
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {user && (
+            <Link href="/orders">
+              <Button variant="ghost">
+                <Package className="h-4 w-4" />
+              </Button>
             </Link>
           )}
 
