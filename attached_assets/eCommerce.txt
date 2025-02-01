@@ -1,0 +1,91 @@
+Create a Python Repl with the following specifications:
+1. Title: "Ecommerce"
+2. Language: python
+
+Implement the following features:
+
+1. Framework Setup
+   frontend: React with TypeScript
+   backend: Express.js
+   database: PostgreSQL with Drizzle ORM
+   ui_components: Radix UI with Tailwind CSS
+   Description: Modern full-stack e-commerce application built with React frontend and Express backend. Features TypeScript for type safety, PostgreSQL database with Drizzle ORM for data persistence, and Radix UI components styled with Tailwind CSS for a polished user interface.
+
+2. Routing Configuration
+   frontend_router: wouter
+   public_routes:
+     - /
+     - /product/:id
+     - /login
+     - /register
+     - /cart
+     - /checkout
+     - /success
+   authenticated_routes:
+     - /dashboard
+     - /profile
+     - /orders
+   admin_routes:
+     - /admin/dashboard
+     - /admin/products/new
+     - /admin/products/:id
+   Description: Client-side routing implemented using wouter for lightweight navigation. Routes are organized into public, authenticated, and admin categories with proper access control. The routing system supports dynamic parameters and maintains a clean URL structure.
+
+3. Database Schema
+   orm: Drizzle ORM
+   provider: Neon PostgreSQL
+   tables:
+     - users
+     - products
+     - orders
+     - order_items
+   relations:
+     - users -> orders
+     - orders -> order_items
+     - products -> order_items
+   Description: Comprehensive database schema designed for e-commerce functionality. Features proper relationships between users, products, orders, and order items. Includes necessary fields for product management, user accounts, and order tracking with proper foreign key constraints and indexing. Create admin user
+
+4. Authentication System
+   provider: Passport.js
+   strategies:
+     - Local
+   session: {'type': 'Express session', 'store': 'MemoryStore', 'security': True}
+   Description: Secure authentication system using Passport.js with multiple login strategies. Implements session-based authentication with proper CSRF protection and secure cookie handling. Supports both local authentication and social login options.
+
+5. Payment Integration
+   provider: Stripe
+   features:
+     - Secure checkout
+     - Payment processing
+     - Session management
+   routes:
+     - /api/checkout
+   Description: Integrated Stripe payment processing with secure checkout flow. Handles payment sessions, order tracking, and success/failure redirects. Maintains proper security measures for handling sensitive payment information.
+
+6. Security Implementation
+   authentication: Session-based with CSRF protection
+   authorization: Role-based access control
+   input_validation: Zod schema validation
+   database: Prepared statements via Drizzle ORM
+   Description: Comprehensive security measures including secure session management, role-based access control, and input validation. Implements CSRF protection, secure headers, and proper error handling without exposing sensitive information.
+
+7. UI Components
+   framework: Radix UI
+   styling: Tailwind CSS
+   components:
+     - Product cards
+     - Shopping cart drawer
+     - Authentication forms
+     - Admin dashboard
+   Description: Reusable UI component library built with Radix UI primitives and styled with Tailwind CSS. Features accessible, responsive components for product display, shopping cart management, user authentication, and administrative functions.
+
+8. State Management
+   library: @tanstack/react-query
+   features:
+     - Data fetching
+     - Cache management
+     - Real-time updates
+     - Loading states
+   Description: Efficient state management using React Query for server state and local state management. Implements proper caching strategies, loading states, and error handling for optimal user experience.
+
+Please create this application with proper folder structure, all necessary requirements, and full implementation of the features listed above. Include proper error handling, logging, and documentation. The application should be production-ready with security best practices implemented.
