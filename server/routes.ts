@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { db } from "@db";
 import { products, orders, orderItems } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { createCheckoutSession } from "./stripe";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -28,7 +29,7 @@ export function registerRoutes(app: Express): Server {
   // Protected admin routes
   app.post("/api/products", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
-    
+
     const [product] = await db.insert(products).values(req.body).returning();
     res.status(201).json(product);
   });
@@ -87,6 +88,27 @@ export function registerRoutes(app: Express): Server {
     });
 
     res.json(userOrders);
+  });
+
+  // Stripe payment routes
+  app.post("/api/create-checkout-session", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const { items } = req.body;
+      const origin = `${req.protocol}://${req.get("host")}`;
+
+      const session = await createCheckoutSession(
+        items,
+        `${origin}/checkout/success`,
+        `${origin}/checkout/cancel`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
   });
 
   const httpServer = createServer(app);

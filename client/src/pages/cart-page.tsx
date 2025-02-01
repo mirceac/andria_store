@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Trash2, CreditCard } from "lucide-react";
+import { Trash2, CreditCard, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
@@ -23,22 +23,23 @@ export default function CartPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/orders", {
+      const response = await apiRequest("POST", "/api/create-checkout-session", {
         items: items.map((item) => ({
-          productId: item.product.id,
+          product: item.product,
           quantity: item.quantity,
-          price: item.product.price,
         })),
-        total,
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Order placed successfully!",
-        description: "Thank you for your purchase.",
+        title: "Checkout failed",
+        description: error.message,
+        variant: "destructive",
       });
-      clearCart();
     },
   });
 
@@ -138,8 +139,14 @@ export default function CartPage() {
                 onClick={() => checkoutMutation.mutate()}
                 disabled={checkoutMutation.isPending}
               >
-                <CreditCard className="mr-2 h-4 w-4" />
-                Checkout
+                {checkoutMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Checkout
+                  </>
+                )}
               </Button>
             ) : (
               <Link href="/auth">
