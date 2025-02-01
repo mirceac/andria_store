@@ -31,6 +31,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const productImages = [
   "https://images.unsplash.com/photo-1578517581165-61ec5ab27a19",
@@ -43,6 +44,9 @@ const productImages = [
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
+  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
   });
@@ -58,6 +62,34 @@ export default function AdminProductsPage() {
     },
   });
 
+  // Reset form when dialog closes
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setSelectedProduct(null);
+      form.reset({
+        name: "",
+        description: "",
+        price: 0,
+        stock: 0,
+        imageUrl: productImages[0],
+      });
+    }
+  };
+
+  // Set form values when editing
+  const handleEditProduct = (product: SelectProduct) => {
+    setSelectedProduct(product);
+    form.reset({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      imageUrl: product.imageUrl,
+    });
+    setIsDialogOpen(true);
+  };
+
   const createProductMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/products", data);
@@ -69,9 +101,36 @@ export default function AdminProductsPage() {
         title: "Product created",
         description: "The product has been created successfully.",
       });
-      form.reset();
+      handleDialogOpenChange(false);
     },
   });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest(
+        "PATCH",
+        `/api/products/${selectedProduct?.id}`,
+        data
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Product updated",
+        description: "The product has been updated successfully.",
+      });
+      handleDialogOpenChange(false);
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    if (selectedProduct) {
+      updateProductMutation.mutate(data);
+    } else {
+      createProductMutation.mutate(data);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -85,7 +144,7 @@ export default function AdminProductsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -94,13 +153,13 @@ export default function AdminProductsPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>
+                {selectedProduct ? "Edit Product" : "Add New Product"}
+              </DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit((data) =>
-                  createProductMutation.mutate(data)
-                )}
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
                 <FormField
@@ -204,10 +263,16 @@ export default function AdminProductsPage() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={createProductMutation.isPending}
+                  disabled={
+                    createProductMutation.isPending ||
+                    updateProductMutation.isPending
+                  }
                 >
-                  {createProductMutation.isPending ? (
+                  {createProductMutation.isPending ||
+                  updateProductMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : selectedProduct ? (
+                    "Update Product"
                   ) : (
                     "Create Product"
                   )}
@@ -242,7 +307,11 @@ export default function AdminProductsPage() {
               <TableCell>${product.price.toFixed(2)}</TableCell>
               <TableCell>{product.stock}</TableCell>
               <TableCell>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEditProduct(product)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TableCell>
