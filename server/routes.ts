@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { db } from "@db";
 import { products, orders, orderItems, users } from "@db/schema";
 import { eq } from "drizzle-orm";
@@ -8,6 +8,41 @@ import { createCheckoutSession } from "./stripe";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+
+  // Create admin user route (will be removed in production)
+  app.post("/api/create-admin", async (req, res) => {
+    const [existingAdmin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, "admin"))
+      .limit(1);
+
+    if (existingAdmin) {
+      // Update existing user to admin if not already
+      if (!existingAdmin.isAdmin) {
+        await db
+          .update(users)
+          .set({ isAdmin: true })
+          .where(eq(users.id, existingAdmin.id));
+      }
+      return res.json({ message: "Admin user already exists" });
+    }
+
+    // Create new admin user
+    const password = "admin"; // In production, this would be more secure
+    const hashedPassword = await hashPassword(password);
+
+    const [admin] = await db
+      .insert(users)
+      .values({
+        username: "admin",
+        password: hashedPassword,
+        isAdmin: true,
+      })
+      .returning();
+
+    res.json({ message: "Admin user created successfully", admin });
+  });
 
   // Products routes
   app.get("/api/products", async (req, res) => {
