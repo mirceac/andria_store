@@ -133,21 +133,28 @@ export default function CartPage() {
               <span>${total.toFixed(2)}</span>
             </div>
             {user ? (
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={() => checkoutMutation.mutate()}
-                disabled={checkoutMutation.isPending}
-              >
-                {checkoutMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Checkout
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  className="w-full mb-2"
+                  size="lg"
+                  onClick={() => checkoutMutation.mutate()}
+                  disabled={checkoutMutation.isPending}
+                >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Checkout
+                    </>
+                  )}
+                </Button>
+                <Link href="/">
+                  <Button variant="outline" className="w-full" size="lg">
+                    Continue Shopping
+                  </Button>
+                </Link>
+              </>
             ) : (
               <Link href="/auth">
                 <Button className="w-full" size="lg">
