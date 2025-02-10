@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Package } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -39,6 +39,7 @@ export default function AdminOrdersPage() {
   const { user } = useAuth();
   const { data: orders, isLoading } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/admin/orders"],
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   if (!user?.isAdmin) {
@@ -60,9 +61,28 @@ export default function AdminOrdersPage() {
     );
   }
 
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Manage Orders</h1>
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
+          <p className="text-muted-foreground">
+            Orders will appear here once customers make purchases
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const updateOrderStatus = async (orderId: number, status: string) => {
-    await apiRequest("PATCH", `/api/admin/orders/${orderId}`, { status });
-    queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+    try {
+      await apiRequest("PATCH", `/api/admin/orders/${orderId}`, { status });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    }
   };
 
   return (
@@ -70,12 +90,16 @@ export default function AdminOrdersPage() {
       <h1 className="text-3xl font-bold mb-8">Manage Orders</h1>
 
       <div className="space-y-6">
-        {orders?.map((order) => (
+        {orders.map((order) => (
           <div key={order.id} className="border rounded-lg p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-sm text-muted-foreground">Order #{order.id}</p>
-                <p className="font-medium">Customer: {order.user.username}</p>
+                <p className="text-sm text-muted-foreground">
+                  Order #{order.id}
+                </p>
+                <p className="font-medium">
+                  Customer: {order.user?.username || "Unknown"}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Placed{" "}
                   {formatDistanceToNow(new Date(order.createdAt), {
@@ -113,7 +137,7 @@ export default function AdminOrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {order.items.map((item, index) => (
+                {order.items?.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center gap-4">
