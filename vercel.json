@@ -5,10 +5,17 @@
             "src": "server/index.ts",
             "use": "@vercel/node",
             "config": {
-              "includeFiles": [
-                "server/**/*",
-                "db/**/*"
-              ]
+              "includeFiles": ["server/**/*", "db/**/*", "tsconfig.json"],
+              "nodeVersion": "18.x",
+              "compilerOptions": {
+                "moduleResolution": "bundler",
+                "allowImportingTsExtensions": true,
+                "paths": {
+                  "@db": ["./db/index.ts"],
+                  "@db/*": ["./db/*"],
+                  "@/*": ["./client/src/*"]
+                }
+              }
             }
           },
           {
