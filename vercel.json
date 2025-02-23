@@ -6,12 +6,11 @@
             "use": "@vercel/node"
           },
           {
-            "src": "client/index.html",
+            "src": "package.json",
             "use": "@vercel/static-build",
             "config": {
-              "buildCommand": "cd client && npm install && npm run build",
-              "outputDirectory": "client/dist",
-              "distDir": "client/dist"
+              "buildCommand": "npm run build",
+              "outputDirectory": "dist"
             }
           }
         ],
@@ -33,7 +32,7 @@
           },
           {
             "src": "/(.*)",
-            "dest": "/client/dist/index.html"
+            "dest": "/index.html"
           }
         ]
       }
