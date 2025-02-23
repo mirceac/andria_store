@@ -42,15 +42,11 @@
             "dest": "/dist/index.js"
           },
           {
-            "src": "^/assets/(.*)",
-            "dest": "/dist/public/assets/$1"
-          },
-          {
-            "src": "^/favicon.ico",
-            "dest": "/dist/public/favicon.ico"
-          },
-          {
             "handle": "filesystem"
+          },
+          {
+            "src": "/(.*\\.[a-z0-9]+$)",
+            "dest": "/dist/public/$1"
           },
           {
             "src": "/(.*)",
