@@ -3,11 +3,7 @@
         "builds": [
           {
             "src": "dist/index.js",
-            "use": "@vercel/node",
-            "config": {
-              "includeFiles": ["dist/**"],
-              "baseUrl": "./dist"
-            }
+            "use": "@vercel/node"
           },
           {
             "src": "package.json",
@@ -20,19 +16,24 @@
         ],
         "routes": [
           {
-            "src": "/api/(.*)",
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "src": "/api/webhook",
+            "methods": ["POST", "OPTIONS"],
+            "dest": "dist/index.js"
+          },
+          {
+            "src": "/api/(products|orders|admin/orders|admin/products|create-admin|create-checkout-session)(.*)",
+            "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
             "headers": {
               "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+              "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
               "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
               "Access-Control-Allow-Credentials": "true"
             },
-            "continue": true
+            "dest": "dist/index.js"
           },
           {
-            "src": "/api/(.*)",
-            "dest": "/dist/index.js"
+            "src": "/auth/(.*)",
+            "dest": "dist/index.js"
           },
           {
             "handle": "filesystem"
@@ -45,8 +46,5 @@
             "src": "/(.*)",
             "dest": "/dist/public/index.html"
           }
-        ],
-        "env": {
-          "NODE_ENV": "production"
-        }
+        ]
       }
