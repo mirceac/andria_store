@@ -2,22 +2,27 @@
         "version": 2,
         "builds": [
           {
-            "src": "server/index.ts",
-            "use": "@vercel/node"
+            "src": "dist/**",
+            "use": "@vercel/static"
           },
           {
-            "src": "package.json",
-            "use": "@vercel/static-build",
+            "src": "server/index.ts",
+            "use": "@vercel/node",
             "config": {
-              "buildCommand": "npm run build",
-              "outputDirectory": "dist"
+              "includeFiles": ["server/**"]
             }
           }
         ],
         "routes": [
           {
             "src": "/api/(.*)",
-            "dest": "/server/index.ts"
+            "headers": {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+              "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+            },
+            "dest": "/server/index.ts",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
           },
           {
             "src": "/auth/(.*)",
@@ -28,19 +33,11 @@
             "dest": "/server/index.ts"
           },
           {
-            "src": "/assets/(.*)",
-            "dest": "/dist/assets/$1"
-          },
-          {
-            "src": "/favicon.ico",
-            "dest": "/dist/favicon.ico"
-          },
-          {
             "handle": "filesystem"
           },
           {
             "src": "/(.*)",
-            "dest": "/dist/index.html"
+            "dest": "/$1"
           }
         ]
       }
