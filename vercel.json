@@ -26,20 +26,21 @@
               "Access-Control-Allow-Methods": "POST,OPTIONS",
               "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, stripe-signature"
             },
-            "dest": "/dist/index.js"
+            "dest": "dist/index.js"
+          },
+          {
+            "src": "/api/(register|login|logout|user|products|orders|admin/orders|admin/products|create-checkout-session)",
+            "headers": {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+              "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+              "Access-Control-Allow-Credentials": "true"
+            },
+            "dest": "dist/index.js"
           },
           {
             "src": "/api/(.*)",
-            "headers": {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-              "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-            },
-            "dest": "/dist/index.js"
-          },
-          {
-            "src": "/auth/(.*)",
-            "dest": "/dist/index.js"
+            "dest": "dist/index.js"
           },
           {
             "handle": "filesystem"
