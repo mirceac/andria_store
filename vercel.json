@@ -17,22 +17,30 @@
         "routes": [
           {
             "src": "/api/(.*)",
-            "dest": "server/index.ts"
+            "dest": "/server/index.ts"
           },
           {
             "src": "/auth/(.*)",
-            "dest": "server/index.ts"
+            "dest": "/server/index.ts"
           },
           {
             "src": "/stripe-webhook",
-            "dest": "server/index.ts"
+            "dest": "/server/index.ts"
+          },
+          {
+            "src": "/assets/(.*)",
+            "dest": "/dist/assets/$1"
+          },
+          {
+            "src": "/favicon.ico",
+            "dest": "/dist/favicon.ico"
           },
           {
             "handle": "filesystem"
           },
           {
             "src": "/(.*)",
-            "dest": "/index.html"
+            "dest": "/dist/index.html"
           }
         ]
       }
