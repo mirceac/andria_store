@@ -33,11 +33,16 @@
             "dest": "/server/index.ts"
           },
           {
-            "handle": "filesystem"
+            "src": "/assets/(.*)",
+            "dest": "/dist/assets/$1"
+          },
+          {
+            "src": "^/$",
+            "dest": "/dist/index.html"
           },
           {
             "src": "/(.*)",
-            "dest": "/$1"
+            "dest": "/dist/$1"
           }
         ]
       }
