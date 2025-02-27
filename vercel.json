@@ -7,7 +7,9 @@
       "config": {
         "includeFiles": [
           "server/**/*",
-          "db/**/*"
+          "db/**/*",
+          "tsconfig.json",
+          "vite.config.ts"
         ]
       }
     },
