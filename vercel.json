@@ -2,32 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/index.ts",
+      "src": "package.json",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [
-          "server/routes.ts",
-          "server/auth.ts",
-          "server/stripe.ts",
-          "server/vite.ts",
-          "db/**/*",
-          "tsconfig.json"
-        ]
-      }
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
         "buildCommand": "npm run build",
-        "outputDirectory": "dist/public"
+        "outputDirectory": "dist"
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/dist/index.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/dist/public/assets/$1"
     },
     {
       "handle": "filesystem"
