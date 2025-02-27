@@ -16,6 +16,10 @@
       "dest": "/dist/index.js"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/dist/public/assets/$1"
+    },
+    {
       "handle": "filesystem"
     },
     {
