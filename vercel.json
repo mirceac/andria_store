@@ -5,8 +5,14 @@
       "src": "server/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["**/*"],
-        "excludeFiles": ["node_modules/**"]
+        "includeFiles": [
+          "server/routes.ts",
+          "server/auth.ts",
+          "server/stripe.ts",
+          "server/vite.ts",
+          "db/**/*",
+          "tsconfig.json"
+        ]
       }
     },
     {
@@ -21,7 +27,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/index.ts"
+      "dest": "/server/index.ts"
     },
     {
       "handle": "filesystem"
