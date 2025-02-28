@@ -22,16 +22,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface OrderWithDetails extends SelectOrder {
   user: {
+    id: number;
     username: string;
   };
   items: {
-    product: {
-      name: string;
-      imageUrl: string;
-      price: number;
-    };
+    id: number;
     quantity: number;
     price: number;
+    product: {
+      id: number;
+      name: string;
+      image_url: string;
+    };
   }[];
 }
 
@@ -42,7 +44,7 @@ export default function AdminOrdersPage() {
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
-  if (!user?.isAdmin) {
+  if (!user?.is_admin) {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold">Unauthorized Access</h1>
@@ -102,7 +104,7 @@ export default function AdminOrdersPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Placed{" "}
-                  {formatDistanceToNow(new Date(order.createdAt), {
+                  {formatDistanceToNow(new Date(order.created_at), {
                     addSuffix: true,
                   })}
                 </p>
@@ -112,11 +114,11 @@ export default function AdminOrdersPage() {
                   Total: ${order.total.toFixed(2)}
                 </p>
                 <Select
-                  defaultValue={order.status}
+                  value={order.status}
                   onValueChange={(value) => updateOrderStatus(order.id, value)}
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pending</SelectItem>
@@ -137,16 +139,18 @@ export default function AdminOrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {order.items?.map((item, index) => (
-                  <TableRow key={index}>
+                {order.items?.map((item) => (
+                  <TableRow key={item.id}>
                     <TableCell>
                       <div className="flex items-center gap-4">
                         <img
-                          src={item.product.imageUrl}
+                          src={item.product.image_url}
                           alt={item.product.name}
                           className="w-16 h-16 object-cover rounded"
                         />
-                        <span className="font-medium">{item.product.name}</span>
+                        <span className="font-medium">
+                          {item.product.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>{item.quantity}</TableCell>

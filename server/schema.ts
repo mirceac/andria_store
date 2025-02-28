@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
   is_admin: boolean("is_admin").default(false).notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const products = pgTable("products", {
@@ -17,7 +17,7 @@ export const products = pgTable("products", {
   price: doublePrecision("price").notNull(),
   image_url: text("image_url").notNull(),
   stock: integer("stock").notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const orders = pgTable("orders", {
@@ -25,7 +25,7 @@ export const orders = pgTable("orders", {
   user_id: integer("user_id").references(() => users.id).notNull(),
   status: text("status").notNull(),
   total: doublePrecision("total").notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const orderItems = pgTable("order_items", {

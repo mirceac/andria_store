@@ -29,7 +29,7 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {user?.isAdmin && (
+          {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">Admin</Button>

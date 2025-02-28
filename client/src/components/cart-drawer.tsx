@@ -40,7 +40,7 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 {items.map((item) => (
                   <div key={item.product.id} className="flex gap-4">
                     <img
-                      src={item.product.imageUrl}
+                      src={item.product.image_url}
                       alt={item.product.name}
                       className="w-20 h-20 object-cover rounded"
                     />

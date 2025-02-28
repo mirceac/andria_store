@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { createCheckoutSession, stripe } from "./stripe";
 import type Stripe from "stripe";
 import * as express from 'express';
+import type { Session } from 'express-session';
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -26,6 +27,14 @@ export function registerRoutes(app: Express): Server {
     "/api/webhook",
     express.raw({ type: "application/json" }),
     (req: Request, _, next) => {
+      console.log("\n=== Webhook Request Received ===");
+      console.log("Timestamp:", new Date().toISOString());
+      console.log("Method:", req.method);
+      console.log("Headers:", JSON.stringify(req.headers, null, 2));
+      console.log("Raw Body Type:", req.rawBody ? typeof req.rawBody : 'undefined');
+      console.log("Raw Body Length:", req.rawBody ? req.rawBody.length : 0);
+      console.log("=== End Request Info ===\n");
+
       const rawBody = req.body;
       if (Buffer.isBuffer(rawBody)) {
         req.rawBody = rawBody;
@@ -36,155 +45,263 @@ export function registerRoutes(app: Express): Server {
 
   // Create admin user route (will be removed in production)
   app.post("/api/create-admin", async (req, res) => {
-    const [existingAdmin] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, "admin"))
-      .limit(1);
+    try {
+      const [existingAdmin] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, "admin"))
+        .limit(1);
 
-    if (existingAdmin) {
-      // Update existing user to admin if not already
-      if (!existingAdmin.isAdmin) {
-        await db
-          .update(users)
-          .set({ isAdmin: true })
-          .where(eq(users.id, existingAdmin.id));
+      if (existingAdmin) {
+        if (!existingAdmin.is_admin) {
+          await db
+            .update(users)
+            .set({ is_admin: true })
+            .where(eq(users.id, existingAdmin.id));
+        }
+        return res.json({ message: "Admin user already exists" });
       }
-      return res.json({ message: "Admin user already exists" });
+
+      const password = "admin";
+      const hashedPassword = await hashPassword(password);
+
+      const [admin] = await db
+        .insert(users)
+        .values({
+          username: "admin",
+          password: hashedPassword,
+          is_admin: true,
+        })
+        .returning();
+
+      res.json({ message: "Admin user created successfully", admin });
+    } catch (error) {
+      console.error("Error creating admin:", error);
+      res.status(500).json({ message: "Failed to create admin user" });
     }
-
-    // Create new admin user
-    const password = "admin"; // In production, this would be more secure
-    const hashedPassword = await hashPassword(password);
-
-    const [admin] = await db
-      .insert(users)
-      .values({
-        username: "admin",
-        password: hashedPassword,
-        isAdmin: true,
-      })
-      .returning();
-
-    res.json({ message: "Admin user created successfully", admin });
   });
 
   // Products routes
   app.get("/api/products", async (req, res) => {
-    const allProducts = await db.query.products.findMany();
-    res.json(allProducts);
+    try {
+      const allProducts = await db.select().from(products);
+      res.json(allProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
   });
 
   app.get("/api/products/:id", async (req, res) => {
-    const [product] = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, parseInt(req.params.id)))
-      .limit(1);
+    try {
+      const [product] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, parseInt(req.params.id)))
+        .limit(1);
 
-    if (!product) return res.sendStatus(404);
-    res.json(product);
+      if (!product) return res.status(404).json({ message: "Product not found" });
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
   });
 
   // Protected admin routes
   app.post("/api/products", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
-    const [product] = await db.insert(products).values(req.body).returning();
-    res.status(201).json(product);
+    try {
+      const [product] = await db
+        .insert(products)
+        .values(req.body)
+        .returning();
+      res.status(201).json(product);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Failed to create product" });
+    }
   });
 
   app.patch("/api/products/:id", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
-    const [product] = await db
-      .update(products)
-      .set(req.body)
-      .where(eq(products.id, parseInt(req.params.id)))
-      .returning();
+    try {
+      const [product] = await db
+        .update(products)
+        .set(req.body)
+        .where(eq(products.id, parseInt(req.params.id)))
+        .returning();
 
-    if (!product) return res.sendStatus(404);
-    res.json(product);
+      if (!product) return res.status(404).json({ message: "Product not found" });
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
   });
 
   // Orders routes
   app.post("/api/orders", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const { items, total } = req.body;
-    const [order] = await db
-      .insert(orders)
-      .values({
-        userId: req.user.id,
-        status: "pending",
-        total,
-      })
-      .returning();
+    try {
+      const { items, total } = req.body;
+      const [order] = await db
+        .insert(orders)
+        .values({
+          user_id: req.user.id,
+          status: "pending",
+          total,
+        })
+        .returning();
 
-    await db.insert(orderItems).values(
-      items.map((item: any) => ({
-        orderId: order.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-      }))
-    );
+      await db.insert(orderItems).values(
+        items.map((item: any) => ({
+          order_id: order.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.price,
+        }))
+      );
 
-    res.status(201).json(order);
+      res.status(201).json(order);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ message: "Failed to create order" });
+    }
   });
 
   app.get("/api/orders", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const userOrders = await db.query.orders.findMany({
-      where: eq(orders.userId, req.user.id),
-      with: {
-        items: {
-          with: {
-            product: true,
-          },
-        },
-      },
-    });
+    try {
+      const userOrders = await db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          total: orders.total,
+          created_at: orders.created_at,
+          items: orderItems,
+          product: products,
+        })
+        .from(orders)
+        .where(eq(orders.user_id, req.user.id))
+        .leftJoin(orderItems, eq(orders.id, orderItems.order_id))
+        .leftJoin(products, eq(orderItems.product_id, products.id));
 
-    res.json(userOrders);
+      res.json(userOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
   });
 
   // Admin order management routes
   app.get("/api/admin/orders", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    console.log("\n=== Admin Orders Request ===");
+    console.log("Request headers:", req.headers);
+    console.log("Session:", req.session);
+    console.log("User:", req.user);
+    console.log("Is authenticated:", req.isAuthenticated?.());
+    console.log("Is admin:", req.user?.is_admin);
+    console.log("=== End Request Info ===\n");
 
-    const allOrders = await db.query.orders.findMany({
-      with: {
-        user: true,
-        items: {
-          with: {
-            product: true,
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!req.user?.is_admin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    try {
+      // First, get basic order info with user details
+      const ordersWithUsers = await db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          total: orders.total,
+          created_at: orders.created_at,
+          user: {
+            id: users.id,
+            username: users.username,
           },
-        },
-      },
-    });
+        })
+        .from(orders)
+        .leftJoin(users, eq(orders.user_id, users.id));
 
-    res.json(allOrders);
+      // Then, for each order, get its items with product details
+      const ordersWithItems = await Promise.all(
+        ordersWithUsers.map(async (order) => {
+          const items = await db
+            .select({
+              id: orderItems.id,
+              quantity: orderItems.quantity,
+              price: orderItems.price,
+              product: {
+                id: products.id,
+                name: products.name,
+                image_url: products.image_url,
+              },
+            })
+            .from(orderItems)
+            .leftJoin(products, eq(orderItems.product_id, products.id))
+            .where(eq(orderItems.order_id, order.id));
+
+          return {
+            ...order,
+            items,
+          };
+        })
+      );
+
+      console.log("Successfully fetched orders:", ordersWithItems.length);
+      res.json(ordersWithItems);
+    } catch (error) {
+      console.error("Error fetching admin orders:", error);
+      res.status(500).json({
+        message: "Failed to fetch orders",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   });
 
   app.patch("/api/admin/orders/:id", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
-    const { status } = req.body;
-    const [order] = await db
-      .update(orders)
-      .set({ status })
-      .where(eq(orders.id, parseInt(req.params.id)))
-      .returning();
+    try {
+      const { status } = req.body;
+      const [order] = await db
+        .update(orders)
+        .set({ status })
+        .where(eq(orders.id, parseInt(req.params.id)))
+        .returning();
 
-    if (!order) return res.sendStatus(404);
-    res.json(order);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ message: "Failed to update order" });
+    }
   });
 
-  // Stripe payment routes
+  // Stripe routes
   app.post("/api/create-checkout-session", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     try {
       const { items } = req.body;
@@ -196,18 +313,18 @@ export function registerRoutes(app: Express): Server {
         items,
         `${origin}/checkout/success`,
         `${origin}/cart`,
-        req.user.id
+        req.user.id // Pass user ID as number, not string
       );
 
       console.log("Checkout session created:", session.id);
       res.json({ url: session.url });
     } catch (error) {
       console.error("Error creating checkout session:", error);
-      res.status(500).json({ error: "Failed to create checkout session" });
+      res.status(500).json({ message: "Failed to create checkout session" });
     }
   });
 
-  // Update the webhook handler with more robust error handling
+  // Stripe webhook handler
   app.post("/api/webhook", async (req, res) => {
     console.log("\n=== Webhook Request Processing Started ===");
     console.log("Timestamp:", new Date().toISOString());
@@ -240,75 +357,86 @@ export function registerRoutes(app: Express): Server {
         process.env.STRIPE_WEBHOOK_SECRET
       );
       console.log("Webhook event verified, type:", event.type);
+      console.log("Full event data:", JSON.stringify(event, null, 2));
 
       if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Processing checkout session:", session.id);
+        console.log("Full session data:", JSON.stringify(session, null, 2));
 
-        // Try both client_reference_id and metadata for user ID
-        const userId = parseInt(session.client_reference_id || session.metadata?.userId || "0");
-        console.log("Extracted user ID:", userId);
+        // Get the user ID from the session metadata
+        const userId = session.client_reference_id
+          ? parseInt(session.client_reference_id)
+          : session.metadata?.userId
+            ? parseInt(session.metadata.userId)
+            : null;
 
         if (!userId) {
           console.error("No user ID found in session");
-          return res.sendStatus(400);
+          return res.status(400).json({ error: "Invalid user ID" });
         }
 
-        // Create order in database
         console.log("Creating order for user:", userId);
-        const [order] = await db
-          .insert(orders)
-          .values({
-            userId,
-            status: "pending",
-            total: (session.amount_total || 0) / 100,
-          })
-          .returning();
+        try {
+          const [order] = await db
+            .insert(orders)
+            .values({
+              user_id: userId,
+              status: "pending",
+              total: (session.amount_total || 0) / 100,
+            })
+            .returning();
 
-        console.log("Created order:", order);
+          console.log("Created order:", order);
 
-        // Retrieve line items
-        console.log("Fetching line items for session:", session.id);
-        const lineItems = await stripe.checkout.sessions.listLineItems(
-          session.id,
-          { expand: ["data.price.product"] }
-        );
-        console.log("Retrieved line items:", lineItems.data.length);
+          console.log("Fetching line items for session:", session.id);
+          const lineItems = await stripe.checkout.sessions.listLineItems(
+            session.id,
+            { expand: ["data.price.product"] }
+          );
+          console.log("Retrieved line items:", lineItems.data.length);
 
-        // Create order items
-        for (const item of lineItems.data) {
-          const product = item.price?.product as Stripe.Product;
-          if (!product?.name) {
-            console.log("No product name found in line item");
-            continue;
+          for (const item of lineItems.data) {
+            const product = item.price?.product as Stripe.Product;
+            if (!product?.name) {
+              console.log("No product name found in line item");
+              continue;
+            }
+
+            console.log("Looking up product:", product.name);
+            const [dbProduct] = await db
+              .select()
+              .from(products)
+              .where(eq(products.name, product.name))
+              .limit(1);
+
+            if (!dbProduct) {
+              console.log("Product not found in database:", product.name);
+              continue;
+            }
+
+            console.log("Creating order item for product:", dbProduct.name);
+            await db
+              .insert(orderItems)
+              .values({
+                order_id: order.id,
+                product_id: dbProduct.id,
+                quantity: item.quantity || 1,
+                price: (item.amount_total || 0) / 100,
+              });
+            console.log("Created order item for product:", dbProduct.name);
           }
 
-          console.log("Looking up product:", product.name);
-          const [dbProduct] = await db
-            .select()
-            .from(products)
-            .where(eq(products.name, product.name))
-            .limit(1);
-
-          if (!dbProduct) {
-            console.log("Product not found in database:", product.name);
-            continue;
-          }
-
-          console.log("Creating order item for product:", dbProduct.name);
-          await db.insert(orderItems).values({
-            orderId: order.id,
-            productId: dbProduct.id,
-            quantity: item.quantity || 1,
-            price: (item.amount_total || 0) / 100,
-          });
-          console.log("Created order item for product:", dbProduct.name);
+          console.log("Order processing completed successfully");
+          res.json({ received: true });
+        } catch (error) {
+          console.error("Failed to create order:", error);
+          res.status(500).json({ error: "Failed to create order" });
         }
-
-        console.log("Order processing completed successfully");
+      } else {
+        console.log("Unhandled event type:", event.type);
+        res.json({ received: true });
       }
-
-      res.json({ received: true });
     } catch (err) {
       console.error("Webhook error:", err instanceof Error ? err.message : err);
       console.error("Full error object:", err);

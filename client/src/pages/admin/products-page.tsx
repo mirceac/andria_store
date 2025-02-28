@@ -58,11 +58,10 @@ export default function AdminProductsPage() {
       description: "",
       price: 0,
       stock: 0,
-      imageUrl: productImages[0],
+      image_url: productImages[0],
     },
   });
 
-  // Reset form when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
@@ -72,12 +71,11 @@ export default function AdminProductsPage() {
         description: "",
         price: 0,
         stock: 0,
-        imageUrl: productImages[0],
+        image_url: productImages[0],
       });
     }
   };
 
-  // Set form values when editing
   const handleEditProduct = (product: SelectProduct) => {
     setSelectedProduct(product);
     form.reset({
@@ -85,7 +83,7 @@ export default function AdminProductsPage() {
       description: product.description,
       price: product.price,
       stock: product.stock,
-      imageUrl: product.imageUrl,
+      image_url: product.image_url,
     });
     setIsDialogOpen(true);
   };
@@ -102,6 +100,13 @@ export default function AdminProductsPage() {
         description: "The product has been created successfully.",
       });
       handleDialogOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create product",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -121,6 +126,13 @@ export default function AdminProductsPage() {
         description: "The product has been updated successfully.",
       });
       handleDialogOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update product",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -158,10 +170,7 @@ export default function AdminProductsPage() {
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -231,7 +240,7 @@ export default function AdminProductsPage() {
                 </div>
                 <FormField
                   control={form.control}
-                  name="imageUrl"
+                  name="image_url"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Image</FormLabel>
@@ -298,7 +307,7 @@ export default function AdminProductsPage() {
             <TableRow key={product.id}>
               <TableCell>
                 <img
-                  src={product.imageUrl}
+                  src={product.image_url}
                   alt={product.name}
                   className="w-16 h-16 object-cover rounded"
                 />
