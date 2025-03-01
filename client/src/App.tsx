@@ -26,8 +26,8 @@ function Router() {
         <ProtectedRoute path="/cart" component={CartPage} />
         <ProtectedRoute path="/orders" component={OrdersPage} />
         <ProtectedRoute path="/checkout/success" component={CheckoutSuccessPage} />
-        <ProtectedRoute path="/admin/products" component={AdminProductsPage} adminOnly={true} />
-        <ProtectedRoute path="/admin/orders" component={AdminOrdersPage} adminOnly={true} />
+        <ProtectedRoute path="/admin/products" component={AdminProductsPage} adminOnly />
+        <ProtectedRoute path="/admin/orders" component={AdminOrdersPage} adminOnly />
         <Route component={NotFound} />
       </Switch>
     </>
