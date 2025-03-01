@@ -18,7 +18,9 @@ try {
     connectionTimeoutMillis: 5000, // 5 second timeout
     max: 10, // Maximum number of clients in the pool
     idleTimeoutMillis: 120000, // Close idle connections after 2 minutes
-    ssl: false // Explicitly disable SSL for local connections
+    ssl: {
+      rejectUnauthorized: false // Required for Neon database
+    }
   });
 
   // Test the connection

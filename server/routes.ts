@@ -146,6 +146,56 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  //New Delete Route
+  app.delete("/api/products/:id", async (req, res) => {
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "You are not authorized to delete products." });
+    }
+
+    try {
+      const productId = parseInt(req.params.id);
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+
+      console.log(`Attempting to delete product with ID: ${productId}`);
+
+      // Check if product has any associated orders
+      const [orderItem] = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.product_id, productId))
+        .limit(1);
+
+      if (orderItem) {
+        console.log(`Product ${productId} cannot be deleted - has existing orders`);
+        return res.status(400).json({ 
+          message: "This product has been ordered by customers and cannot be deleted. You can set its stock to 0 instead.",
+          type: "PRODUCT_HAS_ORDERS"
+        });
+      }
+
+      const [product] = await db
+        .delete(products)
+        .where(eq(products.id, productId))
+        .returning();
+
+      if (!product) {
+        console.log(`Product with ID ${productId} not found`);
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      console.log(`Successfully deleted product: ${JSON.stringify(product)}`);
+      res.json(product);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ 
+        message: "Something went wrong while deleting the product. Please try again." 
+      });
+    }
+  });
+
+
   // Orders routes
   app.post("/api/orders", async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) {
