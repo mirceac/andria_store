@@ -152,6 +152,7 @@ export default function AdminProductsPage() {
       const res = await apiRequest("DELETE", `/api/products/${productId}`);
       if (!res.ok) {
         const error = await res.json();
+        console.log("Delete product error:", error); // Debug log
         throw new Error(error.message, { cause: error });
       }
       return res.json();
@@ -165,10 +166,11 @@ export default function AdminProductsPage() {
     },
     onError: (error: Error) => {
       const cause = (error as any).cause;
+      console.log("Delete mutation error:", error, "Cause:", cause); // Debug log
       if (cause?.type === "PRODUCT_HAS_ORDERS") {
         toast({
           title: "Cannot Delete Product",
-          description: error.message,
+          description: "This product has been ordered by customers and cannot be deleted to maintain order history integrity. Consider setting its stock to 0 to prevent future purchases instead.",
           variant: "default",
         });
       } else {

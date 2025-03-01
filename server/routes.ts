@@ -170,7 +170,7 @@ export function registerRoutes(app: Express): Server {
       if (orderItem) {
         console.log(`Product ${productId} cannot be deleted - has existing orders`);
         return res.status(400).json({ 
-          message: "This product has been ordered by customers and cannot be deleted. You can set its stock to 0 instead.",
+          message: "This product has been ordered by customers and cannot be deleted.  To remove it from sale, set its stock to 0 instead.",
           type: "PRODUCT_HAS_ORDERS"
         });
       }
