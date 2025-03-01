@@ -8,10 +8,14 @@
         "includeFiles": [
           "server/**/*.ts",
           "db/**/*.ts",
+          "config/**/*.ts",
+          "config/**/*.js",
+          "config.ts",
+          "config.js",
           "tsconfig.json",
           "vite.config.ts"
         ],
-        "nodeVersion": "22.x"
+        "nodeVersion": "18.x"
       }
     },
     {
