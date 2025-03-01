@@ -57,89 +57,102 @@ export default function OrdersPage() {
     );
   }
 
-  // Remove duplicates by grouping orders by ID
-  const uniqueOrders = orders.reduce((acc, current) => {
-    const existing = acc.find((order) => order.id === current.id);
-    if (!existing) {
-      acc.push(current);
+  console.log('Raw orders data:', orders); // Debug log
+
+  // Process orders to ensure unique entries with all items
+  const processedOrders = orders.reduce((acc, order) => {
+    const existingOrder = acc.find(o => o.id === order.id);
+    if (!existingOrder) {
+      // Add a new order with its items
+      acc.push({
+        ...order,
+        items: Array.isArray(order.items) ? order.items : []
+      });
+    } else {
+      // If the order exists and has items, merge them
+      if (Array.isArray(order.items)) {
+        existingOrder.items = [
+          ...existingOrder.items,
+          ...order.items
+        ];
+      }
     }
     return acc;
   }, [] as OrderWithItems[]);
+
+  console.log('Processed orders:', processedOrders); // Debug log
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">My Orders</h1>
       <div className="space-y-6">
-        {uniqueOrders.map((order: OrderWithItems) => {
-          const orderItems: OrderItem[] = Array.isArray(order.items) ? order.items : [];
-          return (
-            <div key={order.id} className="border rounded-lg p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Order #{order.id}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Placed{" "}
-                    {order.created_at
-                      ? formatDistanceToNow(new Date(order.created_at), {
-                          addSuffix: true,
-                        })
-                      : "Unknown date"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">
-                    Total: ${order.total.toFixed(2)}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      order.status === "completed"
-                        ? "text-green-600"
-                        : "text-orange-600"
-                    }`}
-                  >
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </p>
-                </div>
+        {processedOrders.map((order) => (
+          <div key={order.id} className="border rounded-lg p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Order #{order.id}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Placed{" "}
+                  {order.created_at
+                    ? formatDistanceToNow(new Date(order.created_at), {
+                        addSuffix: true,
+                      })
+                    : "Unknown date"}
+                </p>
               </div>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderItems.map((item: OrderItem) => (
-                    <TableRow key={`${order.id}-${item.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={item.product.image_url}
-                            alt={item.product.name}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <span className="font-medium">
-                            {item.product.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="text-right">
+                <p className="font-semibold">
+                  Total: ${order.total.toFixed(2)}
+                </p>
+                <p
+                  className={`text-sm ${
+                    order.status === "completed"
+                      ? "text-green-600"
+                      : "text-orange-600"
+                  }`}
+                >
+                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </p>
+              </div>
             </div>
-          );
-        })}
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Unit Price</TableHead>
+                  <TableHead>Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {order.items && order.items.map((item) => (
+                  <TableRow key={`${order.id}-${item.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={item.product.image_url}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <span className="font-medium">
+                          {item.product.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>${item.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ))}
       </div>
     </div>
   );
