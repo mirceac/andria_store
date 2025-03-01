@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Loader2, Package } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 interface OrderWithItems extends SelectOrder {
   items: Array<{
@@ -25,8 +26,10 @@ interface OrderWithItems extends SelectOrder {
 }
 
 export default function OrdersPage() {
+  const { user } = useAuth();
   const { data: orders, isLoading } = useQuery<OrderWithItems[]>({
-    queryKey: ["/api/orders"],
+    queryKey: ["/api/orders", user?.id],
+    enabled: !!user, // Only fetch when user is logged in
   });
 
   if (isLoading) {
@@ -39,7 +42,7 @@ export default function OrdersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Order History</h1>
+      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
 
       {!orders || orders.length === 0 ? (
         <div className="text-center py-12">
@@ -60,13 +63,17 @@ export default function OrdersPage() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Placed{" "}
-                    {formatDistanceToNow(new Date(order.created_at), {
-                      addSuffix: true,
-                    })}
+                    {order.created_at
+                      ? formatDistanceToNow(new Date(order.created_at), {
+                          addSuffix: true,
+                        })
+                      : "Unknown date"}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold">Total: ${order.total.toFixed(2)}</p>
+                  <p className="font-semibold">
+                    Total: ${order.total.toFixed(2)}
+                  </p>
                   <p
                     className={`text-sm ${
                       order.status === "completed"
@@ -89,25 +96,28 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.isArray(order.items) && order.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={item.product.image_url}
-                            alt={item.product.name}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <span className="font-medium">
-                            {item.product.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
-                      <TableCell>${(item.price * item.quantity).toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {Array.isArray(order.items) &&
+                    order.items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product.name}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                            <span className="font-medium">
+                              {item.product.name}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>${item.price.toFixed(2)}</TableCell>
+                        <TableCell>
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>
