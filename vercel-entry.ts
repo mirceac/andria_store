@@ -1,4 +1,4 @@
-// Import config first to ensure it's loaded
-import './config';
+// Import config first with explicit extension
+import './config.ts';
 // Then import the server
-import './server/index';
+import './server/index.ts';
