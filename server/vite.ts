@@ -23,6 +23,11 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // Only set up Vite in development mode
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+  
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -65,7 +70,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+  // Correct path for production build files
+  const distPath = path.resolve(__dirname, "..", "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -73,6 +79,8 @@ export function serveStatic(app: Express) {
     );
   }
 
+  log(`Serving static files from ${distPath}`);
+  
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist

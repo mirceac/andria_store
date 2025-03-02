@@ -80,9 +80,11 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
+  if (process.env.NODE_ENV === "development") {
+    console.log("Starting in DEVELOPMENT mode");
     await setupVite(app, server);
   } else {
+    console.log("Starting in PRODUCTION mode");
     serveStatic(app);
   }
 

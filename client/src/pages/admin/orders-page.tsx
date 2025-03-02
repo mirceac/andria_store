@@ -104,7 +104,7 @@ export default function AdminOrdersPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Placed{" "}
-                  {formatDistanceToNow(new Date(order.created_at), {
+                  {formatDistanceToNow(new Date(order.created_at ?? new Date()), {
                     addSuffix: true,
                   })}
                 </p>

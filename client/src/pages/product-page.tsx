@@ -28,7 +28,7 @@ export default function ProductPage() {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="aspect-square overflow-hidden rounded-lg">
           <img
-            src={product.imageUrl}
+            src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover"
           />
