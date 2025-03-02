@@ -5,14 +5,12 @@
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": true,
-    "module": "ESNext",
     "strict": true,
     "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "preserve",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
-    "moduleResolution": "node",
     "baseUrl": ".",
     "types": ["node", "vite/client"],
     "paths": {
@@ -20,8 +18,12 @@
       "@db/*": ["./db/*"],
       "@/*": ["./client/src/*"]
     },
-    "resolveJsonModule": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "allowJs": true,
-    "outDir": "dist"
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": "./",
+    "target": "ESNext"   
   }
 }
