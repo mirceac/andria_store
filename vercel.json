@@ -12,7 +12,9 @@
           "tsconfig.json",
           "vite.config.ts"
         ],
-        "nodeVersion": "22.x"
+        "nodeVersion": "22.x",
+        "buildCommand": "npm run build",
+        "outputDirectory": "dist"
       }
     },
     {
