@@ -2,18 +2,34 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "vercel-entry.ts",
       "use": "@vercel/node",
       "config": {
-        "buildCommand": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/server.js --external:./config --alias:../config=./config",
+        "includeFiles": [
+          "server/**/*.ts",
+          "db/**/*.ts",
+          "config.ts",
+          "tsconfig.json",
+          "vite.config.ts"
+        ],
+        "nodeVersion": "22.x",
+        "buildCommand": "npm run build",
         "outputDirectory": "dist"
+      }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "npm run build",
+        "outputDirectory": "dist/public"
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/dist/server.js"
+      "dest": "/vercel-entry.ts"
     },
     {
       "handle": "filesystem"
