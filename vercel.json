@@ -2,16 +2,13 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/index.ts",
+      "src": "vercel-entry.ts",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
           "server/**/*.ts",
           "db/**/*.ts",
-          "config/**/*.ts",
-          "config/**/*.js",
           "config.ts",
-          "config.js",
           "tsconfig.json",
           "vite.config.ts"
         ],
@@ -30,7 +27,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/vercel-entry.ts"
     },
     {
       "handle": "filesystem"
