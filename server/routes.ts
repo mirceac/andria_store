@@ -11,7 +11,13 @@ import * as express from 'express';
 import type { Session } from 'express-session';
 import multer from 'multer';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import fs from 'fs';
+
+// Get current file path and directory in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Setup file upload directory
 const uploadDir = path.join(__dirname, '..', 'uploads');
