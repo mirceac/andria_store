@@ -15,7 +15,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   price: doublePrecision("price").notNull(),
-  image_url: text("image_url").notNull(),
+  pdf_file: text("pdf_file").notNull(),
   stock: integer("stock").notNull(),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });

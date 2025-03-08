@@ -9,6 +9,37 @@ import { createCheckoutSession, stripe } from "./stripe";
 import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Setup file upload directory
+const uploadDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  }
+});
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -109,15 +140,19 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Protected admin routes
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", upload.single('pdf'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      const productData = { ...req.body, pdf_path: req.file.path };
       const [product] = await db
         .insert(products)
-        .values(req.body)
+        .values(productData)
         .returning();
       res.status(201).json(product);
     } catch (error) {
@@ -126,15 +161,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/products/:id", async (req, res) => {
+  app.patch("/api/products/:id", upload.single('pdf'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
+      const productData = req.body;
+      if (req.file) {
+        productData.pdf_path = req.file.path;
+      }
       const [product] = await db
         .update(products)
-        .set(req.body)
+        .set(productData)
         .where(eq(products.id, parseInt(req.params.id)))
         .returning();
 
@@ -257,7 +296,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                image_url: products.image_url,
+                pdf_path: products.pdf_path, // Changed to pdf_path
               },
             })
             .from(orderItems)
@@ -323,7 +362,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                image_url: products.image_url,
+                pdf_path: products.pdf_path, // Changed to pdf_path
               },
             })
             .from(orderItems)
@@ -515,6 +554,10 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(`Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   });
+
+  // Static files
+  app.use(express.static(path.join(__dirname, '..', 'client')));
+  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
   const httpServer = createServer(app);
   return httpServer;

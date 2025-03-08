@@ -44,14 +44,8 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-const productImages = [
-  "https://images.unsplash.com/photo-1578517581165-61ec5ab27a19",
-  "https://images.unsplash.com/photo-1615900119829-2158e385f448",
-  "https://images.unsplash.com/photo-1526947425960-945c6e72858f",
-  "https://images.unsplash.com/photo-1612817159576-986a0b7a4165",
-  "https://images.unsplash.com/photo-1622910076411-b126ff7e469b",
-  "https://images.unsplash.com/photo-1497515098781-e965764ab601",
-];
+// Default PDF file name will be set when uploading
+const defaultPdfName = "product-info.pdf";
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
@@ -69,7 +63,7 @@ export default function AdminProductsPage() {
       description: "",
       price: 0,
       stock: 0,
-      image_url: productImages[0],
+      pdf_file: "",
     },
   });
 
@@ -82,7 +76,7 @@ export default function AdminProductsPage() {
         description: "",
         price: 0,
         stock: 0,
-        image_url: productImages[0],
+        pdf_file: "",
       });
     }
   };
@@ -287,29 +281,38 @@ export default function AdminProductsPage() {
                 </div>
                 <FormField
                   control={form.control}
-                  name="image_url"
+                  name="pdf_file"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image</FormLabel>
+                      <FormLabel>PDF File</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-3 gap-2">
-                          {productImages.map((url) => (
-                            <div
-                              key={url}
-                              className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
-                                field.value === url
-                                  ? "border-primary"
-                                  : "border-transparent"
-                              }`}
-                              onClick={() => field.onChange(url)}
-                            >
-                              <img
-                                src={url}
-                                alt="Product"
-                                className="w-full h-full object-cover"
-                              />
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            className="block w-full text-sm text-slate-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-full file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-primary file:text-primary-foreground
+                              hover:file:bg-primary/90"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                // In a real app, you'd upload the file to server/storage
+                                // For now, we'll just store the file name
+                                field.onChange(file.name);
+                              }
+                            }}
+                          />
+                          {field.value && (
+                            <div className="flex items-center gap-2 p-2 border rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5 4v8.5c0 .83.67 1.5 1.5 1.5H12v2H6.5A3.5 3.5 0 0 1 3 12.5V4h2zm7 8a1 1 0 0 1-1-1V3.5A1.5 1.5 0 0 0 9.5 2h-2A1.5 1.5 0 0 0 6 3.5V11H4V3.5A3.5 3.5 0 0 1 7.5 0h2A3.5 3.5 0 0 1 13 3.5V11h-1zm3 2v-2h-2v2h2zm0-12v10h2V2h-2z" clipRule="evenodd" />
+                              </svg>
+                              <span>{field.value}</span>
                             </div>
-                          ))}
+                          )}
                         </div>
                       </FormControl>
                       <FormMessage />
