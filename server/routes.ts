@@ -155,7 +155,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-      const productData = { ...req.body, pdf_path: req.file.path };
+      const productData = { ...req.body, pdf_file: req.file.path };
       const [product] = await db
         .insert(products)
         .values(productData)
@@ -175,7 +175,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const productData = req.body;
       if (req.file) {
-        productData.pdf_path = req.file.path;
+        productData.pdf_file = req.file.path;
       }
       const [product] = await db
         .update(products)
@@ -302,7 +302,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                pdf_path: products.pdf_path, // Changed to pdf_path
+                pdf_file: products.pdf_file,
               },
             })
             .from(orderItems)
@@ -368,7 +368,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                pdf_path: products.pdf_path, // Changed to pdf_path
+                pdf_file: products.pdf_file,
               },
             })
             .from(orderItems)
