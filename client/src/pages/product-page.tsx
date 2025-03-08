@@ -26,12 +26,14 @@ export default function ProductPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="aspect-square overflow-hidden rounded-lg">
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+        <div className="aspect-square overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
+          <object
+            data={`/uploads/${product.pdf_file.split('/').pop()}`}
+            type="application/pdf"
+            className="w-full h-full"
+          >
+            <p>Unable to display PDF file. <a href={`/uploads/${product.pdf_file.split('/').pop()}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Download PDF</a> instead.</p>
+          </object>
         </div>
 
         <div className="space-y-6">

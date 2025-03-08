@@ -302,7 +302,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                pdf_file: products.pdf_file,
+                pdf_file: products.pdf_file, // Changed from image_url
               },
             })
             .from(orderItems)
@@ -368,7 +368,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                pdf_file: products.pdf_file,
+                pdf_file: products.pdf_file, // Changed from image_url
               },
             })
             .from(orderItems)
