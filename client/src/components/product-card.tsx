@@ -16,11 +16,15 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Card className="overflow-hidden">
       <Link href={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden">
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform hover:scale-105"
-          />
+          <div className="bg-gray-100 w-full h-full flex items-center justify-center">
+            <object
+              data={`/uploads/${product.pdf_file.split('/').pop()}`}
+              type="application/pdf"
+              className="w-full h-full"
+            >
+              <p className="p-4 text-center">PDF preview</p>
+            </object>
+          </div>
         </div>
       </Link>
       

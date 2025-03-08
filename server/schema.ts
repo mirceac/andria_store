@@ -17,7 +17,7 @@ export const products = pgTable("products", {
   price: doublePrecision("price").notNull(),
   pdf_file: text("pdf_file").notNull(),
   stock: integer("stock").notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const orders = pgTable("orders", {
