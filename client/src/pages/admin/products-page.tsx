@@ -88,7 +88,7 @@ export default function AdminProductsPage() {
       description: product.description,
       price: product.price,
       stock: product.stock,
-      image_url: product.image_url,
+      pdf_file: product.pdf_file,
     });
     setIsDialogOpen(true);
   };
