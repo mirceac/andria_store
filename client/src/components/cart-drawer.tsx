@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import React, { useState } from 'react';
 
 interface CartDrawerProps {
   open: boolean;
@@ -20,6 +21,39 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { items, removeFromCart, total } = useCart();
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setPdfFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pdfFile) {
+      alert("Please select a PDF file to upload.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append('pdf_file', pdfFile);
+
+    // Submit form data to server
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        alert("PDF file uploaded successfully.");
+      } else {
+        alert("Failed to upload PDF file.");
+      }
+    } catch (error) {
+      console.error("Error uploading PDF file:", error);
+      alert("An error occurred while uploading the PDF file.");
+    }
+  };
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -39,18 +73,15 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               <div className="space-y-4 py-4">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex gap-4">
-                    <img
-                      src={item.product.image_url}
-                      alt={item.product.name}
-                      className="w-20 h-20 object-cover rounded"
-                    />
                     <div className="flex-1">
                       <h4 className="font-semibold">{item.product.name}</h4>
                       <p className="text-sm text-muted-foreground">
                         Quantity: {item.quantity}
                       </p>
                       <p className="font-medium">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        {typeof item.product.price === 'number'
+                          ? `$${(item.product.price * item.quantity).toFixed(2)}`
+                          : 'N/A'}
                       </p>
                     </div>
                     <Button
@@ -86,6 +117,10 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </DrawerFooter>
           </>
         )}
+        <form onSubmit={handleSubmit} className="px-4 py-2">
+          <input type="file" accept="application/pdf" onChange={handleFileChange} />
+          <button type="submit" className="mt-2">Upload PDF</button>
+        </form>
       </DrawerContent>
     </Drawer>
   );

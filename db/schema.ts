@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, varchar, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 
@@ -12,12 +12,12 @@ export const users = pgTable("users", {
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  price: doublePrecision("price").notNull(),
-  image_url: text("image_url").notNull(),
-  stock: integer("stock").notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  price: numeric("price").notNull(),
+  pdf_file: varchar("pdf_file").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const orders = pgTable("orders", {

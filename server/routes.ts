@@ -9,6 +9,7 @@ import { createCheckoutSession, stripe } from "./stripe";
 import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
+import { Router } from 'express';
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -195,6 +196,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  const router = Router();
+
+  router.post('/products', async (req, res) => {
+    const { name, description, price, pdf_file } = req.body;
+    try {
+      const newProduct = await db.insert(products).values({
+        name,
+        description,
+        price,
+        pdf_file,
+      }).returning();
+      res.status(201).json(newProduct);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create product' });
+    }
+  });
 
   // Orders routes
   app.post("/api/orders", async (req, res) => {
@@ -257,7 +274,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                image_url: products.image_url,
+                pdf_file: products.pdf_file,
               },
             })
             .from(orderItems)
@@ -323,7 +340,7 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
-                image_url: products.image_url,
+                pdf_file: products.pdf_file,
               },
             })
             .from(orderItems)
