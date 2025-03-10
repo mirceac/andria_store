@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
-import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { PDFViewerDialog, PDFViewer } from "@/components/pdf-viewer-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -88,12 +88,15 @@ export default function HomePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts?.map((product) => (
           <div key={product.id} className="flex flex-col border rounded-lg bg-white">
-            <div className="w-full cursor-pointer" onClick={() => {
-              setSelectedPdf(getPdfUrl(product.pdf_file));
-              setSelectedProduct(product);
-              setIsPdfViewerOpen(true);
-            }}>
-              <PDFThumbnail pdfUrl={getPdfUrl(product.pdf_file)} />
+            <div 
+              className="w-full h-40 cursor-pointer overflow-hidden"
+              onClick={() => {
+                setSelectedPdf(getPdfUrl(product.pdf_file));
+                setSelectedProduct(product);
+                setIsPdfViewerOpen(true);
+              }}
+            >
+              <PDFViewer url={getPdfUrl(product.pdf_file)} scale={0.5} />
             </div>
             
             <div className="p-3 flex flex-col gap-2">
