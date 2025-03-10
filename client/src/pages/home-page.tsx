@@ -60,7 +60,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-7xl mx-auto">
       {/* Search and sort controls */}
       <div className="flex items-center justify-between mb-8">
         <div className="relative max-w-xs w-full">
