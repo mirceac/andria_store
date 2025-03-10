@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import ProductCard from "@/components/product-card";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useCart } from "@/hooks/use-cart";
 import {
   Select,
   SelectContent,
@@ -13,6 +13,8 @@ import {
 import { useState } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
@@ -24,6 +26,8 @@ export default function HomePage() {
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
   });
+
+  const { addToCart } = useCart();
 
   if (isLoading) {
     return (
@@ -56,17 +60,11 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold">Featured Products</h1>
-        <p className="text-muted-foreground mt-2">
-          Discover our handpicked selection of premium products
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+    <div className="container py-8">
+      {/* Search and sort controls */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="relative max-w-xs w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
             value={search}
@@ -74,39 +72,77 @@ export default function HomePage() {
             className="pl-9"
           />
         </div>
-        <Select value={sort} onValueChange={(value: any) => setSort(value)}>
+        <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="price_asc">Price: Low to High</SelectItem>
-            <SelectItem value="price_desc">Price: High to Low</SelectItem>
+            <SelectItem value="name">Name (A-Z)</SelectItem>
+            <SelectItem value="price_asc">Price (Low to High)</SelectItem>
+            <SelectItem value="price_desc">Price (High to Low)</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Products grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts?.map((product) => (
-          <div key={product.id} className="space-y-4">
-            <PDFThumbnail
-              pdfUrl={getPdfUrl(product.pdf_file)}
-              onClick={() => {
-                setSelectedPdf(getPdfUrl(product.pdf_file));
-                setSelectedProduct(product); // Add this state
-                setIsPdfViewerOpen(true);
-              }}
-            />
-            <ProductCard product={product} />
+          <div key={product.id} className="flex flex-col border rounded-lg bg-white">
+            <div className="w-full cursor-pointer" onClick={() => {
+              setSelectedPdf(getPdfUrl(product.pdf_file));
+              setSelectedProduct(product);
+              setIsPdfViewerOpen(true);
+            }}>
+              <PDFThumbnail pdfUrl={getPdfUrl(product.pdf_file)} />
+            </div>
+            
+            <div className="p-3 flex flex-col gap-2">
+              <div className="flex justify-between items-start gap-2">
+                <h3 
+                  className="font-medium text-base hover:text-primary cursor-pointer"
+                  onClick={() => {
+                    setSelectedPdf(getPdfUrl(product.pdf_file));
+                    setSelectedProduct(product);
+                    setIsPdfViewerOpen(true);
+                  }}
+                >
+                  {product.name}
+                </h3>
+                <Badge 
+                  variant={product.stock > 0 ? "secondary" : "destructive"} 
+                  className="text-xs shrink-0"
+                >
+                  {product.stock > 0 ? `${product.stock} left` : "Out of stock"}
+                </Badge>
+              </div>
+
+              {product.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between mt-auto pt-2">
+                <p className="font-semibold">${Number(product.price).toFixed(2)}</p>
+                <Button
+                  size="sm"
+                  onClick={() => addToCart(product)}
+                  disabled={product.stock === 0}
+                >
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
+      {/* PDF Viewer Dialog */}
       <PDFViewerDialog
         open={isPdfViewerOpen}
         onOpenChange={setIsPdfViewerOpen}
         pdfUrl={selectedPdf}
-        title={selectedProduct?.name || "View PDF"} // Add product name as title
+        title={selectedProduct?.name}
       />
     </div>
   );
