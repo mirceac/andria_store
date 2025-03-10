@@ -89,7 +89,7 @@ export function PDFViewerDialog({
   }, [open]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoom <= 1) return;
+    // Remove zoom check to allow dragging at any zoom level
     setIsDragging(true);
     setStartPosition({
       x: e.clientX - position.x,
@@ -175,7 +175,8 @@ export function PDFViewerDialog({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
-            cursor: zoom > initialScale ? (isDragging ? 'grabbing' : 'grab') : 'default'
+            // Update cursor to show grab/grabbing at any zoom level
+            cursor: isDragging ? 'grabbing' : 'grab'
           }}
         >
           <div
