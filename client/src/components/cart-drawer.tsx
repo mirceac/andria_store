@@ -79,9 +79,7 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                         Quantity: {item.quantity}
                       </p>
                       <p className="font-medium">
-                        {typeof item.product.price === 'number'
-                          ? `$${(item.product.price * item.quantity).toFixed(2)}`
-                          : 'N/A'}
+                        ${Number(item.product.price).toFixed(2)}
                       </p>
                     </div>
                     <Button

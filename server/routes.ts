@@ -10,6 +10,7 @@ import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
 import { Router } from 'express';
+import { upload } from './upload';
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -86,7 +87,11 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/products", async (req, res) => {
     try {
       const allProducts = await db.select().from(products);
-      res.json(allProducts);
+      const productsWithNumberPrice = allProducts.map(product => ({
+        ...product,
+        price: Number(product.price)
+      }));
+      res.json(productsWithNumberPrice);
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });
@@ -102,7 +107,12 @@ export function registerRoutes(app: Express): Server {
         .limit(1);
 
       if (!product) return res.status(404).json({ message: "Product not found" });
-      res.json(product);
+      
+      const productWithNumberPrice = {
+        ...product,
+        price: Number(product.price)
+      };
+      res.json(productWithNumberPrice);
     } catch (error) {
       console.error("Error fetching product:", error);
       res.status(500).json({ message: "Failed to fetch product" });
@@ -132,7 +142,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/products/:id", async (req, res) => {
+  app.patch("/api/products/:id", upload.single('pdf_file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -140,7 +150,8 @@ export function registerRoutes(app: Express): Server {
     try {
       const updateData = {
         ...req.body,
-        price: req.body.price ? Number(req.body.price) : undefined
+        price: req.body.price ? Number(req.body.price) : undefined,
+        pdf_file: req.file ? req.file.path.replace('public/', '/') : undefined
       };
 
       const [product] = await db
@@ -221,6 +232,15 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       res.status(500).json({ error: 'Failed to create product' });
     }
+  });
+
+  app.post("/api/upload-pdf", upload.single('pdf_file'), async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No PDF file uploaded" });
+    }
+    
+    const filePath = req.file.path.replace('public/', '/');
+    res.json({ path: filePath });
   });
 
   // Orders routes

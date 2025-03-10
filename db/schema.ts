@@ -1,6 +1,18 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, varchar, numeric } from "drizzle-orm/pg-core";
+import { 
+  pgTable, 
+  text, 
+  serial, 
+  integer, 
+  boolean, 
+  timestamp, 
+  doublePrecision, 
+  varchar, 
+  numeric,
+  decimal  // Add this import
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
+import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -10,14 +22,15 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  price: numeric("price").notNull(),
-  pdf_file: varchar("pdf_file").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  stock: integer('stock').notNull().default(0),
+  pdf_file: varchar('pdf_file').notNull(),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
 });
 
 export const orders = pgTable("orders", {
@@ -60,10 +73,24 @@ export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 
-export const insertProductSchema = createInsertSchema(products);
-export const selectProductSchema = createSelectSchema(products);
-export type InsertProduct = typeof products.$inferInsert;
-export type SelectProduct = typeof products.$inferSelect;
+export const insertProductSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable(),
+  price: z.number().min(0),
+  stock: z.number().min(0),
+  pdf_file: z.string().min(1),
+});
+
+export type SelectProduct = {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  stock: number;
+  pdf_file: string;
+  created_at: Date;
+  updated_at: Date;
+};
 
 export const insertOrderSchema = createInsertSchema(orders);
 export const selectOrderSchema = createSelectSchema(orders);

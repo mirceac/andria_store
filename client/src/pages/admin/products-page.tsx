@@ -44,15 +44,6 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-const productImages = [
-  "https://images.unsplash.com/photo-1578517581165-61ec5ab27a19",
-  "https://images.unsplash.com/photo-1615900119829-2158e385f448",
-  "https://images.unsplash.com/photo-1526947425960-945c6e72858f",
-  "https://images.unsplash.com/photo-1612817159576-986a0b7a4165",
-  "https://images.unsplash.com/photo-1622910076411-b126ff7e469b",
-  "https://images.unsplash.com/photo-1497515098781-e965764ab601",
-];
-
 export default function AdminProductsPage() {
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
@@ -69,7 +60,7 @@ export default function AdminProductsPage() {
       description: "",
       price: 0,
       stock: 0,
-      image_url: productImages[0],
+      pdf_file: "",
     },
   });
 
@@ -82,7 +73,7 @@ export default function AdminProductsPage() {
         description: "",
         price: 0,
         stock: 0,
-        image_url: productImages[0],
+        pdf_file: "", // Changed from image_url
       });
     }
   };
@@ -91,10 +82,10 @@ export default function AdminProductsPage() {
     setSelectedProduct(product);
     form.reset({
       name: product.name,
-      description: product.description,
-      price: product.price,
+      description: product.description || "", // Handle null case
+      price: Number(product.price), // Ensure price is a number
       stock: product.stock,
-      image_url: product.image_url,
+      pdf_file: product.pdf_file,
     });
     setIsDialogOpen(true);
   };
@@ -287,30 +278,21 @@ export default function AdminProductsPage() {
                 </div>
                 <FormField
                   control={form.control}
-                  name="image_url"
+                  name="pdf_file"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image</FormLabel>
+                      <FormLabel>PDF File</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-3 gap-2">
-                          {productImages.map((url) => (
-                            <div
-                              key={url}
-                              className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
-                                field.value === url
-                                  ? "border-primary"
-                                  : "border-transparent"
-                              }`}
-                              onClick={() => field.onChange(url)}
-                            >
-                              <img
-                                src={url}
-                                alt="Product"
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
-                        </div>
+                        <Input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              field.onChange(file);
+                            }
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -342,7 +324,7 @@ export default function AdminProductsPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Image</TableHead>
+            <TableHead>PDF</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Stock</TableHead>
@@ -353,11 +335,14 @@ export default function AdminProductsPage() {
           {products?.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-16 h-16 object-cover rounded"
-                />
+                <a 
+                  href={product.pdf_file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  View PDF
+                </a>
               </TableCell>
               <TableCell className="font-medium">{product.name}</TableCell>
               <TableCell>${product.price.toFixed(2)}</TableCell>
