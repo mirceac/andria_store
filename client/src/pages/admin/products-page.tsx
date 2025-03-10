@@ -92,7 +92,16 @@ export default function AdminProductsPage() {
 
   const createProductMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/products", data);
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'pdf_file' && value instanceof File) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, String(value));
+        }
+      });
+      
+      const res = await apiRequest("POST", "/api/products", formData);
       return res.json();
     },
     onSuccess: () => {
@@ -114,10 +123,23 @@ export default function AdminProductsPage() {
 
   const updateProductMutation = useMutation({
     mutationFn: async (data: any) => {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'pdf_file') {
+          if (value instanceof File) {
+            formData.append(key, value);
+          } else if (typeof value === 'string' && value !== '') {
+            formData.append(key, value);
+          }
+        } else {
+          formData.append(key, String(value));
+        }
+      });
+      
       const res = await apiRequest(
         "PATCH",
         `/api/products/${selectedProduct?.id}`,
-        data
+        formData
       );
       return res.json();
     },
@@ -279,20 +301,33 @@ export default function AdminProductsPage() {
                 <FormField
                   control={form.control}
                   name="pdf_file"
-                  render={({ field }) => (
+                  render={({ field: { value, onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>PDF File</FormLabel>
                       <FormControl>
-                        <Input
-                          type="file"
-                          accept=".pdf"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              field.onChange(file);
-                            }
-                          }}
-                        />
+                        <div className="space-y-2">
+                          {selectedProduct && (
+                            <a
+                              href={selectedProduct.pdf_file}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline block mb-2"
+                            >
+                              Current PDF
+                            </a>
+                          )}
+                          <Input
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                onChange(file);
+                              }
+                            }}
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -7,21 +7,31 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
+export const apiRequest = async (
   method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
+  path: string,
+  body?: any
+) => {
+  const headers: HeadersInit = {};
+  
+  // Don't set Content-Type for FormData
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(path, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    headers,
+    body: body instanceof FormData ? body : JSON.stringify(body),
   });
 
-  await throwIfResNotOk(res);
-  return res;
-}
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "An error occurred");
+  }
+
+  return response;
+};
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {

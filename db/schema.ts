@@ -78,7 +78,7 @@ export const insertProductSchema = z.object({
   description: z.string().nullable(),
   price: z.number().min(0),
   stock: z.number().min(0),
-  pdf_file: z.string().min(1),
+  pdf_file: z.instanceof(File).or(z.string()),  // Accept both File object and string
 });
 
 export type SelectProduct = {
