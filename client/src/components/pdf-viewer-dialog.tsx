@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,20 +11,34 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 initPdfWorker();
 
 export function PDFViewer({ url, scale = 1.0 }: { url: string; scale?: number }) {
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    // Set initial dimensions based on container width
+    setDimensions({
+      width: 400, // thumbnail width
+      height: 160 // thumbnail height (40px container)
+    });
+  };
+
   return (
-    <Document
-      file={url}
-      loading={<Loader2 className="h-8 w-8 animate-spin" />}
-      error={<p>Unable to load PDF file.</p>}
-    >
-      <Page
-        pageNumber={1}
-        scale={scale}
-        renderTextLayer={false}
-        renderAnnotationLayer={false}
-        loading={null}
-      />
-    </Document>
+    <div className="w-full h-40 flex items-center justify-center bg-white">
+      <Document
+        file={url}
+        loading={<Loader2 className="h-8 w-8 animate-spin" />}
+        error={<p>Unable to load PDF file.</p>}
+        onLoadSuccess={onDocumentLoadSuccess}
+      >
+        <Page
+          pageNumber={1}
+          scale={scale}
+          renderTextLayer={false}
+          renderAnnotationLayer={false}
+          loading={null}
+          width={400}
+        />
+      </Document>
+    </div>
   );
 }
 
@@ -47,6 +61,9 @@ export function PDFViewerDialog({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [initialScale, setInitialScale] = useState(1.0);
 
   useEffect(() => {
     // Reset position and zoom when dialog opens/closes
@@ -54,6 +71,21 @@ export function PDFViewerDialog({
       setPosition({ x: 0, y: 0 });
       setZoom(1.0);
     }
+  }, [open]);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight
+        });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, [open]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -85,6 +117,27 @@ export function PDFViewerDialog({
     setPosition({ x: 0, y: 0 }); // Reset position on zoom change
   };
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      
+      // Start with a scale that fits the width
+      const initialZoom = 0.8; // Start at 80% to ensure full content visibility
+      setZoom(initialZoom);
+      setInitialScale(initialZoom);
+      setIsLoading(false);
+    }
+  };
+
+  // Reset to fit scale when dialog opens
+  useEffect(() => {
+    if (open) {
+      setZoom(initialScale);
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [open, initialScale]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] p-0">
@@ -114,13 +167,14 @@ export function PDFViewerDialog({
         </DialogHeader>
 
         <div 
-          className="flex-1 h-[calc(90vh-4rem)] overflow-hidden bg-white"
+          ref={containerRef}
+          className="flex-1 h-[calc(90vh-4rem)] overflow-hidden bg-white flex items-center justify-center p-4"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
-            cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+            cursor: zoom > initialScale ? (isDragging ? 'grabbing' : 'grab') : 'default'
           }}
         >
           <div
@@ -129,7 +183,20 @@ export function PDFViewerDialog({
               transition: isDragging ? 'none' : 'transform 0.2s ease-out'
             }}
           >
-            <PDFViewer url={pdfUrl!} scale={zoom} />
+            <Document
+              file={pdfUrl}
+              loading={<Loader2 className="h-8 w-8 animate-spin" />}
+              error={<p>Unable to load PDF file.</p>}
+              onLoadSuccess={onDocumentLoadSuccess}
+            >
+              <Page
+                pageNumber={1}
+                scale={zoom}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                loading={null}
+              />
+            </Document>
           </div>
         </div>
       </DialogContent>
