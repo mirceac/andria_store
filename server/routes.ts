@@ -10,7 +10,14 @@ import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
 import { Router } from 'express';
-import { upload } from './upload';
+import { upload } from './upload';  // Import from the new file
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import multer from 'multer';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -120,25 +127,59 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Protected admin routes
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", upload.single('pdf_file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
+      console.log('Received request body:', req.body);
+      console.log('Received file:', req.file);
+
+      if (!req.file) {
+        return res.status(400).json({ message: "PDF file is required" });
+      }
+
+      if (!req.body.name) {
+        return res.status(400).json({ message: "Product name is required" });
+      }
+
+      const price = Number(req.body.price);
+      if (isNaN(price) || price <= 0) {
+        return res.status(400).json({ message: "Valid price is required" });
+      }
+
+      const stock = Number(req.body.stock);
+      if (isNaN(stock) || stock < 0) {
+        return res.status(400).json({ message: "Valid stock quantity is required" });
+      }
+
       const productData = {
-        ...req.body,
-        price: Number(req.body.price)
+        name: String(req.body.name).trim(),
+        description: req.body.description ? String(req.body.description).trim() : null,
+        price: price.toString(), // Convert number to string for database insertion
+        stock: stock,
+        pdf_file: `/uploads/pdf/${req.file.filename}`
       };
-      
+
+      console.log('Processed product data:', productData);
+
       const [product] = await db
         .insert(products)
         .values(productData)
         .returning();
-      res.status(201).json(product);
+
+      // Convert price back to number in response
+      res.status(201).json({
+        ...product,
+        price: Number(product.price)
+      });
     } catch (error) {
       console.error("Error creating product:", error);
-      res.status(500).json({ message: "Failed to create product" });
+      res.status(500).json({ 
+        message: "Failed to create product",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -151,7 +192,8 @@ export function registerRoutes(app: Express): Server {
       const updateData = {
         ...req.body,
         price: req.body.price ? Number(req.body.price) : undefined,
-        pdf_file: req.file ? req.file.path.replace('public/', '/') : undefined
+        // Store the URL path that will be used to access the file
+        pdf_file: req.file ? `/uploads/pdf/${req.file.filename}` : undefined
       };
 
       const [product] = await db
@@ -214,23 +256,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         message: "Something went wrong while deleting the product. Please try again." 
       });
-    }
-  });
-
-  const router = Router();
-
-  router.post('/products', async (req, res) => {
-    const { name, description, price, pdf_file } = req.body;
-    try {
-      const newProduct = await db.insert(products).values({
-        name,
-        description,
-        price,
-        pdf_file,
-      }).returning();
-      res.status(201).json(newProduct);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create product' });
     }
   });
 

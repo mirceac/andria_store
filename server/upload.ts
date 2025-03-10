@@ -1,18 +1,20 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'public/uploads/pdf';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const uploadDir = join(__dirname, '../public/uploads/pdf');
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+    const cleanFileName = uniqueSuffix + path.extname(file.originalname);
+    cb(null, cleanFileName);
   }
 });
 
@@ -24,8 +26,5 @@ export const upload = multer({
       return;
     }
     cb(null, true);
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 });

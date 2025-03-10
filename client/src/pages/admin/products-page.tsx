@@ -44,6 +44,16 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
+// Helper function to get the full URL for PDF files
+const getPdfUrl = (pdfPath: string) => {
+  // If it's already an absolute URL, return it
+  if (pdfPath.startsWith('http')) return pdfPath;
+  // If it starts with /uploads, use it as is
+  if (pdfPath.startsWith('/uploads')) return pdfPath;
+  // Otherwise, assume it's a relative path and prepend /uploads/pdf
+  return `/uploads/pdf/${pdfPath}`;
+};
+
 export default function AdminProductsPage() {
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
@@ -308,7 +318,7 @@ export default function AdminProductsPage() {
                         <div className="space-y-2">
                           {selectedProduct && (
                             <a
-                              href={selectedProduct.pdf_file}
+                              href={getPdfUrl(selectedProduct.pdf_file)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline block mb-2"
@@ -371,7 +381,7 @@ export default function AdminProductsPage() {
             <TableRow key={product.id}>
               <TableCell>
                 <a 
-                  href={product.pdf_file}
+                  href={getPdfUrl(product.pdf_file)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"

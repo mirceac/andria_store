@@ -1,9 +1,21 @@
 import '../config';
 import express, { type Request, Response, NextFunction } from "express";
+import path from 'path';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
+
+// Update the static file serving
+app.use('/uploads', express.static(join(__dirname, '../public/uploads')));
+
+// Serve PDF files from public/uploads
+app.use('/uploads/pdf', express.static(join(__dirname, '../public/uploads/pdf')));
 
 // Add webhook request logging
 app.use((req, res, next) => {
