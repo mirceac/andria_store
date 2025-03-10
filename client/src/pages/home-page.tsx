@@ -11,10 +11,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"price_asc" | "price_desc" | "name">("name");
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -44,6 +49,11 @@ export default function HomePage() {
           return 0;
       }
     });
+
+  const getPdfUrl = (pdfPath: string) => {
+    if (pdfPath.startsWith('http')) return pdfPath;
+    return `/uploads/pdf/${pdfPath.split('/').pop()}`;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -78,9 +88,26 @@ export default function HomePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts?.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} className="space-y-4">
+            <PDFThumbnail
+              pdfUrl={getPdfUrl(product.pdf_file)}
+              onClick={() => {
+                setSelectedPdf(getPdfUrl(product.pdf_file));
+                setSelectedProduct(product); // Add this state
+                setIsPdfViewerOpen(true);
+              }}
+            />
+            <ProductCard product={product} />
+          </div>
         ))}
       </div>
+
+      <PDFViewerDialog
+        open={isPdfViewerOpen}
+        onOpenChange={setIsPdfViewerOpen}
+        pdfUrl={selectedPdf}
+        title={selectedProduct?.name || "View PDF"} // Add product name as title
+      />
     </div>
   );
 }
