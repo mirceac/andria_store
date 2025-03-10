@@ -111,8 +111,9 @@ export function PDFViewerDialog({
 
   const handleZoom = (increment: boolean) => {
     setZoom(prev => {
-      const newZoom = increment ? prev + 0.5 : prev - 0.5;
-      return Math.max(0.5, Math.min(5, newZoom));
+      const step = 0.1; // 10% increments
+      const newZoom = increment ? prev + step : prev - step;
+      return Math.max(0.1, Math.min(5.0, newZoom)); // 10% to 500% range
     });
     setPosition({ x: 0, y: 0 }); // Reset position on zoom change
   };
@@ -149,7 +150,7 @@ export function PDFViewerDialog({
                 variant="outline"
                 size="icon"
                 onClick={() => handleZoom(false)}
-                disabled={zoom <= 0.5}
+                disabled={zoom <= 0.1} // Disable at 10%
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -158,7 +159,7 @@ export function PDFViewerDialog({
                 variant="outline"
                 size="icon"
                 onClick={() => handleZoom(true)}
-                disabled={zoom >= 5}
+                disabled={zoom >= 5.0} // Disable at 500%
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
