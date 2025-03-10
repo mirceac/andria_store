@@ -43,6 +43,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 
 // Helper function to get the full URL for PDF files
 const getPdfUrl = (pdfPath: string) => {
@@ -58,6 +59,8 @@ export default function AdminProductsPage() {
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -380,14 +383,16 @@ export default function AdminProductsPage() {
           {products?.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                <a 
-                  href={getPdfUrl(product.pdf_file)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Button
+                  variant="link"
                   className="text-blue-600 hover:underline"
+                  onClick={() => {
+                    setSelectedPdf(getPdfUrl(product.pdf_file));
+                    setIsPdfViewerOpen(true);
+                  }}
                 >
                   View PDF
-                </a>
+                </Button>
               </TableCell>
               <TableCell className="font-medium">{product.name}</TableCell>
               <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -435,6 +440,12 @@ export default function AdminProductsPage() {
           ))}
         </TableBody>
       </Table>
+
+      <PDFViewerDialog
+        open={isPdfViewerOpen}
+        onOpenChange={setIsPdfViewerOpen}
+        pdfUrl={selectedPdf}
+      />
     </div>
   );
 }
