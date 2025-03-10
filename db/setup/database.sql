@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR NOT NULL,
     description TEXT,
     price NUMERIC NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
     pdf_file VARCHAR NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -59,13 +60,13 @@ INSERT INTO users (username, password, is_admin) VALUES
 ('admin', 'ef8b1da1d797450be6577b93cc51aadb07b754d52ca96cc96dbb7f5d0c05cc4c0c2a41eedec93bc0e4ec130d465750954e1866415fe0b1eccb6041b4ce85b2ab.3926a6e11f96c40b64b6e5ab3c981110', true);
 
 -- Sample Products
-INSERT INTO products (name, description, price, stock, image_url) VALUES
-('Classic T-Shirt', 'Comfortable cotton t-shirt', 29.99, 100, 'https://images.unsplash.com/photo-1578517581165-61ec5ab27a19'),
-('Designer Jeans', 'Premium denim jeans', 89.99, 50, 'https://images.unsplash.com/photo-1615900119829-2158e385f448'),
-('Running Shoes', 'Lightweight performance shoes', 129.99, 30, 'https://images.unsplash.com/photo-1526947425960-945c6e72858f'),
-('Leather Wallet', 'Genuine leather bifold wallet', 49.99, 75, 'https://images.unsplash.com/photo-1612817159576-986a0b7a4165'),
-('Smart Watch', 'Fitness tracking smartwatch', 199.99, 25, 'https://images.unsplash.com/photo-1622910076411-b126ff7e469b'),
-('Sunglasses', 'UV protection sunglasses', 79.99, 60, 'https://images.unsplash.com/photo-1497515098781-e965764ab601');
+INSERT INTO products (name, description, price, stock, pdf_file) VALUES
+('Classic T-Shirt', 'Comfortable cotton t-shirt', 29.99, 100, 'path/to/classic_tshirt.pdf'),
+('Designer Jeans', 'Premium denim jeans', 89.99, 50, 'path/to/designer_jeans.pdf'),
+('Running Shoes', 'Lightweight performance shoes', 129.99, 30, 'path/to/running_shoes.pdf'),
+('Leather Wallet', 'Genuine leather bifold wallet', 49.99, 75, 'path/to/leather_wallet.pdf'),
+('Smart Watch', 'Fitness tracking smartwatch', 199.99, 25, 'path/to/smart_watch.pdf'),
+('Sunglasses', 'UV protection sunglasses', 79.99, 60, 'path/to/sunglasses.pdf');
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);

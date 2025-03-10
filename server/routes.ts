@@ -116,9 +116,14 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      const productData = {
+        ...req.body,
+        price: Number(req.body.price)
+      };
+      
       const [product] = await db
         .insert(products)
-        .values(req.body)
+        .values(productData)
         .returning();
       res.status(201).json(product);
     } catch (error) {
@@ -133,9 +138,14 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      const updateData = {
+        ...req.body,
+        price: req.body.price ? Number(req.body.price) : undefined
+      };
+
       const [product] = await db
         .update(products)
-        .set(req.body)
+        .set(updateData)
         .where(eq(products.id, parseInt(req.params.id)))
         .returning();
 
