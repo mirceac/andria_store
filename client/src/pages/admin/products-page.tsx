@@ -44,16 +44,7 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
-
-// Helper function to get the full URL for PDF files
-const getPdfUrl = (pdfPath: string) => {
-  // If it's already an absolute URL, return it
-  if (pdfPath.startsWith('http')) return pdfPath;
-  // If it starts with /uploads, use it as is
-  if (pdfPath.startsWith('/uploads')) return pdfPath;
-  // Otherwise, assume it's a relative path and prepend /uploads/pdf
-  return `/uploads/pdf/${pdfPath}`;
-};
+import { getPdfUrl } from "@/lib/pdf-worker";
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
@@ -92,14 +83,15 @@ export default function AdminProductsPage() {
   };
 
   const handleEditProduct = (product: SelectProduct) => {
-    setSelectedProduct(product);
     form.reset({
       name: product.name,
-      description: product.description || "", // Handle null case
-      price: Number(product.price), // Ensure price is a number
+      description: product.description || "",
+      price: Number(product.price),
       stock: product.stock,
-      pdf_file: product.pdf_file,
+      // Set pdf_file as empty string instead of null
+      pdf_file: product.pdf_file || ""
     });
+    setSelectedProduct(product);
     setIsDialogOpen(true);
   };
 
@@ -108,8 +100,9 @@ export default function AdminProductsPage() {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'pdf_file' && value instanceof File) {
-          formData.append(key, value);
-        } else {
+          formData.append('pdf_file', value);
+          formData.append('store_as_binary', 'true');
+        } else if (value !== null) {
           formData.append(key, String(value));
         }
       });
@@ -140,8 +133,10 @@ export default function AdminProductsPage() {
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'pdf_file') {
           if (value instanceof File) {
-            formData.append(key, value);
+            formData.append('pdf_file', value);
+            formData.append('store_as_binary', 'true');
           } else if (typeof value === 'string' && value !== '') {
+            // Keep existing file path if no new file is uploaded
             formData.append(key, value);
           }
         } else {
@@ -320,14 +315,16 @@ export default function AdminProductsPage() {
                       <FormControl>
                         <div className="space-y-2">
                           {selectedProduct && (
-                            <a
-                              href={getPdfUrl(selectedProduct.pdf_file)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline block mb-2"
+                            <Button
+                              variant="link"
+                              className="text-blue-600 hover:underline p-0"
+                              onClick={() => {
+                                setSelectedPdf(getPdfUrl(selectedProduct.id));
+                                setIsPdfViewerOpen(true);
+                              }}
                             >
-                              Current PDF
-                            </a>
+                              View Current PDF
+                            </Button>
                           )}
                           <Input
                             type="file"
@@ -387,7 +384,7 @@ export default function AdminProductsPage() {
                   variant="link"
                   className="text-blue-600 hover:underline"
                   onClick={() => {
-                    setSelectedPdf(getPdfUrl(product.pdf_file));
+                    setSelectedPdf(getPdfUrl(product.id));
                     setIsPdfViewerOpen(true);
                   }}
                 >

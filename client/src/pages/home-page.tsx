@@ -15,6 +15,7 @@ import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { PDFViewerDialog, PDFViewer } from "@/components/pdf-viewer-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getPdfUrl } from "@/lib/pdf-worker"; // Add this import
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
@@ -54,11 +55,6 @@ export default function HomePage() {
       }
     });
 
-  const getPdfUrl = (pdfPath: string) => {
-    if (pdfPath.startsWith('http')) return pdfPath;
-    return `/uploads/pdf/${pdfPath.split('/').pop()}`;
-  };
-
   return (
     <div className="container py-8 max-w-7xl mx-auto">
       {/* Search and sort controls */}
@@ -91,12 +87,12 @@ export default function HomePage() {
             <div 
               className="w-full h-40 cursor-pointer overflow-hidden"
               onClick={() => {
-                setSelectedPdf(getPdfUrl(product.pdf_file));
+                setSelectedPdf(getPdfUrl(product.id));
                 setSelectedProduct(product);
                 setIsPdfViewerOpen(true);
               }}
             >
-              <PDFViewer url={getPdfUrl(product.pdf_file)} scale={0.5} />
+              <PDFViewer url={getPdfUrl(product.id)} scale={0.5} />
             </div>
             
             <div className="p-3 flex flex-col gap-2">
@@ -104,7 +100,7 @@ export default function HomePage() {
                 <h3 
                   className="font-medium text-base hover:text-primary cursor-pointer"
                   onClick={() => {
-                    setSelectedPdf(getPdfUrl(product.pdf_file));
+                    setSelectedPdf(getPdfUrl(product.id));
                     setSelectedProduct(product);
                     setIsPdfViewerOpen(true);
                   }}

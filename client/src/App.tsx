@@ -14,6 +14,10 @@ import AdminProductsPage from "@/pages/admin/products-page";
 import AdminOrdersPage from "@/pages/admin/orders-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
+import { initPdfWorker } from '@/lib/pdf-worker';
+
+// Initialize PDF worker
+initPdfWorker();
 
 function Router() {
   return (

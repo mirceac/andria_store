@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price NUMERIC NOT NULL,
     stock INTEGER NOT NULL DEFAULT 0,
-    pdf_file VARCHAR NOT NULL,
+    pdf_file VARCHAR,
+    pdf_data bytea,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -72,3 +73,12 @@ INSERT INTO products (name, description, price, stock, pdf_file) VALUES
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Keep the existing pdf_file column but make it nullable
+ALTER TABLE products ALTER COLUMN pdf_file DROP NOT NULL;
+
+-- Add new column for binary data
+ALTER TABLE products ADD COLUMN pdf_data bytea;
+
+-- Create index for pdf lookups
+CREATE INDEX idx_products_pdf ON products(id) WHERE pdf_data IS NOT NULL;

@@ -15,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -126,6 +127,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/products/:id/pdf", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, productId)
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      if (product.pdf_data) {
+        try {
+          // Convert Buffer to string without parameters
+          const base64String = product.pdf_data.toString();
+          
+          // Create a new Buffer from the base64 string
+          const pdfBuffer = Buffer.from(base64String, 'base64');
+          
+          console.log('Decoded PDF buffer details:', {
+            originalSize: product.pdf_data.length,
+            decodedSize: pdfBuffer.length,
+            // Check the first few bytes without parameters
+            firstFewBytes: pdfBuffer.slice(0, 5).toString()
+          });
+      
+          // Set headers for the response
+          res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBuffer.length,
+            'Content-Disposition': 'inline; filename="document.pdf"'
+          });
+      
+          // Send the decoded buffer
+          return res.send(pdfBuffer);
+        } catch (error) {
+          console.error('Error sending PDF:', error);
+          return res.status(500).send('Error processing PDF');
+        }
+      }
+
+      // Fall back to file system if pdf_file exists
+      if (product.pdf_file) {
+        try {
+          const filePath = path.join(process.cwd(), 'public', product.pdf_file);
+          if (!fs.existsSync(filePath)) {
+            console.log('PDF file not found:', filePath);
+            return res.status(404).json({ message: "PDF file not found" });
+          }
+
+          console.log('Serving PDF from file:', filePath);
+          return res.sendFile(filePath);
+        } catch (err) {
+          console.error('Error serving PDF file:', err);
+          return res.status(500).json({ message: "Error serving PDF file" });
+        }
+      }
+
+      return res.status(404).json({ message: "No PDF found for this product" });
+    } catch (error) {
+      console.error('Error serving PDF:', error);
+      return res.status(500).json({ message: "Error serving PDF" });
+    }
+  });
+
   // Protected admin routes
   app.post("/api/products", upload.single('pdf_file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
@@ -133,46 +199,61 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log('Received request body:', req.body);
-      console.log('Received file:', req.file);
+      console.log('Request body:', req.body);
+      console.log('File:', req.file);
 
-      if (!req.file) {
-        return res.status(400).json({ message: "PDF file is required" });
-      }
-
+      // Validate required fields
       if (!req.body.name) {
         return res.status(400).json({ message: "Product name is required" });
       }
 
-      const price = Number(req.body.price);
-      if (isNaN(price) || price <= 0) {
+      // Parse and validate price
+      const price = parseFloat(req.body.price);
+      if (isNaN(price) || price < 0) {
         return res.status(400).json({ message: "Valid price is required" });
       }
 
-      const stock = Number(req.body.stock);
+      // Parse and validate stock
+      const stock = parseInt(req.body.stock);
       if (isNaN(stock) || stock < 0) {
         return res.status(400).json({ message: "Valid stock quantity is required" });
       }
 
       const productData = {
-        name: String(req.body.name).trim(),
-        description: req.body.description ? String(req.body.description).trim() : null,
-        price: price.toString(), // Convert number to string for database insertion
+        name: req.body.name,
+        description: req.body.description || null,
+        price: price.toString(),
         stock: stock,
-        pdf_file: `/uploads/pdf/${req.file.filename}`
+        pdf_file: null as string | null,
+        pdf_data: null as string | null
       };
 
-      console.log('Processed product data:', productData);
+      if (req.file) {
+        console.log('Processing PDF file:', req.file.originalname);
+        // Always store as binary now
+        productData.pdf_data = req.file.buffer.toString('base64');
+        console.log('PDF data length:', productData.pdf_data.length);
+      }
+
+      console.log('Inserting product with data:', {
+        ...productData,
+        pdf_data: productData.pdf_data ? `<${productData.pdf_data.length} bytes>` : null
+      });
 
       const [product] = await db
         .insert(products)
         .values(productData)
         .returning();
 
-      // Convert price back to number in response
+      console.log('Product created:', {
+        ...product,
+        pdf_data: product.pdf_data ? `<${product.pdf_data.length} bytes>` : null
+      });
+
       res.status(201).json({
         ...product,
-        price: Number(product.price)
+        price: Number(product.price),
+        pdf_data: undefined // Don't send binary data back to client
       });
     } catch (error) {
       console.error("Error creating product:", error);
@@ -189,12 +270,47 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const updateData = {
-        ...req.body,
-        price: req.body.price ? Number(req.body.price) : undefined,
-        // Store the URL path that will be used to access the file
-        pdf_file: req.file ? `/uploads/pdf/${req.file.filename}` : undefined
-      };
+      console.log('Update request body:', req.body);
+      
+      const updateData: Record<string, any> = {};
+
+      // Handle basic fields
+      if (req.body.name) updateData.name = req.body.name;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.price) updateData.price = req.body.price.toString();
+      if (req.body.stock !== undefined) updateData.stock = parseInt(req.body.stock);
+
+      // Handle PDF file
+      if (req.file) {
+        console.log('Processing PDF file:', {
+          name: req.file.originalname,
+          size: req.file.size,
+          buffer: req.file.buffer ? 'Present' : 'Missing'
+        });
+
+        if (!req.file.buffer) {
+          return res.status(400).json({ message: "PDF file buffer is missing" });
+        }
+
+        try {
+          const base64Data = req.file.buffer.toString('base64');
+          updateData.pdf_data = base64Data;
+          updateData.pdf_file = null; // Clear old file path
+          console.log('PDF data processed, length:', base64Data.length);
+        } catch (err) {
+          console.error('Error processing PDF:', err);
+          return res.status(400).json({ message: "Error processing PDF file" });
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      console.log('Updating product with data:', {
+        ...updateData,
+        pdf_data: updateData.pdf_data ? `<${updateData.pdf_data.length} bytes>` : 'No PDF data'
+      });
 
       const [product] = await db
         .update(products)
@@ -202,11 +318,28 @@ export function registerRoutes(app: Express): Server {
         .where(eq(products.id, parseInt(req.params.id)))
         .returning();
 
-      if (!product) return res.status(404).json({ message: "Product not found" });
-      res.json(product);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      console.log('Product updated:', {
+        id: product.id,
+        name: product.name,
+        hasPdfData: !!product.pdf_data,
+        pdfDataLength: product.pdf_data ? product.pdf_data.length : 0
+      });
+
+      res.json({
+        ...product,
+        price: Number(product.price),
+        pdf_data: undefined // Don't send binary data back
+      });
     } catch (error) {
       console.error("Error updating product:", error);
-      res.status(500).json({ message: "Failed to update product" });
+      res.status(500).json({ 
+        message: "Failed to update product",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

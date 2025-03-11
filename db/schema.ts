@@ -8,7 +8,7 @@ import {
   doublePrecision, 
   varchar, 
   numeric,
-  decimal  // Add this import
+  decimal
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
@@ -28,7 +28,8 @@ export const products = pgTable('products', {
   description: text('description'),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
-  pdf_file: varchar('pdf_file').notNull(),
+  pdf_file: varchar('pdf_file'),  // Made nullable
+  pdf_data: text('pdf_data'),     // Added new column for binary data
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
@@ -87,7 +88,8 @@ export type SelectProduct = {
   description: string | null;
   price: number;
   stock: number;
-  pdf_file: string;
+  pdf_file: string | null;
+  pdf_data: string | null;
   created_at: Date;
   updated_at: Date;
 };

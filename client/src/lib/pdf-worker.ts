@@ -1,10 +1,11 @@
-import { pdfjs } from 'react-pdf';
+import { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf';
 
-if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+export function initPdfWorker() {
+  if (typeof window !== 'undefined') {
+    GlobalWorkerOptions.workerSrc = '/public/pdf.worker.js';
+  }
 }
 
-export const initPdfWorker = () => {
-  if (typeof window === 'undefined') return;
-  return pdfjs.getDocument;
-};
+export function getPdfUrl(productId: number): string {
+  return `/api/products/${productId}/pdf`;
+}
