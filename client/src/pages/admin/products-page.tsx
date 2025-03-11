@@ -1,5 +1,6 @@
+import * as z from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { SelectProduct, insertProductSchema } from "@db/schema";
+import { SelectProduct } from "@db/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { getPdfUrl } from "@/lib/pdf-worker";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+// Update the form schema
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  price: z.number().min(0, "Price must be positive"),
+  stock: z.number().min(0, "Stock must be positive"),
+  pdf_file: z.custom<File|string|null>(), // Allow File, string, or null
+  storage_type: z.enum(['database', 'file'])
+});
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
@@ -57,14 +70,15 @@ export default function AdminProductsPage() {
     queryKey: ["/api/products"],
   });
 
-  const form = useForm({
-    resolver: zodResolver(insertProductSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
       price: 0,
       stock: 0,
-      pdf_file: "",
+      pdf_file: null as null, // Explicitly type as null
+      storage_type: "database" as const
     },
   });
 
@@ -78,6 +92,7 @@ export default function AdminProductsPage() {
         price: 0,
         stock: 0,
         pdf_file: "", // Changed from image_url
+        storage_type: "database"
       });
     }
   };
@@ -88,8 +103,8 @@ export default function AdminProductsPage() {
       description: product.description || "",
       price: Number(product.price),
       stock: product.stock,
-      // Set pdf_file as empty string instead of null
-      pdf_file: product.pdf_file || ""
+      pdf_file: "",
+      storage_type: product.pdf_data ? "database" : "file"
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -101,8 +116,8 @@ export default function AdminProductsPage() {
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'pdf_file' && value instanceof File) {
           formData.append('pdf_file', value);
-          formData.append('store_as_binary', 'true');
-        } else if (value !== null) {
+          formData.append('store_as_binary', data.storage_type === 'database' ? 'true' : 'false');
+        } else if (key !== 'storage_type' && value !== null) {
           formData.append(key, String(value));
         }
       });
@@ -134,12 +149,12 @@ export default function AdminProductsPage() {
         if (key === 'pdf_file') {
           if (value instanceof File) {
             formData.append('pdf_file', value);
-            formData.append('store_as_binary', 'true');
+            formData.append('store_as_binary', data.storage_type === 'database' ? 'true' : 'false');
           } else if (typeof value === 'string' && value !== '') {
             // Keep existing file path if no new file is uploaded
             formData.append(key, value);
           }
-        } else {
+        } else if (key !== 'storage_type' && value !== null) {
           formData.append(key, String(value));
         }
       });
@@ -306,6 +321,32 @@ export default function AdminProductsPage() {
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="storage_type"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>PDF Storage Type</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="database" id="database" />
+                            <Label htmlFor="database">Store in Database (Better for small PDFs)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="file" id="file" />
+                            <Label htmlFor="file">Store as File (Better for large PDFs)</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="pdf_file"
