@@ -2,9 +2,6 @@ node_modules
 dist
 .DS_Store
 server/public
-public/uploads
-public/uploads/**/*
-!public/uploads/pdf/.gitkeep
 vite.config.ts.*
 *.tar.gz
 .env
