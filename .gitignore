@@ -8,3 +8,7 @@ public/uploads/**/*
 vite.config.ts.*
 *.tar.gz
 .env
+
+# Ignore uploaded PDFs but keep directory
+public/uploads/pdf/*
+!public/uploads/pdf/.gitkeep
