@@ -19,6 +19,8 @@ import { Loader2, Package } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { getPdfUrl } from "@/lib/pdf-worker";
 
 interface OrderWithDetails extends SelectOrder {
   user: {
@@ -143,14 +145,18 @@ export default function AdminOrdersPage() {
                   <TableRow key={item.id}>
                     <TableCell>
                       <div className="flex items-center gap-4">
-                        <img
-                          src={item.product.image_url}
-                          alt={item.product.name}
-                          className="w-16 h-16 object-cover rounded"
+                        <PDFThumbnail
+                          pdfUrl={getPdfUrl(item.product.id)}
+                          width={60}    // Smaller thumbnail for the table
+                          height={84}   // Maintaining 1.4 aspect ratio
+                          className="shrink-0"
                         />
-                        <span className="font-medium">
-                          {item.product.name}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{item.product.name}</span>
+                          <span className="text-sm text-gray-500">
+                            ${(item.price / item.quantity).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{item.quantity}</TableCell>

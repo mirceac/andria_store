@@ -53,43 +53,20 @@ export function PDFViewerDialog({
   open,
   onOpenChange,
   pdfUrl,
-  title = "View PDF"
+  title
 }: PDFViewerDialogProps) {
-  const [numPages, setNumPages] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [zoom, setZoom] = useState(1.0);
+  const [error, setError] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const [initialScale, setInitialScale] = useState(1.0);
 
-  useEffect(() => {
-    // Reset position and zoom when dialog opens/closes
-    if (!open) {
-      setPosition({ x: 0, y: 0 });
-      setZoom(1.0);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        setContainerSize({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
-        });
-      }
-    };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, [open]);
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Remove zoom check to allow dragging at any zoom level
     setIsDragging(true);
     setStartPosition({
       x: e.clientX - position.x,
@@ -99,104 +76,104 @@ export function PDFViewerDialog({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    setPosition({
-      x: e.clientX - startPosition.x,
-      y: e.clientY - startPosition.y
-    });
+    
+    const newX = e.clientX - startPosition.x;
+    const newY = e.clientY - startPosition.y;
+    
+    setPosition({ x: newX, y: newY });
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
   };
 
-  const handleZoom = (increment: boolean) => {
-    setZoom(prev => {
-      const step = 0.1; // 10% increments
-      const newZoom = increment ? prev + step : prev - step;
-      return Math.max(0.1, Math.min(5.0, newZoom)); // 10% to 500% range
-    });
-    setPosition({ x: 0, y: 0 }); // Reset position on zoom change
-  };
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      
-      // Start with a scale that fits the width
-      const initialZoom = 0.8; // Start at 80% to ensure full content visibility
-      setZoom(initialZoom);
-      setInitialScale(initialZoom);
-      setIsLoading(false);
-    }
-  };
-
-  // Reset to fit scale when dialog opens
   useEffect(() => {
     if (open) {
-      setZoom(initialScale);
+      setScale(1);
       setPosition({ x: 0, y: 0 });
     }
-  }, [open, initialScale]);
+  }, [open]);
+
+  const baseWidth = 500;
+  const baseHeight = 700;
+
+  // Convert scale to percentage
+  const zoomPercentage = Math.round(scale * 100);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] p-0">
-        <DialogHeader className="p-4">
-          <div className="flex items-center justify-between">
-            <DialogTitle>{title}</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleZoom(false)}
-                disabled={zoom <= 0.1} // Disable at 10%
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium">{Math.round(zoom * 100)}%</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleZoom(true)}
-                disabled={zoom >= 5.0} // Disable at 500%
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
+      <DialogContent className="max-w-6xl h-[90vh] p-6">
+        {/* Title and controls row */}
+        <div className="flex items-center justify-between mb+1">
+          <h2 className="text-lg font-medium text-gray-700">{title}</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleZoomOut}
+              disabled={scale <= 0.5}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="min-w-[60px] text-center text-sm">
+              {zoomPercentage}%
+            </span>
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleZoomIn}
+              disabled={scale >= 2}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
           </div>
-        </DialogHeader>
+        </div>
 
+        {/* PDF Container - now full width */}
         <div 
           ref={containerRef}
-          className="flex-1 h-[calc(90vh-4rem)] overflow-hidden bg-white flex items-center justify-center p-4"
+          className="w-full h-[calc(90vh-110px)] bg-white rounded-lg overflow-hidden border relative"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          style={{
-            // Update cursor to show grab/grabbing at any zoom level
-            cursor: isDragging ? 'grabbing' : 'grab'
-          }}
         >
-          <div
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          )}
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-red-50 text-red-500 text-sm p-4 text-center">
+              Failed to load PDF
+            </div>
+          )}
+          <div 
+            className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
             style={{
-              transform: `translate(${position.x}px, ${position.y}px)`,
-              transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+              transform: `translate(-50%, -50%) translate(${position.x}px, ${position.y}px)`,
+              cursor: isDragging ? 'grabbing' : 'grab'
             }}
           >
             <Document
               file={pdfUrl}
-              loading={<Loader2 className="h-8 w-8 animate-spin" />}
-              error={<p>Unable to load PDF file.</p>}
-              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadSuccess={() => {
+                setIsLoading(false);
+                setError(null);
+              }}
+              onLoadError={(err) => {
+                console.error('Error loading PDF:', err);
+                setIsLoading(false);
+                setError(err.message);
+              }}
+              loading={null}
             >
               <Page
                 pageNumber={1}
-                scale={zoom}
+                width={baseWidth * scale}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
-                loading={null}
+                scale={scale}
               />
             </Document>
           </div>

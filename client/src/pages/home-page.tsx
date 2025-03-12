@@ -81,18 +81,27 @@ export default function HomePage() {
       </div>
 
       {/* Products grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1"> {/* Reduced gap-2 to gap-1 */}
         {filteredProducts?.map((product) => (
-          <div key={product.id} className="flex flex-col border rounded-lg bg-white">
+          <div key={product.id} className="flex flex-col border rounded-lg bg-white max-w-[310px] mx-auto w-full"> {/* Increased from 180px to 310px */}
             <div 
-              className="w-full h-40 cursor-pointer overflow-hidden"
+              className="w-full p-0.5 flex items-center justify-center bg-gray-50"
               onClick={() => {
                 setSelectedPdf(getPdfUrl(product.id));
                 setSelectedProduct(product);
                 setIsPdfViewerOpen(true);
               }}
             >
-              <PDFViewer url={getPdfUrl(product.id)} scale={0.5} />
+              <PDFThumbnail
+                pdfUrl={getPdfUrl(product.id)}
+                width={220}    // Maintained original size
+                height={308}   // Maintained original size
+                onClick={() => {
+                  setSelectedPdf(getPdfUrl(product.id));
+                  setSelectedProduct(product);
+                  setIsPdfViewerOpen(true);
+                }}
+              />
             </div>
             
             <div className="p-3 flex flex-col gap-2">

@@ -48,6 +48,7 @@ import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { getPdfUrl } from "@/lib/pdf-worker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
 
 // Update the form schema
 const formSchema = z.object({
@@ -421,16 +422,13 @@ export default function AdminProductsPage() {
           {products?.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                <Button
-                  variant="link"
-                  className="text-blue-600 hover:underline"
+                <PDFThumbnail
+                  pdfUrl={getPdfUrl(product.id)}
                   onClick={() => {
                     setSelectedPdf(getPdfUrl(product.id));
                     setIsPdfViewerOpen(true);
                   }}
-                >
-                  View PDF
-                </Button>
+                />
               </TableCell>
               <TableCell className="font-medium">{product.name}</TableCell>
               <TableCell>${product.price.toFixed(2)}</TableCell>

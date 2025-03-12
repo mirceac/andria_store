@@ -1,47 +1,67 @@
 import { useState } from "react";
-import { Loader2, FileText } from "lucide-react";
+import { Document, Page } from 'react-pdf';
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PDFThumbnailProps {
   pdfUrl: string;
   onClick?: () => void;
+  width?: number;
+  height?: number;
+  className?: string;
 }
 
-export function PDFThumbnail({ pdfUrl, onClick }: PDFThumbnailProps) {
+export function PDFThumbnail({ 
+  pdfUrl, 
+  onClick, 
+  width = 80,   // default width
+  height = 112, // default height (maintaining 1.4 aspect ratio)
+  className 
+}: PDFThumbnailProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div 
-      className="relative w-full h-40 rounded-t-lg cursor-pointer overflow-hidden"
+      className={cn(
+        "relative bg-white border border-gray-200 rounded overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center",
+        className
+      )}
+      style={{ width: `${width}px`, height: `${height}px` }}
       onClick={onClick}
     >
-      {isLoading && !loadError && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin" />
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+          <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       )}
-      
-      {loadError ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-          <p className="text-xs text-muted-foreground">PDF Preview</p>
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-50 text-red-500 text-xs p-2 text-center">
+          Failed to load PDF
         </div>
-      ) : (
-        <object
-          data={`${pdfUrl}#page=1&toolbar=0&navpanes=0&scrollbar=0&zoom=page-fit&view=fit`}
-          type="application/pdf"
-          className="w-full h-full object-contain"
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setLoadError(true);
-            setIsLoading(false);
-          }}
-        >
-          <div className="flex items-center justify-center h-full">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </object>
       )}
+      <Document
+        file={pdfUrl}
+        onLoadSuccess={() => {
+          setIsLoading(false);
+          setError(null);
+        }}
+        onLoadError={(err) => {
+          console.error('Error loading PDF thumbnail:', err);
+          setIsLoading(false);
+          setError(err.message);
+        }}
+        loading={null}
+        className="flex items-center justify-center"
+      >
+        <Page
+          pageNumber={1}
+          width={width}
+          renderTextLayer={false}
+          renderAnnotationLayer={false}
+          className="flex items-center justify-center"
+        />
+      </Document>
     </div>
   );
 }

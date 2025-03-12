@@ -15,6 +15,8 @@ import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { getPdfUrl } from "@/lib/pdf-worker";
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
@@ -67,8 +69,8 @@ export default function CartPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Price</TableHead>
                 <TableHead>Quantity</TableHead>
+                <TableHead>Price</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -76,22 +78,22 @@ export default function CartPage() {
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.product.id}>
-                  <TableCell className="font-medium">
+                  <TableCell>
                     <div className="flex items-center gap-4">
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover rounded"
+                      <PDFThumbnail
+                        pdfUrl={getPdfUrl(item.product.id)}
+                        width={60}    // Smaller thumbnail for the table
+                        height={84}   // Maintaining 1.4 aspect ratio
+                        className="shrink-0"
                       />
-                      <div>
-                        <p className="font-semibold">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Stock: {item.product.stock}
-                        </p>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.product.name}</span>
+                        <span className="text-sm text-gray-500">
+                          ${item.product.price.toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>${item.product.price.toFixed(2)}</TableCell>
                   <TableCell>
                     <Input
                       type="number"
