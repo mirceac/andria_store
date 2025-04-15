@@ -115,6 +115,7 @@ export default function CartPage() {
                   <TableCell>
                     <Button
                       variant="ghost"
+                      className="btn-danger h-8 w-8 p-0"
                       onClick={() => removeFromCart(item.product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -127,16 +128,16 @@ export default function CartPage() {
         </div>
 
         <div>
-          <div className="bg-card p-6 rounded-lg space-y-4">
+          <div className="bg-card p-6 rounded-lg space-y-6">
             <h3 className="text-xl font-semibold">Order Summary</h3>
             <div className="flex justify-between text-lg font-semibold">
               <span>Total</span>
               <span>${total.toFixed(2)}</span>
             </div>
             {user ? (
-              <>
+              <div className="flex gap-2">
                 <Button
-                  className="w-full mb-2"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
                   onClick={() => checkoutMutation.mutate()}
                   disabled={checkoutMutation.isPending}
                 >
@@ -150,14 +151,14 @@ export default function CartPage() {
                   )}
                 </Button>
                 <Link href="/">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="flex-1">
                     Continue Shopping
                   </Button>
                 </Link>
-              </>
+              </div>
             ) : (
-              <Link href="/auth">
-                <Button className="w-full">
+              <Link href="/auth" className="w-full">
+                <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
                   Login to Checkout
                 </Button>
               </Link>

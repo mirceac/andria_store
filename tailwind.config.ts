@@ -14,10 +14,10 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#2563eb", // Tailwind's blue-600
-          hover: "#1d4ed8", // Tailwind's blue-700
-          active: "#1d4ed8", // Tailwind's blue-700
-          foreground: "#ffffff", // White text
+          DEFAULT: "#3B82F6", // blue-500 (lighter blue)
+          hover: "#2563EB", // blue-600
+          active: "#2563EB",
+          foreground: "#ffffff",
         },
       },
     },
@@ -28,7 +28,7 @@ export default {
     function ({ addComponents }) {
       addComponents({
         ".btn-primary": {
-          "@apply rounded-md bg-blue-600 py-2 px-4 border border-transparent text-center text-sm text-white transition-all shadow-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-700 disabled:pointer-events-none disabled:opacity-50":
+          "@apply rounded-md bg-blue-400 py-2 px-4 border border-transparent text-center text-sm text-gray-800 transition-all shadow-md hover:bg-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-500 disabled:pointer-events-none disabled:opacity-50":
             "",
         },
         ".btn-danger": {
