@@ -25,7 +25,7 @@ export default function Navbar() {
     <nav className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary">Store</h1>
+          <h1 className="text-2xl font-bold text-primary">Gallery</h1>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -71,13 +71,16 @@ export default function Navbar() {
           </Link>
 
           {user ? (
-            <Button variant="ghost" onClick={() => logoutMutation.mutate()}>
+            <Button
+              className="btn-primary"
+              onClick={() => logoutMutation.mutate()}
+            >
               <User className="mr-2 h-4 w-4" />
               Logout
             </Button>
           ) : (
             <Link href="/auth">
-              <Button>
+              <Button className="btn-primary">
                 <User className="mr-2 h-4 w-4" />
                 Login
               </Button>

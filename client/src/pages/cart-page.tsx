@@ -115,7 +115,6 @@ export default function CartPage() {
                   <TableCell>
                     <Button
                       variant="ghost"
-                      size="icon"
                       onClick={() => removeFromCart(item.product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -138,7 +137,6 @@ export default function CartPage() {
               <>
                 <Button
                   className="w-full mb-2"
-                  size="lg"
                   onClick={() => checkoutMutation.mutate()}
                   disabled={checkoutMutation.isPending}
                 >
@@ -152,14 +150,14 @@ export default function CartPage() {
                   )}
                 </Button>
                 <Link href="/">
-                  <Button variant="outline" className="w-full" size="lg">
+                  <Button variant="outline" className="w-full">
                     Continue Shopping
                   </Button>
                 </Link>
               </>
             ) : (
               <Link href="/auth">
-                <Button className="w-full" size="lg">
+                <Button className="w-full">
                   Login to Checkout
                 </Button>
               </Link>

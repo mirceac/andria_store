@@ -133,7 +133,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between mt-auto pt-2">
                 <p className="font-semibold">${Number(product.price).toFixed(2)}</p>
                 <Button
-                  size="sm"
+                  className="btn-primary"
                   onClick={() => addToCart(product)}
                   disabled={product.stock === 0}
                 >

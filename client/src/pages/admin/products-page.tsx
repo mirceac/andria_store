@@ -41,14 +41,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
-import { getPdfUrl } from "@/lib/pdf-worker";
+import { getPdfUrl, checkPdfAvailability } from "@/lib/pdf-worker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { cn } from "@/lib/utils";
 
 // Update the form schema
 const formSchema = z.object({
@@ -56,16 +57,39 @@ const formSchema = z.object({
   description: z.string().optional(),
   price: z.number().min(0, "Price must be positive"),
   stock: z.number().min(0, "Stock must be positive"),
-  pdf_file: z.custom<File|string|null>(), // Allow File, string, or null
-  storage_type: z.enum(['database', 'file'])
+  pdf_file: z.custom<File | string | null>(), // Allow File, string, or null
+  storage_type: z.enum(["database", "file"]),
 });
+
+// Add these types at the top of the file
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+};
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
-  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [pdfAvailable, setPdfAvailable] = useState(false);
+
+  // Add these states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
+    key: 'name', 
+    direction: 'asc' 
+  });
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    if (selectedProduct?.id) {
+      checkPdfAvailability(selectedProduct.id).then(setPdfAvailable);
+    }
+  }, [selectedProduct]);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -79,7 +103,7 @@ export default function AdminProductsPage() {
       price: 0,
       stock: 0,
       pdf_file: null as null, // Explicitly type as null
-      storage_type: "database" as const
+      storage_type: "database" as const,
     },
   });
 
@@ -93,7 +117,7 @@ export default function AdminProductsPage() {
         price: 0,
         stock: 0,
         pdf_file: "", // Changed from image_url
-        storage_type: "database"
+        storage_type: "database",
       });
     }
   };
@@ -105,7 +129,7 @@ export default function AdminProductsPage() {
       price: Number(product.price),
       stock: product.stock,
       pdf_file: "",
-      storage_type: product.pdf_data ? "database" : "file"
+      storage_type: product.pdf_data ? "database" : "file",
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -115,14 +139,17 @@ export default function AdminProductsPage() {
     mutationFn: async (data: any) => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (key === 'pdf_file' && value instanceof File) {
-          formData.append('pdf_file', value);
-          formData.append('store_as_binary', data.storage_type === 'database' ? 'true' : 'false');
-        } else if (key !== 'storage_type' && value !== null) {
+        if (key === "pdf_file" && value instanceof File) {
+          formData.append("pdf_file", value);
+          formData.append(
+            "store_as_binary",
+            data.storage_type === "database" ? "true" : "false"
+          );
+        } else if (key !== "storage_type" && value !== null) {
           formData.append(key, String(value));
         }
       });
-      
+
       const res = await apiRequest("POST", "/api/products", formData);
       return res.json();
     },
@@ -147,19 +174,22 @@ export default function AdminProductsPage() {
     mutationFn: async (data: any) => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (key === 'pdf_file') {
+        if (key === "pdf_file") {
           if (value instanceof File) {
-            formData.append('pdf_file', value);
-            formData.append('store_as_binary', data.storage_type === 'database' ? 'true' : 'false');
-          } else if (typeof value === 'string' && value !== '') {
+            formData.append("pdf_file", value);
+            formData.append(
+              "store_as_binary",
+              data.storage_type === "database" ? "true" : "false"
+            );
+          } else if (typeof value === "string" && value !== "") {
             // Keep existing file path if no new file is uploaded
             formData.append(key, value);
           }
-        } else if (key !== 'storage_type' && value !== null) {
+        } else if (key !== "storage_type" && value !== null) {
           formData.append(key, String(value));
         }
       });
-      
+
       const res = await apiRequest(
         "PATCH",
         `/api/products/${selectedProduct?.id}`,
@@ -207,13 +237,15 @@ export default function AdminProductsPage() {
       if (cause?.type === "PRODUCT_HAS_ORDERS") {
         toast({
           title: "Cannot Delete Product",
-          description: "This product has been ordered by customers and cannot be deleted to maintain order history integrity. Consider setting its stock to 0 to prevent future purchases instead.",
+          description:
+            "This product has been ordered by customers and cannot be deleted to maintain order history integrity. Consider setting its stock to 0 to prevent future purchases instead.",
           variant: "default",
         });
       } else {
         toast({
           title: "Unable to Delete Product",
-          description: "There was a problem deleting this product. Please try again.",
+          description:
+            "There was a problem deleting this product. Please try again.",
           variant: "destructive",
         });
       }
@@ -227,6 +259,60 @@ export default function AdminProductsPage() {
       createProductMutation.mutate(data);
     }
   };
+
+  // Add sorting function
+  const sortProducts = (products: SelectProduct[]) => {
+    return [...products].sort((a, b) => {
+      if (!a[sortConfig.key as keyof SelectProduct] || !b[sortConfig.key as keyof SelectProduct]) return 0;
+      
+      const aValue = a[sortConfig.key as keyof SelectProduct];
+      const bValue = b[sortConfig.key as keyof SelectProduct];
+      
+      if (sortConfig.direction === 'asc') {
+        return (aValue ?? '') < (bValue ?? '') ? -1 : 1;
+      } else {
+        return (aValue ?? '') > (bValue ?? '') ? -1 : 1;
+      }
+    });
+  };
+
+  // Add pagination logic
+  const paginateProducts = (products: SelectProduct[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return products.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  // Add sort handler
+  const handleSort = (key: string) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  // Update the SortHeader component to handle alignment better
+  const SortHeader = ({ column, label, className }: { column: string, label: string, className?: string }) => (
+    <TableHead 
+      className={cn("cursor-pointer hover:bg-slate-100 transition-colors", className)}
+      onClick={() => handleSort(column)}
+    >
+      <div className={cn(
+        "flex items-center gap-2",
+        className?.includes("text-right") ? "justify-end" : "justify-start"
+      )}>
+        {label}
+        {sortConfig.key === column ? (
+          sortConfig.direction === 'asc' ? (
+            <ChevronUp className="h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          )
+        ) : (
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        )}
+      </div>
+    </TableHead>
+  );
 
   if (isLoading) {
     return (
@@ -336,11 +422,15 @@ export default function AdminProductsPage() {
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="database" id="database" />
-                            <Label htmlFor="database">Store in Database (Better for small PDFs)</Label>
+                            <Label htmlFor="database">
+                              Store in Database (Better for small PDFs)
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="file" id="file" />
-                            <Label htmlFor="file">Store as File (Better for large PDFs)</Label>
+                            <Label htmlFor="file">
+                              Store as File (Better for large PDFs)
+                            </Label>
                           </div>
                         </RadioGroup>
                       </FormControl>
@@ -353,18 +443,20 @@ export default function AdminProductsPage() {
                   name="pdf_file"
                   render={({ field: { value, onChange, ...field } }) => (
                     <FormItem>
-                      <FormLabel>PDF File</FormLabel>
                       <FormControl>
                         <div className="space-y-2">
-                          {selectedProduct && (
+                          {(selectedProduct?.pdf_data || pdfAvailable) && (
                             <Button
-                              variant="link"
-                              className="text-blue-600 hover:underline p-0"
+                              type="button"
+                              className="btn-success"
                               onClick={() => {
-                                setSelectedPdf(getPdfUrl(selectedProduct.id));
+                                if (selectedProduct) {
+                                  setSelectedPdf(getPdfUrl(selectedProduct.id));
+                                }
                                 setIsPdfViewerOpen(true);
                               }}
                             >
+                              <FileText className="h-4 w-4 mr-2" />
                               View Current PDF
                             </Button>
                           )}
@@ -385,97 +477,160 @@ export default function AdminProductsPage() {
                     </FormItem>
                   )}
                 />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    createProductMutation.isPending ||
-                    updateProductMutation.isPending
-                  }
-                >
-                  {createProductMutation.isPending ||
-                  updateProductMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : selectedProduct ? (
-                    "Update Product"
-                  ) : (
-                    "Create Product"
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={
+                      createProductMutation.isPending ||
+                      updateProductMutation.isPending
+                    }
+                  >
+                    {createProductMutation.isPending ||
+                    updateProductMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : selectedProduct ? (
+                      "Update Product"
+                    ) : (
+                      "Create Product"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleDialogOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>PDF</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products?.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell>
-                <PDFThumbnail
-                  pdfUrl={getPdfUrl(product.id)}
-                  onClick={() => {
-                    setSelectedPdf(getPdfUrl(product.id));
-                    setIsPdfViewerOpen(true);
-                  }}
-                />
-              </TableCell>
-              <TableCell className="font-medium">{product.name}</TableCell>
-              <TableCell>${product.price.toFixed(2)}</TableCell>
-              <TableCell>{product.stock}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEditProduct(product)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-destructive" />
+      <div className="space-y-4">
+        <div className="w-full flex justify-between items-center mb-3 mt-1 pl-3">
+          <div>
+            <h3 className="table-title">Products</h3>
+            <p className="table-subtitle">Manage your product catalog</p>
+          </div>
+          {/* Add your create product button here */}
+        </div>
+
+        <div className="table-container">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">PDF</TableHead>
+                <SortHeader column="name" label="Name" className="w-[300px]" />
+                <SortHeader column="price" label="Price" className="w-[120px]" />
+                <SortHeader column="stock" label="Stock" className="w-[100px]" />
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products && paginateProducts(sortProducts(products)).map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="w-[100px]">
+                    <PDFThumbnail
+                      pdfUrl={getPdfUrl(product.id)}
+                      onClick={() => {
+                        setSelectedPdf(getPdfUrl(product.id));
+                        setIsPdfViewerOpen(true);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell className="w-[300px]">
+                    <p className="table-cell-text">{product.name}</p>
+                  </TableCell>
+                  <TableCell className="w-[120px]">
+                    <p className="table-cell-subtext">
+                      ${product.price.toFixed(2)}
+                    </p>
+                  </TableCell>
+                  <TableCell className="w-[100px]">
+                    <p className={cn(
+                      "table-cell-subtext",
+                      product.stock === 0 ? "text-red-500" : "text-green-600"
+                    )}>
+                      {product.stock}
+                    </p>
+                  </TableCell>
+                  <TableCell className="w-[100px] text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleEditProduct(product)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{product.name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteProductMutation.mutate(product.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {deleteProductMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Delete"
-                          )}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button className="btn-danger h-8 w-8 p-0">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{product.name}"?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                deleteProductMutation.mutate(product.id)
+                              }
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {deleteProductMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Delete"
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {/* Add pagination controls */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
+            <div className="text-sm text-slate-500">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, products?.length || 0)} of {products?.length || 0} products
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil((products?.length || 0) / itemsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil((products?.length || 0) / itemsPerPage)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <PDFViewerDialog
         open={isPdfViewerOpen}

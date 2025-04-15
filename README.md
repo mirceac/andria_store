@@ -37,10 +37,8 @@ A modern, feature-rich e-commerce platform built with React and Express.js, deli
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# Database
+# Example environment variables
 DATABASE_URL=postgresql://user:password@localhost:5432/your_database
-
-# Stripe
 STRIPE_SECRET_KEY=your_stripe_secret_key
 ```
 
@@ -74,6 +72,15 @@ This will start:
 - Database connection
 
 The application will be available at `http://localhost:5000`
+
+## Production
+
+To run the application in production mode:
+
+1. Build the frontend:
+   ```bash
+   npm run build
+   ```
 
 ## Admin Access
 

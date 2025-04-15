@@ -26,13 +26,7 @@ export default function ProductPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="aspect-square overflow-hidden rounded-lg">
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
+
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold">{product.name}</h1>
@@ -44,8 +38,7 @@ export default function ProductPage() {
               Stock: {product.stock} units
             </p>
             <Button
-              size="lg"
-              className="w-full"
+              className="btn-primary"
               onClick={() => addToCart(product)}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
