@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page } from 'react-pdf';
 import { initPdfWorker } from '@/lib/pdf-worker';
@@ -104,12 +104,15 @@ export function PDFViewerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl h-[90vh] p-6">
         {/* Title and controls row */}
-        <div className="flex items-center justify-between mb+1">
+        <div className="flex items-center justify-between mb-4 relative">
+          {/* Left: Title */}
           <h2 className="text-lg font-medium text-gray-700">{title}</h2>
-          <div className="flex items-center gap-2">
+          
+          {/* Center: Zoom Controls - Absolute positioned */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
             <Button
               variant="secondary"
-              size="icon"
+              className="p-2"
               onClick={handleZoomOut}
               disabled={scale <= 0.5}
             >
@@ -120,13 +123,22 @@ export function PDFViewerDialog({
             </span>
             <Button
               variant="secondary"
-              size="icon"
+              className="p-2"
               onClick={handleZoomIn}
               disabled={scale >= 2}
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Right: Close button */}
+          <Button
+            variant="ghost"
+            className="p-2 mr-6"
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </Button>
         </div>
 
         {/* PDF Container - now full width */}
