@@ -14,8 +14,8 @@ interface PDFThumbnailProps {
 export function PDFThumbnail({ 
   pdfUrl, 
   onClick, 
-  width = 80,   // default width
-  height = 112, // default height (maintaining 1.4 aspect ratio)
+  width = 130,   // default width
+  height = 182, // default height (maintaining 1.4 aspect ratio)
   className 
 }: PDFThumbnailProps) {
   const [isLoading, setIsLoading] = useState(true);

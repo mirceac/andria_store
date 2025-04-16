@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { Loader2, Search, ShoppingCart } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Loader2, ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import {
   Select,
@@ -15,11 +14,14 @@ import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { PDFViewerDialog, PDFViewer } from "@/components/pdf-viewer-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getPdfUrl } from "@/lib/pdf-worker"; // Add this import
+import { getPdfUrl } from "@/lib/pdf-worker";
+import { useSearch } from "@/contexts/search-context";
+import { useSort } from "@/contexts/sort-context";
+import { cn } from "@/lib/utils";
 
 export default function HomePage() {
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"price_asc" | "price_desc" | "name">("name");
+  const { search } = useSearch();
+  const { sort } = useSort();
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
@@ -56,89 +58,46 @@ export default function HomePage() {
     });
 
   return (
-    <div className="container py-8 max-w-7xl mx-auto">
-      {/* Search and sort controls */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="relative max-w-xs w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">Name (A-Z)</SelectItem>
-            <SelectItem value="price_asc">Price (Low to High)</SelectItem>
-            <SelectItem value="price_desc">Price (High to Low)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Products grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1"> {/* Reduced gap-2 to gap-1 */}
+    <div className="container mx-auto px-0.5 py-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0.5">
         {filteredProducts?.map((product) => (
-          <div key={product.id} className="flex flex-col border rounded-lg bg-white max-w-[310px] mx-auto w-full"> {/* Increased from 180px to 310px */}
-            <div 
-              className="w-full p-0.5 flex items-center justify-center bg-gray-50"
-              onClick={() => {
-                setSelectedPdf(getPdfUrl(product.id));
-                setSelectedProduct(product);
-                setIsPdfViewerOpen(true);
-              }}
-            >
+          <div 
+            key={product.id} 
+            className={cn(
+              "flex flex-col h-[260px] rounded border hover:shadow-sm transition-shadow bg-gray-50",
+              product.stock > 0 
+                ? "border-slate-200 hover:border-blue-200" 
+                : "border-red-200 hover:border-red-300"
+            )}
+          >
+            {/* Adjusted thumbnail container */}
+            <div className="relative w-full h-[200px] flex items-center justify-center p-0.5">
               <PDFThumbnail
                 pdfUrl={getPdfUrl(product.id)}
-                width={220}    // Maintained original size
-                height={308}   // Maintained original size
                 onClick={() => {
                   setSelectedPdf(getPdfUrl(product.id));
                   setSelectedProduct(product);
                   setIsPdfViewerOpen(true);
                 }}
+                className="w-full h-full object-contain rounded-t"
               />
             </div>
-            
-            <div className="p-3 flex flex-col gap-2">
-              <div className="flex justify-between items-start gap-2">
-                <h3 
-                  className="font-medium text-base hover:text-primary cursor-pointer"
-                  onClick={() => {
-                    setSelectedPdf(getPdfUrl(product.id));
-                    setSelectedProduct(product);
-                    setIsPdfViewerOpen(true);
-                  }}
-                >
-                  {product.name}
-                </h3>
+            {/* Reduced padding and text section height */}
+            <div className="px-1 py-0.5 flex flex-col flex-shrink-0">
+              <h3 className="font-medium text-sm text-slate-900 line-clamp-1">{product.name}</h3>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-sm font-semibold text-slate-900">${product.price.toFixed(2)}</span>
                 <Badge 
-                  variant={product.stock > 0 ? "secondary" : "destructive"} 
-                  className="text-xs shrink-0"
+                  variant={product.stock > 0 ? "default" : "destructive"} 
+                  className={cn(
+                    "text-xs px-2 py-0.5",
+                    product.stock > 0 
+                      ? "bg-blue-50 text-blue-700 hover:bg-blue-100" 
+                      : "bg-red-50 text-red-700 hover:bg-red-100"
+                  )}
                 >
-                  {product.stock > 0 ? `${product.stock} left` : "Out of stock"}
+                  {product.stock > 0 ? "In Stock" : "Out of Stock"}
                 </Badge>
-              </div>
-
-              {product.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {product.description}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between mt-auto pt-2">
-                <p className="font-semibold">${Number(product.price).toFixed(2)}</p>
-                <Button
-                  className="btn-primary"
-                  onClick={() => addToCart(product)}
-                  disabled={product.stock === 0}
-                >
-                  Add to Cart
-                </Button>
               </div>
             </div>
           </div>

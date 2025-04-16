@@ -15,6 +15,8 @@ import AdminOrdersPage from "@/pages/admin/orders-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
 import { initPdfWorker } from '@/lib/pdf-worker';
+import { SearchProvider } from '@/contexts/search-context';
+import { SortProvider } from '@/contexts/sort-context';
 
 // Initialize PDF worker
 initPdfWorker();
@@ -40,12 +42,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <SearchProvider>
+      <SortProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router />
+            <Toaster />
+          </AuthProvider>
+        </QueryClientProvider>
+      </SortProvider>
+    </SearchProvider>
   );
 }
 
