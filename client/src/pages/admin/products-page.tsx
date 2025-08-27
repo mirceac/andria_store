@@ -41,7 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Pencil, Trash2, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
@@ -50,15 +50,23 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 // Update the form schema
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  price: z.number().min(0, "Price must be positive"),
-  stock: z.number().min(0, "Stock must be positive"),
-  pdf_file: z.custom<File | string | null>(), // Allow File, string, or null
-  storage_type: z.enum(["database", "file"]),
+  price: z.coerce.number().min(0, "Price must be positive"),
+  stock: z.coerce.number().min(0, "Stock must be non-negative").int(),
+  file: z.custom<File | string | null>(),
+  storage_type: z.enum(["pdf", "image"]),
+  storage_location: z.enum(["database", "file"]).optional(),
 });
 
 // Add these types at the top of the file
@@ -102,8 +110,9 @@ export default function AdminProductsPage() {
       description: "",
       price: 0,
       stock: 0,
-      pdf_file: null as null, // Explicitly type as null
-      storage_type: "database" as const,
+      file: null,
+      storage_type: "pdf", // Set a default value
+      storage_location: "database", // Set a default value
     },
   });
 
@@ -116,8 +125,9 @@ export default function AdminProductsPage() {
         description: "",
         price: 0,
         stock: 0,
-        pdf_file: "", // Changed from image_url
-        storage_type: "database",
+        file: null,
+        storage_type: "pdf",
+        storage_location: "database"
       });
     }
   };
@@ -128,29 +138,21 @@ export default function AdminProductsPage() {
       description: product.description || "",
       price: Number(product.price),
       stock: product.stock,
-      pdf_file: "",
-      storage_type: product.pdf_data ? "database" : "file",
+      file: "",
+      storage_type: product.pdf_data ? "pdf" : "image",
+      storage_location: product.pdf_data || product.image_data ? "database" : "file"
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
   };
 
   const createProductMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === "pdf_file" && value instanceof File) {
-          formData.append("pdf_file", value);
-          formData.append(
-            "store_as_binary",
-            data.storage_type === "database" ? "true" : "false"
-          );
-        } else if (key !== "storage_type" && value !== null) {
-          formData.append(key, String(value));
-        }
-      });
-
+    mutationFn: async (formData: FormData) => {
       const res = await apiRequest("POST", "/api/products", formData);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -174,12 +176,12 @@ export default function AdminProductsPage() {
     mutationFn: async (data: any) => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (key === "pdf_file") {
+        if (key === "file") {
           if (value instanceof File) {
-            formData.append("pdf_file", value);
+            formData.append("file", value);
             formData.append(
               "store_as_binary",
-              data.storage_type === "database" ? "true" : "false"
+              data.storage_type === "pdf" ? "true" : "false"
             );
           } else if (typeof value === "string" && value !== "") {
             // Keep existing file path if no new file is uploaded
@@ -252,11 +254,55 @@ export default function AdminProductsPage() {
     },
   });
 
-  const onSubmit = (data: any) => {
-    if (selectedProduct) {
-      updateProductMutation.mutate(data);
-    } else {
-      createProductMutation.mutate(data);
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      const formData = new FormData();
+      
+      // Convert price and stock to valid numbers
+      const price = Number(data.price);
+      const stock = Number(data.stock);
+
+      if (Number.isNaN(price) || Number.isNaN(stock)) {
+        throw new Error("Invalid price or stock value");
+      }
+
+      // Append basic fields
+      formData.append("name", data.name);
+      formData.append("description", data.description || "");
+      formData.append("price", price.toFixed(2));
+      formData.append("stock", stock.toString());
+      formData.append("storage_type", data.storage_type);
+      if (data.storage_location !== undefined) {
+        formData.append("storage_location", data.storage_location);
+      }
+
+      // Handle file upload
+      if (data.file instanceof File) {
+        formData.append("file", data.file);
+        formData.append("store_as_binary", data.storage_location === "database" ? "true" : "false");
+      }
+
+      // Debug log
+      console.log('Form data entries:');
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      if (selectedProduct) {
+        await updateProductMutation.mutateAsync(formData);
+      } else {
+        await createProductMutation.mutateAsync(formData);
+      }
+      
+      setIsDialogOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit form",
+        variant: "destructive",
+      });
     }
   };
 
@@ -412,65 +458,91 @@ export default function AdminProductsPage() {
                   control={form.control}
                   name="storage_type"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>PDF Storage Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="database" id="database" />
-                            <Label htmlFor="database">
-                              Store in Database (Better for small PDFs)
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="file" id="file" />
-                            <Label htmlFor="file">
-                              Store as File (Better for large PDFs)
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
+                    <FormItem>
+                      <FormLabel>File Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select file type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pdf">PDF Document</SelectItem>
+                          <SelectItem value="image">Image</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form.control}
-                  name="pdf_file"
+                  name="storage_location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Storage Location</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storage location" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="database">Database</SelectItem>
+                          <SelectItem value="file">File System</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="file"
                   render={({ field: { value, onChange, ...field } }) => (
                     <FormItem>
+                      <FormLabel>
+                        {form.watch("storage_type") === "pdf" ? "PDF Document" : "Product Image"}
+                      </FormLabel>
                       <FormControl>
-                        <div className="space-y-2">
-                          {(selectedProduct?.pdf_data || pdfAvailable) && (
-                            <Button
-                              type="button"
-                              className="btn-success"
-                              onClick={() => {
-                                if (selectedProduct) {
-                                  setSelectedPdf(getPdfUrl(selectedProduct.id));
-                                }
-                                setIsPdfViewerOpen(true);
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              View Current PDF
-                            </Button>
+                        <div className="space-y-2 border rounded-lg p-4">
+                          {value && (
+                            form.watch("storage_type") === "image" ? (
+                              <div className="w-32 h-32 relative mb-2">
+                                <img
+                                  src={typeof value === "string" ? value : URL.createObjectURL(value as File)}
+                                  alt="Preview"
+                                  className="object-cover rounded-md w-full h-full"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-5 w-5" />
+                                <span className="text-sm">{(value as File)?.name || "Current PDF"}</span>
+                              </div>
+                            )
                           )}
-                          <Input
-                            type="file"
-                            accept=".pdf"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                onChange(file);
-                              }
-                            }}
-                            {...field}
-                          />
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="file"
+                              accept={form.watch("storage_type") === "pdf" ? ".pdf" : ".jpg,.jpeg,.png"}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) onChange(file);
+                              }}
+                              {...field}
+                            />
+                            {value instanceof File && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => onChange(null)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </FormControl>
                       <FormMessage />

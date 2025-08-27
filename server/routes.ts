@@ -10,7 +10,6 @@ import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
 import { Router } from 'express';
-import { upload } from './upload';  // Import from the new file
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -28,6 +27,39 @@ declare global {
     }
   }
 }
+
+// Update the multer upload middleware
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    console.log('Multer processing file:', {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      mimetype: file.mimetype
+    });
+    console.log('Request body in multer:', req.body);
+    
+    const storageType = req.body.storage_type;
+    console.log('Storage type in multer:', storageType);
+    
+    if (storageType === 'pdf') {
+      if (file.mimetype !== 'application/pdf') {
+        cb(new Error('Only PDF files are allowed for PDF storage'));
+        return;
+      }
+    } else if (storageType === 'image') {
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files are allowed for image storage'));
+        return;
+      }
+    } else {
+      console.log('Invalid storage type:', storageType);
+      cb(new Error(`Invalid storage type: ${storageType}`));
+      return;
+    }
+    cb(null, true);
+  }
+});
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -193,16 +225,20 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Protected admin routes
-  app.post("/api/products", upload.single('pdf_file'), async (req, res) => {
+  app.post("/api/products", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
-      // Validate required fields and parse values
       const price = parseFloat(req.body.price);
       const stock = parseInt(req.body.stock);
-      const storeAsBinary = req.body.store_as_binary === 'true';
+      const storageType = req.body.storage_type;
+      const storageLocation = req.body.storage_location;
+
+      console.log('Storage type:', storageType);
+      console.log('Storage location:', storageLocation);
+      console.log('File info:', req.file);
 
       const productData = {
         name: req.body.name,
@@ -210,28 +246,44 @@ export function registerRoutes(app: Express): Server {
         price: price.toString(),
         stock: stock,
         pdf_data: null as string | null,
-        pdf_file: null as string | null
+        pdf_file: null as string | null,
+        image_data: null as string | null,
+        image_file: null as string | null
       };
 
-      // Handle PDF storage based on the selected storage type
       if (req.file) {
-        if (storeAsBinary) {
-          // Store as binary in database
-          productData.pdf_data = req.file.buffer.toString('base64');
-          productData.pdf_file = null;
-        } else {
-          // Store as file in filesystem
-          const fileName = `pdf_${Date.now()}_${req.file.originalname}`;
-          const filePath = `/uploads/pdf/${fileName}`;
-          const fullPath = path.join(process.cwd(), 'public', filePath);
-          
-          // Ensure directory exists
-          await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-          // Write file
-          await fs.promises.writeFile(fullPath, req.file.buffer);
-          
-          productData.pdf_file = filePath;
-          productData.pdf_data = null;
+        if (storageType === 'pdf') {
+          // Handle PDF storage
+          if (storageLocation === 'database') {
+            productData.pdf_data = req.file.buffer.toString('base64');
+            productData.pdf_file = null;
+          } else {
+            const fileName = `pdf_${Date.now()}_${req.file.originalname}`;
+            const filePath = `/uploads/pdfs/${fileName}`;
+            const fullPath = path.join(process.cwd(), 'public', filePath);
+            
+            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+            await fs.promises.writeFile(fullPath, req.file.buffer);
+            
+            productData.pdf_file = filePath;
+            productData.pdf_data = null;
+          }
+        } else if (storageType === 'image') {
+          // Handle Image storage
+          if (storageLocation === 'database') {
+            productData.image_data = req.file.buffer.toString('base64');
+            productData.image_file = null;
+          } else {
+            const fileName = `image_${Date.now()}_${req.file.originalname}`;
+            const filePath = `/uploads/images/${fileName}`;
+            const fullPath = path.join(process.cwd(), 'public', filePath);
+            
+            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+            await fs.promises.writeFile(fullPath, req.file.buffer);
+            
+            productData.image_file = filePath;
+            productData.image_data = null;
+          }
         }
       }
 
@@ -243,9 +295,12 @@ export function registerRoutes(app: Express): Server {
       console.log('Product created:', {
         id: product.id,
         name: product.name,
-        storage: storeAsBinary ? 'database' : 'file',
+        type: storageType,
+        storage: storageLocation,
         hasPdfData: !!product.pdf_data,
-        hasPdfFile: !!product.pdf_file
+        hasPdfFile: !!product.pdf_file,
+        hasImageData: !!product.image_data,
+        hasImageFile: !!product.image_file
       });
 
       res.status(201).json(product);

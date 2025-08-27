@@ -28,8 +28,10 @@ export const products = pgTable('products', {
   description: text('description'),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
-  pdf_file: varchar('pdf_file'),  // Made nullable
-  pdf_data: text('pdf_data'),     // Added new column for binary data
+  pdf_file: varchar('pdf_file'),
+  pdf_data: text('pdf_data'),
+  image_file: varchar('image_file'),  // Changed from image_url
+  image_data: text('image_data'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
@@ -79,7 +81,8 @@ export const insertProductSchema = z.object({
   description: z.string().nullable(),
   price: z.number().min(0),
   stock: z.number().min(0),
-  pdf_file: z.instanceof(File).or(z.string()),  // Accept both File object and string
+  pdf_file: z.instanceof(File).or(z.string()).nullable(),
+  image_file: z.instanceof(File).or(z.string()).nullable(),  // Add image file validation
 });
 
 export type SelectProduct = {
@@ -90,6 +93,8 @@ export type SelectProduct = {
   stock: number;
   pdf_file: string | null;
   pdf_data: string | null;
+  image_url: string | null;    // Add new image URL field
+  image_data: string | null;   // Add new image data field
   created_at: Date;
   updated_at: Date;
 };
