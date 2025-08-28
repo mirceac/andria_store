@@ -45,6 +45,7 @@ import { Plus, Pencil, Trash2, Loader2, FileText, ChevronDown, ChevronUp, Chevro
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { getPdfUrl, checkPdfAvailability } from "@/lib/pdf-worker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -83,7 +84,9 @@ export default function AdminProductsPage() {
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [pdfAvailable, setPdfAvailable] = useState(false);
 
   // Add these states
@@ -370,7 +373,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Products</h1>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
@@ -613,16 +616,13 @@ export default function AdminProductsPage() {
                       imageUrl={product.image_file} 
                       imageData={product.image_data}
                       alt={product.name}
-                      storageType={product.pdf_data || product.pdf_file ? "pdf" : "image"}
                       onClick={() => {
-                        if (product.image_data || product.image_file) {
-                          const imageSource = product.image_data 
-                            ? `/api/products/${product.id}/img`
-                            : product.image_file;
-                          if (imageSource) {
-                            window.open(imageSource, '_blank');
-                          }
+                        if (product.image_data) {
+                          setSelectedImage(`/api/products/${product.id}/img`);
+                        } else if (product.image_file) {
+                          setSelectedImage(product.image_file);
                         }
+                        setIsImageViewerOpen(true);
                       }}
                     />
                   </TableCell>
@@ -729,6 +729,12 @@ export default function AdminProductsPage() {
         open={isPdfViewerOpen}
         onOpenChange={setIsPdfViewerOpen}
         pdfUrl={selectedPdf}
+      />
+
+      <ImageViewerDialog
+        open={isImageViewerOpen}
+        onOpenChange={setIsImageViewerOpen}
+        url={selectedImage}
       />
     </div>
   );
