@@ -30,7 +30,7 @@ export const products = pgTable('products', {
   stock: integer('stock').notNull().default(0),
   pdf_file: varchar('pdf_file'),
   pdf_data: text('pdf_data'),
-  image_file: varchar('image_file'),  // Changed from image_url
+  image_file: varchar('image_file'),  // Make sure this exists
   image_data: text('image_data'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
@@ -93,8 +93,8 @@ export type SelectProduct = {
   stock: number;
   pdf_file: string | null;
   pdf_data: string | null;
-  image_url: string | null;    // Add new image URL field
-  image_data: string | null;   // Add new image data field
+  image_file: string | null;  // Add this
+  image_data: string | null;  // Add this
   created_at: Date;
   updated_at: Date;
 };

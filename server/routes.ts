@@ -224,6 +224,77 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this new route after the PDF route
+  app.get("/api/products/:id/img", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, productId)
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // Handle database-stored image
+      if (product.image_data) {
+        try {
+          // Parse the stored image metadata
+          const imageInfo = JSON.parse(product.image_data);
+          console.log('Retrieved image info:', {
+            contentType: imageInfo.contentType,
+            dataLength: imageInfo.data.length
+          });
+
+          const imageBuffer = Buffer.from(imageInfo.data, 'base64');
+
+          // Set proper headers using the stored content type
+          res.set({
+            'Content-Type': imageInfo.contentType,
+            'Content-Length': imageBuffer.length,
+            'Cache-Control': 'public, max-age=31557600'
+          });
+
+          return res.send(imageBuffer);
+        } catch (error) {
+          console.error('Error processing image data:', error);
+          return res.status(500).json({ 
+            message: "Error processing image",
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      // Handle file system image
+      if (product.image_file) {
+        try {
+          const filePath = path.join(process.cwd(), 'public', product.image_file);
+          if (!fs.existsSync(filePath)) {
+            console.error('Image file not found:', filePath);
+            return res.status(404).json({ message: "Image file not found" });
+          }
+          
+          // Get content type based on file extension
+          const ext = path.extname(filePath).toLowerCase();
+          const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+          
+          res.set('Content-Type', contentType);
+          console.log('Serving image from file:', filePath, 'Content-Type:', contentType);
+          
+          return res.sendFile(filePath);
+        } catch (error) {
+          console.error('Error serving image file:', error);
+          return res.status(500).json({ message: "Error serving image file" });
+        }
+      }
+
+      return res.status(404).json({ message: "No image found for this product" });
+    } catch (error) {
+      console.error('Error serving image:', error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Protected admin routes
   app.post("/api/products", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
@@ -236,9 +307,12 @@ export function registerRoutes(app: Express): Server {
       const storageType = req.body.storage_type;
       const storageLocation = req.body.storage_location;
 
-      console.log('Storage type:', storageType);
-      console.log('Storage location:', storageLocation);
-      console.log('File info:', req.file);
+      // Add debug logging for the uploaded file
+      console.log('Uploaded file details:', {
+        mimetype: req.file?.mimetype,
+        originalname: req.file?.originalname,
+        size: req.file?.size
+      });
 
       const productData = {
         name: req.body.name,
@@ -252,7 +326,28 @@ export function registerRoutes(app: Express): Server {
       };
 
       if (req.file) {
-        if (storageType === 'pdf') {
+        if (storageType === 'image') {
+          // Handle Image storage
+          if (storageLocation === 'database') {
+            // Store image with its mimetype for proper content-type detection later
+            const imageMetadata = {
+              contentType: req.file.mimetype,
+              data: req.file.buffer.toString('base64')
+            };
+            productData.image_data = JSON.stringify(imageMetadata);
+            productData.image_file = null;
+          } else {
+            const fileName = `image_${Date.now()}_${req.file.originalname}`;
+            const filePath = `/uploads/images/${fileName}`;
+            const fullPath = path.join(process.cwd(), 'public', filePath);
+            
+            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+            await fs.promises.writeFile(fullPath, req.file.buffer);
+            
+            productData.image_file = filePath;
+            productData.image_data = null;
+          }
+        } else if (storageType === 'pdf') {
           // Handle PDF storage
           if (storageLocation === 'database') {
             productData.pdf_data = req.file.buffer.toString('base64');
@@ -267,22 +362,6 @@ export function registerRoutes(app: Express): Server {
             
             productData.pdf_file = filePath;
             productData.pdf_data = null;
-          }
-        } else if (storageType === 'image') {
-          // Handle Image storage
-          if (storageLocation === 'database') {
-            productData.image_data = req.file.buffer.toString('base64');
-            productData.image_file = null;
-          } else {
-            const fileName = `image_${Date.now()}_${req.file.originalname}`;
-            const filePath = `/uploads/images/${fileName}`;
-            const fullPath = path.join(process.cwd(), 'public', filePath);
-            
-            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-            await fs.promises.writeFile(fullPath, req.file.buffer);
-            
-            productData.image_file = filePath;
-            productData.image_data = null;
           }
         }
       }

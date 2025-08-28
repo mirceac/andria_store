@@ -8,4 +8,6 @@ vite.config.ts.*
 
 # Ignore uploaded PDFs but keep directory
 public/uploads/pdf/*
+public/uploads/pdfs/*
+public/uploads/images/*
 !public/uploads/pdf/.gitkeep

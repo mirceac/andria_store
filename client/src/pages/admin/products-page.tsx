@@ -57,6 +57,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { ImageThumbnail } from "@/components/ui/image-thumbnail";
 
 // Update the form schema
 const formSchema = z.object({
@@ -595,6 +596,7 @@ export default function AdminProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[100px]">Image</TableHead>
                 <TableHead className="w-[100px]">PDF</TableHead>
                 <SortHeader column="name" label="Name" className="w-[300px]" />
                 <SortHeader column="price" label="Price" className="w-[120px]" />
@@ -605,7 +607,26 @@ export default function AdminProductsPage() {
             <TableBody>
               {products && paginateProducts(sortProducts(products)).map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="w-[100px]">
+                  <TableCell>
+                    <ImageThumbnail 
+                      productId={product.id}
+                      imageUrl={product.image_file} 
+                      imageData={product.image_data}
+                      alt={product.name}
+                      storageType={product.pdf_data || product.pdf_file ? "pdf" : "image"}
+                      onClick={() => {
+                        if (product.image_data || product.image_file) {
+                          const imageSource = product.image_data 
+                            ? `/api/products/${product.id}/img`
+                            : product.image_file;
+                          if (imageSource) {
+                            window.open(imageSource, '_blank');
+                          }
+                        }
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <PDFThumbnail
                       pdfUrl={getPdfUrl(product.id)}
                       onClick={() => {
