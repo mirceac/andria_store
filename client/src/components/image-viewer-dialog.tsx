@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { useState } from "react";
 
 interface ImageViewerDialogProps {
@@ -24,17 +24,23 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
           <div className="w-24" /> {/* Spacer to help center controls */}
           <div className="flex items-center gap-4">
             <Button
+              variant="secondary"
+              className="p-2"
               onClick={handleZoomOut}
+              disabled={scale >= 2}
             >
-              <Minus className="h-4 w-4" />
+              <ZoomOut className="h-4 w-4" />
             </Button>
             <span className="w-16 text-center">
               {Math.round(scale * 100)}%
             </span>
             <Button
+              variant="secondary"
+              className="p-2"
               onClick={handleZoomIn}
+              disabled={scale >= 2}
             >
-              <Plus className="h-4 w-4" />
+              <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
           <div className="w-24 flex justify-end">
