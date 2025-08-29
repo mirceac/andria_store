@@ -611,7 +611,7 @@ export default function AdminProductsPage() {
             <TableBody>
               {products && paginateProducts(sortProducts(products)).map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell>
+                  <TableCell className="px-2 text-center align-middle">
                     <ImageThumbnail 
                       productId={product.id}
                       imageUrl={product.image_file} 
@@ -627,7 +627,7 @@ export default function AdminProductsPage() {
                       }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="pl-0 align-middle">
                     <PDFThumbnail
                       pdfUrl={getPdfUrl(product.id)}
                       onClick={() => {
