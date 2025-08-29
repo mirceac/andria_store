@@ -602,6 +602,7 @@ export default function AdminProductsPage() {
                 <TableHead className="w-[100px]">Image</TableHead>
                 <TableHead className="w-[100px]">PDF</TableHead>
                 <SortHeader column="name" label="Name" className="w-[300px]" />
+                <SortHeader column="description" label="Description" className="w-[300px]" />
                 <SortHeader column="price" label="Price" className="w-[120px]" />
                 <SortHeader column="stock" label="Stock" className="w-[100px]" />
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -637,6 +638,9 @@ export default function AdminProductsPage() {
                   </TableCell>
                   <TableCell className="w-[300px]">
                     <p className="table-cell-text">{product.name}</p>
+                  </TableCell>
+                  <TableCell className="w-[300px]">
+                    <p className="table-cell-text truncate">{product.description}</p>
                   </TableCell>
                   <TableCell className="w-[120px]">
                     <p className="table-cell-subtext">
