@@ -28,7 +28,7 @@ declare global {
   }
 }
 
-// Update the multer upload middleware
+// Update the multer file filter to handle array values for storage_type
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
@@ -39,7 +39,12 @@ const upload = multer({
     });
     console.log('Request body in multer:', req.body);
     
-    const storageType = req.body.storage_type;
+    // Handle storage_type as an array or single value
+    let storageType = req.body.storage_type;
+    if (Array.isArray(storageType)) {
+      storageType = storageType[0]; // Take the first value if it's an array
+    }
+    
     console.log('Storage type in multer:', storageType);
     
     if (storageType === 'pdf') {
@@ -392,7 +397,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/products/:id", upload.single('pdf_file'), async (req, res) => {
+  app.patch("/api/products/:id", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -400,35 +405,84 @@ export function registerRoutes(app: Express): Server {
     try {
       const productId = parseInt(req.params.id);
       const storeAsBinary = req.body.store_as_binary === 'true';
+      const storageType = req.body.storage_type;
       
-      const updateData: any = {
-        name: req.body.name,
-        description: req.body.description || null,
-        price: req.body.price,
-        stock: parseInt(req.body.stock)
-      };
-
-      // Handle PDF update if a new file is uploaded
-      if (req.file) {
-        if (storeAsBinary) {
-          // Store as binary in database
-          updateData.pdf_data = req.file.buffer.toString('base64');
-          updateData.pdf_file = null;
+      // Initialize an empty update object
+      const updateData: any = {};
+      
+      // Only include fields that are actually provided in the request
+      if (req.body.name !== undefined) {
+        updateData.name = req.body.name;
+      }
+      
+      if (req.body.description !== undefined) {
+        updateData.description = req.body.description || null;
+      }
+      
+      if (req.body.price !== undefined) {
+        updateData.price = req.body.price;
+      }
+      
+      if (req.body.stock !== undefined) {
+        const stockValue = parseInt(req.body.stock);
+        if (!isNaN(stockValue)) {
+          updateData.stock = stockValue;
         } else {
-          // Store as file in filesystem
-          const fileName = `pdf_${Date.now()}_${req.file.originalname}`;
-          const filePath = `/uploads/pdf/${fileName}`;
-          const fullPath = path.join(process.cwd(), 'public', filePath);
-          
-          // Ensure directory exists
-          await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-          // Write file
-          await fs.promises.writeFile(fullPath, req.file.buffer);
-          
-          updateData.pdf_file = filePath;
-          updateData.pdf_data = null;
+          return res.status(400).json({ 
+            message: "Invalid stock value. Must be a number."
+          });
         }
       }
+
+      // Handle file update if a new file is uploaded
+      if (req.file) {
+        console.log("File update detected:", {
+          storageType: storageType,
+          fileName: req.file.originalname,
+          fileSize: req.file.size
+        });
+
+        if (storageType === 'pdf') {
+          // Update PDF fields only, don't touch image fields
+          if (storeAsBinary) {
+            updateData.pdf_data = req.file.buffer.toString('base64');            
+          } else {
+            const fileName = `pdf_${Date.now()}_${req.file.originalname}`;
+            const filePath = `/uploads/pdfs/${fileName}`;
+            const fullPath = path.join(process.cwd(), 'public', filePath);
+            
+            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+            await fs.promises.writeFile(fullPath, req.file.buffer);
+            
+            updateData.pdf_file = filePath;
+          }
+        } else if (storageType === 'image') {
+          // Update image fields only, don't touch PDF fields
+          if (storeAsBinary) {
+            const imageMetadata = {
+              contentType: req.file.mimetype,
+              data: req.file.buffer.toString('base64')
+            };
+            updateData.image_data = JSON.stringify(imageMetadata);            
+          } else {
+            const fileName = `image_${Date.now()}_${req.file.originalname}`;
+            const filePath = `/uploads/images/${fileName}`;
+            const fullPath = path.join(process.cwd(), 'public', filePath);
+            
+            await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+            await fs.promises.writeFile(fullPath, req.file.buffer);
+            
+            updateData.image_file = filePath;            
+          }          
+        }
+      }
+
+      // Only proceed with update if there are fields to update
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      console.log("Updating product with data:", updateData);
 
       const [product] = await db
         .update(products)
@@ -443,9 +497,12 @@ export function registerRoutes(app: Express): Server {
       console.log('Product updated:', {
         id: product.id,
         name: product.name,
+        type: storageType,
         storage: storeAsBinary ? 'database' : 'file',
         hasPdfData: !!product.pdf_data,
-        hasPdfFile: !!product.pdf_file
+        hasPdfFile: !!product.pdf_file,
+        hasImageData: !!product.image_data,
+        hasImageFile: !!product.image_file
       });
 
       res.json(product);

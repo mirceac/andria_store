@@ -177,30 +177,28 @@ export default function AdminProductsPage() {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === "file") {
-          if (value instanceof File) {
-            formData.append("file", value);
-            formData.append(
-              "store_as_binary",
-              data.storage_type === "pdf" ? "true" : "false"
-            );
-          } else if (typeof value === "string" && value !== "") {
-            // Keep existing file path if no new file is uploaded
-            formData.append(key, value);
-          }
-        } else if (key !== "storage_type" && value !== null) {
-          formData.append(key, String(value));
-        }
-      });
-
+    mutationFn: async (formData: FormData) => {
+      if (!selectedProduct?.id) {
+        throw new Error("No product selected for update");
+      }
+      
+      console.log("Updating product with ID:", selectedProduct.id);
+      console.log("FormData contents:");
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+      
       const res = await apiRequest(
         "PATCH",
-        `/api/products/${selectedProduct?.id}`,
+        `/api/products/${selectedProduct.id}`,
         formData
       );
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update product");
+      }
+      
       return res.json();
     },
     onSuccess: () => {
@@ -212,6 +210,7 @@ export default function AdminProductsPage() {
       handleDialogOpenChange(false);
     },
     onError: (error: Error) => {
+      console.error("Error updating product:", error);
       toast({
         title: "Failed to update product",
         description: error.message,
@@ -262,39 +261,95 @@ export default function AdminProductsPage() {
     try {
       const formData = new FormData();
       
-      // Convert price and stock to valid numbers
-      const price = Number(data.price);
-      const stock = Number(data.stock);
-
-      if (Number.isNaN(price) || Number.isNaN(stock)) {
-        throw new Error("Invalid price or stock value");
-      }
-
-      // Append basic fields
-      formData.append("name", data.name);
-      formData.append("description", data.description || "");
-      formData.append("price", price.toFixed(2));
-      formData.append("stock", stock.toString());
-      formData.append("storage_type", data.storage_type);
-      if (data.storage_location !== undefined) {
-        formData.append("storage_location", data.storage_location);
-      }
-
-      // Handle file upload
-      if (data.file instanceof File) {
-        formData.append("file", data.file);
-        formData.append("store_as_binary", data.storage_location === "database" ? "true" : "false");
-      }
-
-      // Debug log
-      console.log('Form data entries:');
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
       if (selectedProduct) {
+        // If updating, only include changed fields
+        if (data.name !== selectedProduct.name) {
+          formData.append("name", data.name);
+        }
+        
+        if (data.description !== selectedProduct.description) {
+          formData.append("description", data.description || "");
+        }
+        
+        if (Number(data.price) !== Number(selectedProduct.price)) {
+          formData.append("price", Number(data.price).toFixed(2));
+        }
+        
+        if (Number(data.stock) !== selectedProduct.stock) {
+          formData.append("stock", Number(data.stock).toString());
+        }
+        
+        // Add a flag if we're switching file types
+        const currentType = selectedProduct?.pdf_data || selectedProduct?.pdf_file 
+          ? "pdf" 
+          : "image";
+        
+        console.log("Current product file type:", currentType);
+        console.log("Selected storage type:", data.storage_type);
+        console.log("Current product state:", {
+          id: selectedProduct?.id,
+          hasPdfData: !!selectedProduct?.pdf_data,
+          hasPdfFile: !!selectedProduct?.pdf_file,
+          hasImageData: !!selectedProduct?.image_data,
+          hasImageFile: !!selectedProduct?.image_file,
+        });
+        
+        // IMPORTANT: Only include storage_type ONCE!
+        if (data.file instanceof File) {
+          // Include storage_type with the file, but NOT elsewhere
+          formData.append("storage_type", data.storage_type);
+          formData.append("file", data.file);
+          
+          if (data.storage_location) {
+            formData.append("storage_location", data.storage_location);
+            formData.append("store_as_binary", 
+              data.storage_location === "database" ? "true" : "false");
+          }
+          
+          // Add type conversion flags if needed
+          if (data.storage_type !== currentType) {
+            if (data.storage_type === "pdf") {
+              formData.append("clear_image", "true");
+            } else {
+              formData.append("clear_pdf", "true");
+            }
+          }
+        } else if (data.storage_type !== currentType) {
+          // Only include storage_type here if we're changing file type without uploading new file
+          formData.append("storage_type", data.storage_type);
+          formData.append("convert_to_" + data.storage_type, "true");
+        }
+        
+        // If form is empty (no changes), add a dummy field
+        if ([...formData.entries()].length === 0) {
+          formData.append("name", data.name);
+        }
+        
+        // Debug log
+        console.log('Form data entries for update:');
+        for (const pair of formData.entries()) {
+          console.log(`${pair[0]}: ${pair[1]}`);
+        }
+        
         await updateProductMutation.mutateAsync(formData);
       } else {
+        // Create product logic (stays the same)
+        formData.append("name", data.name);
+        formData.append("description", data.description || "");
+        formData.append("price", Number(data.price).toFixed(2));
+        formData.append("stock", Number(data.stock).toString());
+        formData.append("storage_type", data.storage_type);
+        
+        if (data.storage_location) {
+          formData.append("storage_location", data.storage_location);
+        }
+        
+        if (data.file instanceof File) {
+          formData.append("file", data.file);
+          formData.append("store_as_binary", 
+            data.storage_location === "database" ? "true" : "false");
+        }
+        
         await createProductMutation.mutateAsync(formData);
       }
       
