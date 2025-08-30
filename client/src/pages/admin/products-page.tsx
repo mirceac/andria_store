@@ -41,9 +41,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Pencil, Trash2, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { getPdfUrl, checkPdfAvailability } from "@/lib/pdf-worker";
@@ -74,7 +88,7 @@ const formSchema = z.object({
 // Add these types at the top of the file
 type SortConfig = {
   key: string;
-  direction: 'asc' | 'desc';
+  direction: "asc" | "desc";
 };
 
 export default function AdminProductsPage() {
@@ -91,11 +105,14 @@ export default function AdminProductsPage() {
 
   // Add these states
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
-    key: 'name', 
-    direction: 'asc' 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: "name",
+    direction: "asc",
   });
   const itemsPerPage = 10;
+
+  // Add a timestamp state to force refreshes
+  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
 
   useEffect(() => {
     if (selectedProduct?.id) {
@@ -131,7 +148,7 @@ export default function AdminProductsPage() {
         stock: 0,
         file: null,
         storage_type: "pdf",
-        storage_location: "database"
+        storage_location: "database",
       });
     }
   };
@@ -144,7 +161,8 @@ export default function AdminProductsPage() {
       stock: product.stock,
       file: "",
       storage_type: product.pdf_data ? "pdf" : "image",
-      storage_location: product.pdf_data || product.image_data ? "database" : "file"
+      storage_location:
+        product.pdf_data || product.image_data ? "database" : "file",
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -181,28 +199,30 @@ export default function AdminProductsPage() {
       if (!selectedProduct?.id) {
         throw new Error("No product selected for update");
       }
-      
+
       console.log("Updating product with ID:", selectedProduct.id);
       console.log("FormData contents:");
       for (const pair of formData.entries()) {
         console.log(`${pair[0]}: ${pair[1]}`);
       }
-      
+
       const res = await apiRequest(
         "PATCH",
         `/api/products/${selectedProduct.id}`,
         formData
       );
-      
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to update product");
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Add this line to update the timestamp
+      setRefreshTimestamp(Date.now());
       toast({
         title: "Product updated",
         description: "The product has been updated successfully.",
@@ -260,30 +280,31 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       const formData = new FormData();
-      
+
       if (selectedProduct) {
         // If updating, only include changed fields
         if (data.name !== selectedProduct.name) {
           formData.append("name", data.name);
         }
-        
+
         if (data.description !== selectedProduct.description) {
           formData.append("description", data.description || "");
         }
-        
+
         if (Number(data.price) !== Number(selectedProduct.price)) {
           formData.append("price", Number(data.price).toFixed(2));
         }
-        
+
         if (Number(data.stock) !== selectedProduct.stock) {
           formData.append("stock", Number(data.stock).toString());
         }
-        
+
         // Add a flag if we're switching file types
-        const currentType = selectedProduct?.pdf_data || selectedProduct?.pdf_file 
-          ? "pdf" 
-          : "image";
-        
+        const currentType =
+          selectedProduct?.pdf_data || selectedProduct?.pdf_file
+            ? "pdf"
+            : "image";
+
         console.log("Current product file type:", currentType);
         console.log("Selected storage type:", data.storage_type);
         console.log("Current product state:", {
@@ -293,19 +314,21 @@ export default function AdminProductsPage() {
           hasImageData: !!selectedProduct?.image_data,
           hasImageFile: !!selectedProduct?.image_file,
         });
-        
+
         // IMPORTANT: Only include storage_type ONCE!
         if (data.file instanceof File) {
           // Include storage_type with the file, but NOT elsewhere
           formData.append("storage_type", data.storage_type);
           formData.append("file", data.file);
-          
+
           if (data.storage_location) {
             formData.append("storage_location", data.storage_location);
-            formData.append("store_as_binary", 
-              data.storage_location === "database" ? "true" : "false");
+            formData.append(
+              "store_as_binary",
+              data.storage_location === "database" ? "true" : "false"
+            );
           }
-          
+
           // Add type conversion flags if needed
           if (data.storage_type !== currentType) {
             if (data.storage_type === "pdf") {
@@ -319,18 +342,18 @@ export default function AdminProductsPage() {
           formData.append("storage_type", data.storage_type);
           formData.append("convert_to_" + data.storage_type, "true");
         }
-        
+
         // If form is empty (no changes), add a dummy field
         if ([...formData.entries()].length === 0) {
           formData.append("name", data.name);
         }
-        
+
         // Debug log
-        console.log('Form data entries for update:');
+        console.log("Form data entries for update:");
         for (const pair of formData.entries()) {
           console.log(`${pair[0]}: ${pair[1]}`);
         }
-        
+
         await updateProductMutation.mutateAsync(formData);
       } else {
         // Create product logic (stays the same)
@@ -339,11 +362,11 @@ export default function AdminProductsPage() {
         formData.append("price", Number(data.price).toFixed(2));
         formData.append("stock", Number(data.stock).toString());
         formData.append("storage_type", data.storage_type);
-        
+
         if (data.storage_location) {
           formData.append("storage_location", data.storage_location);
         }
-        
+
         if (data.file instanceof File) {
           formData.append("file", data.file);
           formData.append("store_as_binary", 
@@ -352,14 +375,15 @@ export default function AdminProductsPage() {
         
         await createProductMutation.mutateAsync(formData);
       }
-      
+
       setIsDialogOpen(false);
       form.reset();
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit form",
+        description:
+          error instanceof Error ? error.message : "Failed to submit form",
         variant: "destructive",
       });
     }
@@ -368,15 +392,16 @@ export default function AdminProductsPage() {
   // Add sorting function
   const sortProducts = (products: SelectProduct[]) => {
     return [...products].sort((a, b) => {
-      if (!a[sortConfig.key as keyof SelectProduct] || !b[sortConfig.key as keyof SelectProduct]) return 0;
-      
+      if (!a[sortConfig.key as keyof SelectProduct] || !b[sortConfig.key as keyof SelectProduct])
+        return 0;
+
       const aValue = a[sortConfig.key as keyof SelectProduct];
       const bValue = b[sortConfig.key as keyof SelectProduct];
-      
-      if (sortConfig.direction === 'asc') {
-        return (aValue ?? '') < (bValue ?? '') ? -1 : 1;
+
+      if (sortConfig.direction === "asc") {
+        return (aValue ?? "") < (bValue ?? "") ? -1 : 1;
       } else {
-        return (aValue ?? '') > (bValue ?? '') ? -1 : 1;
+        return (aValue ?? "") > (bValue ?? "") ? -1 : 1;
       }
     });
   };
@@ -389,25 +414,41 @@ export default function AdminProductsPage() {
 
   // Add sort handler
   const handleSort = (key: string) => {
-    setSortConfig(current => ({
+    setSortConfig((current) => ({
       key,
-      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+      direction:
+        current.key === key && current.direction === "asc" ? "desc" : "asc",
     }));
   };
 
   // Update the SortHeader component to handle alignment better
-  const SortHeader = ({ column, label, className }: { column: string, label: string, className?: string }) => (
-    <TableHead 
-      className={cn("cursor-pointer hover:bg-slate-100 transition-colors", className)}
+  const SortHeader = ({
+    column,
+    label,
+    className,
+  }: {
+    column: string;
+    label: string;
+    className?: string;
+  }) => (
+    <TableHead
+      className={cn(
+        "cursor-pointer hover:bg-slate-100 transition-colors",
+        className
+      )}
       onClick={() => handleSort(column)}
     >
-      <div className={cn(
-        "flex items-center gap-2",
-        className?.includes("text-right") ? "justify-end" : "justify-start"
-      )}>
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          className?.includes("text-right")
+            ? "justify-end"
+            : "justify-start"
+        )}
+      >
         {label}
         {sortConfig.key === column ? (
-          sortConfig.direction === 'asc' ? (
+          sortConfig.direction === "asc" ? (
             <ChevronUp className="h-4 w-4 shrink-0" />
           ) : (
             <ChevronDown className="h-4 w-4 shrink-0" />
@@ -519,7 +560,10 @@ export default function AdminProductsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>File Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select file type" />
@@ -540,7 +584,10 @@ export default function AdminProductsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Storage Location</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select storage location" />
@@ -562,30 +609,42 @@ export default function AdminProductsPage() {
                   render={({ field: { value, onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>
-                        {form.watch("storage_type") === "pdf" ? "PDF Document" : "Product Image"}
+                        {form.watch("storage_type") === "pdf"
+                          ? "PDF Document"
+                          : "Product Image"}
                       </FormLabel>
                       <FormControl>
                         <div className="space-y-2 border rounded-lg p-4">
-                          {value && (
-                            form.watch("storage_type") === "image" ? (
-                              <div className="w-32 h-32 relative mb-2">
-                                <img
-                                  src={typeof value === "string" ? value : URL.createObjectURL(value as File)}
-                                  alt="Preview"
-                                  className="object-cover rounded-md w-full h-full"
-                                />
-                              </div>
-                            ) : (
+                          {value && form.watch("storage_type") === "image" ? (
+                            <div className="w-32 h-32 relative mb-2">
+                              <img
+                                src={
+                                  typeof value === "string"
+                                    ? value
+                                    : URL.createObjectURL(value as File)
+                                }
+                                alt="Preview"
+                                className="object-cover rounded-md w-full h-full"
+                              />
+                            </div>
+                          ) : (
+                            value && (
                               <div className="flex items-center gap-2 mb-2">
                                 <FileText className="h-5 w-5" />
-                                <span className="text-sm">{(value as File)?.name || "Current PDF"}</span>
+                                <span className="text-sm">
+                                  {(value as File)?.name || "Current PDF"}
+                                </span>
                               </div>
                             )
                           )}
                           <div className="flex items-center gap-2">
                             <Input
                               type="file"
-                              accept={form.watch("storage_type") === "pdf" ? ".pdf" : ".jpg,.jpeg,.png"}
+                              accept={
+                                form.watch("storage_type") === "pdf"
+                                  ? ".pdf"
+                                  : ".jpg,.jpeg,.png"
+                              }
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) onChange(file);
@@ -654,8 +713,12 @@ export default function AdminProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Image</TableHead>
-                <TableHead className="w-[100px]">PDF</TableHead>
+                {/* Removed Image and PDF columns */}
+                {/* Display storage columns with content instead of checkmarks */}
+                <TableHead className="px-0 text-center w-[90px]">Image File</TableHead>
+                <TableHead className="px-0 text-center w-[90px]">Image DB</TableHead>
+                <TableHead className="px-0 text-center w-[90px]">PDF File</TableHead>
+                <TableHead className="px-0 text-center w-[90px]">PDF DB</TableHead>
                 <SortHeader column="name" label="Name" className="w-[300px]" />
                 <SortHeader column="description" label="Description" className="w-[300px]" />
                 <SortHeader column="price" label="Price" className="w-[120px]" />
@@ -664,109 +727,158 @@ export default function AdminProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products && paginateProducts(sortProducts(products)).map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="px-1 text-center align-middle">
-                    <ImageThumbnail 
-                      productId={product.id}
-                      imageUrl={product.image_file} 
-                      imageData={product.image_data}
-                      alt={product.name}
-                      onClick={() => {
-                        if (product.image_data) {
-                          setSelectedImage(`/api/products/${product.id}/img`);
-                        } else if (product.image_file) {
-                          setSelectedImage(product.image_file);
-                        }
-                        setIsImageViewerOpen(true);
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="pl-0 pr-1 align-middle">
-                    <PDFThumbnail
-                      pdfUrl={getPdfUrl(product.id)}
-                      onClick={() => {
-                        setSelectedPdf(getPdfUrl(product.id));
-                        setIsPdfViewerOpen(true);
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="w-[300px]">
-                    <p className="table-cell-text">{product.name}</p>
-                  </TableCell>
-                  <TableCell className="w-[300px]">
-                    <p className="table-cell-text truncate">{product.description}</p>
-                  </TableCell>
-                  <TableCell className="w-[120px]">
-                    <p className="table-cell-subtext">
-                      ${product.price.toFixed(2)}
-                    </p>
-                  </TableCell>
-                  <TableCell className="w-[100px]">
-                    <p className={cn(
-                      "table-cell-subtext",
-                      product.stock === 0 ? "text-red-500" : "text-green-600"
-                    )}>
-                      {product.stock}
-                    </p>
-                  </TableCell>
-                  <TableCell className="w-[100px] text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleEditProduct(product)}
-                        className="h-8 w-8 p-0"
+              {products &&
+                paginateProducts(sortProducts(products)).map((product) => (
+                  <TableRow key={product.id}>
+                    {/* Image File column */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {product.image_file ? (
+                        <ImageThumbnail
+                          productId={product.id}
+                          imageUrl={product.image_file}
+                          imageData={null}
+                          alt={product.name}
+                          onClick={() => {
+                            setSelectedImage(product.image_file);
+                            setIsImageViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* Image DB column */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {product.image_data ? (
+                        <ImageThumbnail
+                          productId={product.id}
+                          imageUrl={null}
+                          imageData={product.image_data}
+                          alt={product.name}
+                          onClick={() => {
+                            setSelectedImage(`/api/products/${product.id}/img`);
+                            setIsImageViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* PDF File column */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {product.pdf_file ? (
+                        <PDFThumbnail
+                          pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+                          onClick={() => {
+                            setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
+                            setIsPdfViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* PDF DB column */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {product.pdf_data ? (
+                        <PDFThumbnail
+                          pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+                          onClick={() => {
+                            setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
+                            setIsPdfViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    <TableCell className="w-[300px]">
+                      <p className="table-cell-text">{product.name}</p>
+                    </TableCell>
+                    <TableCell className="w-[300px]">
+                      <p className="table-cell-text truncate">{product.description}</p>
+                    </TableCell>
+                    <TableCell className="w-[120px]">
+                      <p className="table-cell-subtext">
+                        ${product.price.toFixed(2)}
+                      </p>
+                    </TableCell>
+                    <TableCell className="w-[100px]">
+                      <p
+                        className={cn(
+                          "table-cell-subtext",
+                          product.stock === 0
+                            ? "text-red-500"
+                            : "text-green-600"
+                        )}
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button className="btn-danger h-8 w-8 p-0">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{product.name}"?
-                              This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() =>
-                                deleteProductMutation.mutate(product.id)
-                              }
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {deleteProductMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Delete"
-                              )}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        {product.stock}
+                      </p>
+                    </TableCell>
+                    <TableCell className="w-[100px] text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleEditProduct(product)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="btn-danger h-8 w-8 p-0">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{product.name}"?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  deleteProductMutation.mutate(product.id)
+                                }
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {deleteProductMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  "Delete"
+                                )}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
-          
+
           {/* Add pagination controls */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
             <div className="text-sm text-slate-500">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, products?.length || 0)} of {products?.length || 0} products
+              Showing{" "}
+              {((currentPage - 1) * itemsPerPage) + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, products?.length || 0)} of{" "}
+              {products?.length || 0} products
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -774,8 +886,16 @@ export default function AdminProductsPage() {
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0"
-                onClick={() => setCurrentPage(p => Math.min(Math.ceil((products?.length || 0) / itemsPerPage), p + 1))}
-                disabled={currentPage === Math.ceil((products?.length || 0) / itemsPerPage)}
+                onClick={() =>
+                  setCurrentPage((p) =>
+                    Math.min(
+                      Math.ceil((products?.length || 0) / itemsPerPage),
+                      p + 1
+                    )
+                  )}
+                disabled={
+                  currentPage === Math.ceil((products?.length || 0) / itemsPerPage)
+                }
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
