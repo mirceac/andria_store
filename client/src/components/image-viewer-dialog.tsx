@@ -12,7 +12,9 @@ interface ImageViewerDialogProps {
 export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialogProps) {
   const [scale, setScale] = useState(1);
 
-  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
+  // Remove the upper limit on zoom in
+  const handleZoomIn = () => setScale(prev => prev + 0.1);
+  // Keep the lower limit for zoom out
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
 
   if (!url) return null;
@@ -27,7 +29,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               variant="secondary"
               className="p-2"
               onClick={handleZoomOut}
-              disabled={scale >= 2}
+              disabled={scale <= 0.5}
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -38,7 +40,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               variant="secondary"
               className="p-2"
               onClick={handleZoomIn}
-              disabled={scale >= 2}
+              // Remove the disabled condition here
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
