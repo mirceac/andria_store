@@ -14,12 +14,12 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" asChild>
             <Link href="/cart">
               <ShoppingCart className="h-5 w-5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" asChild>
             <Link href="/profile">
               <User className="h-5 w-5" />
             </Link>
