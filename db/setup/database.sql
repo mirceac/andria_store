@@ -77,8 +77,5 @@ CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id)
 -- Keep the existing pdf_file column but make it nullable
 ALTER TABLE products ALTER COLUMN pdf_file DROP NOT NULL;
 
--- Add new column for binary data
-ALTER TABLE products ADD COLUMN pdf_data bytea;
-
 -- Create index for pdf lookups
 CREATE INDEX idx_products_pdf ON products(id) WHERE pdf_data IS NOT NULL;

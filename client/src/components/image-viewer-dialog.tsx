@@ -40,7 +40,6 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               variant="secondary"
               className="p-2"
               onClick={handleZoomIn}
-              // Remove the disabled condition here
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
