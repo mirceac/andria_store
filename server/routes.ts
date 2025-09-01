@@ -890,6 +890,87 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // DELETE endpoint to remove specific storage type from a product
+  app.delete("/api/products/:id/storage/:type", async (req, res) => {
+    const { id, type } = req.params;
+    
+    try {
+      const productId = parseInt(id);
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+
+      // Check if product exists
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, productId),
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // Determine which field to clear based on the storage type
+      let updateData: Partial<typeof product> = {};
+      
+      switch (type) {
+        case "image_file":
+          updateData = { image_file: null };
+          break;
+        case "image_data":
+          updateData = { image_data: null };
+          break;
+        case "pdf_file":
+          updateData = { pdf_file: null };
+          break;
+        case "pdf_data":
+          updateData = { pdf_data: null };
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid storage type" });
+      }
+
+      // Update the product to remove the specified storage
+      await db.update(products)
+        .set(updateData)
+        .where(eq(products.id, productId));
+
+      // If the file is stored in the filesystem, delete the actual file
+      if (type === "image_file" && product.image_file) {
+        try {
+          const filePath = path.join(process.cwd(), 'uploads', path.basename(product.image_file));
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted file: ${filePath}`);
+          }
+        } catch (fileError) {
+          console.error("Error deleting image file:", fileError);
+          // Continue execution even if file deletion fails
+        }
+      } else if (type === "pdf_file" && product.pdf_file) {
+        try {
+          const filePath = path.join(process.cwd(), 'uploads', path.basename(product.pdf_file));
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted file: ${filePath}`);
+          }
+        } catch (fileError) {
+          console.error("Error deleting PDF file:", fileError);
+          // Continue execution even if file deletion fails
+        }
+      }
+
+      // Return success response
+      return res.status(200).json({
+        message: `Successfully removed ${type} from product ${productId}`,
+        productId,
+        type
+      });
+    } catch (error) {
+      console.error("Error removing storage:", error);
+      return res.status(500).json({ message: "Server error removing storage" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

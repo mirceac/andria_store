@@ -58,6 +58,12 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { getPdfUrl, checkPdfAvailability } from "@/lib/pdf-worker";
@@ -113,6 +119,12 @@ export default function AdminProductsPage() {
 
   // Add a timestamp state to force refreshes
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+
+  // Add this after other state declarations (around line 60)
+  const [storageToRemove, setStorageToRemove] = useState<{
+    productId: number;
+    type: "image_file" | "image_data" | "pdf_file" | "pdf_data";
+  } | null>(null);
 
   useEffect(() => {
     if (selectedProduct?.id) {
@@ -274,6 +286,55 @@ export default function AdminProductsPage() {
           variant: "destructive",
         });
       }
+    },
+  });
+
+  const removeStorageMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      type,
+    }: {
+      productId: number;
+      type: string;
+    }) => {
+      const res = await apiRequest("DELETE", `/api/products/${productId}/storage/${type}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let error;
+        try {
+          // Try to parse as JSON
+          error = JSON.parse(text);
+        } catch (e) {
+          // If not valid JSON, use text as message
+          error = { message: text || "Failed to remove storage" };
+        }
+        throw new Error(error.message || "Failed to remove storage");
+      }
+      
+      // Handle empty or non-JSON responses
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return res.json();
+      } else {
+        // Return a simple success object if no JSON is returned
+        return { success: true };
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setRefreshTimestamp(Date.now()); // Force re-render
+      toast({
+        title: "Storage removed",
+        description: `Successfully removed ${getStorageLabel(variables.type)} from product.`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Error removing storage:", error);
+      toast({
+        title: "Failed to remove storage",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive",
+      });
     },
   });
 
@@ -459,6 +520,36 @@ export default function AdminProductsPage() {
       </div>
     </TableHead>
   );
+
+  const handleRemoveStorage = (
+    productId: number,
+    type: "image_file" | "image_data" | "pdf_file" | "pdf_data"
+  ) => {
+    setStorageToRemove({ productId, type });
+  };
+
+  const confirmRemoveStorage = () => {
+    if (storageToRemove) {
+      removeStorageMutation.mutate(storageToRemove);
+      setStorageToRemove(null);
+    }
+  };
+
+  // Helper function to get storage type label
+  const getStorageLabel = (type: string) => {
+    switch (type) {
+      case "image_file":
+        return "Image File";
+      case "image_data":
+        return "Image DB";
+      case "pdf_file":
+        return "PDF File";
+      case "pdf_data":
+        return "PDF DB";
+      default:
+        return "Storage";
+    }
+  };
 
   if (isLoading) {
     return (
@@ -703,13 +794,15 @@ export default function AdminProductsPage() {
       <div className="space-y-4">
         <div className="w-full flex justify-between items-center mb-3 mt-1 pl-3">
           <div>
-            <h3 className="table-title">Products</h3>
-            <p className="table-subtitle">Manage your product catalog</p>
+            <h3 className="text-lg font-semibold">Products</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage your product catalog
+            </p>
           </div>
           {/* Add your create product button here */}
         </div>
 
-        <div className="table-container">
+        <div className="border rounded-md">
           <Table>
             <TableHeader>
               <TableRow>
@@ -733,16 +826,37 @@ export default function AdminProductsPage() {
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.image_file ? (
-                        <ImageThumbnail
-                          productId={product.id}
-                          imageUrl={product.image_file}
-                          imageData={null}
-                          alt={product.name}
-                          onClick={() => {
-                            setSelectedImage(product.image_file);
-                            setIsImageViewerOpen(true);
-                          }}
-                        />
+                        <div className="relative">
+                          <ImageThumbnail
+                            productId={product.id}
+                            imageUrl={product.image_file}
+                            imageData={null}
+                            alt={product.name}
+                            onClick={() => {
+                              setSelectedImage(product.image_file);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'image_file');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove image file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       ) : (
                         <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
@@ -751,16 +865,37 @@ export default function AdminProductsPage() {
                     {/* Image DB column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.image_data ? (
-                        <ImageThumbnail
-                          productId={product.id}
-                          imageUrl={null}
-                          imageData={product.image_data}
-                          alt={product.name}
-                          onClick={() => {
-                            setSelectedImage(`/api/products/${product.id}/img`);
-                            setIsImageViewerOpen(true);
-                          }}
-                        />
+                        <div className="relative">
+                          <ImageThumbnail
+                            productId={product.id}
+                            imageUrl={null}
+                            imageData={product.image_data}
+                            alt={product.name}
+                            onClick={() => {
+                              setSelectedImage(`/api/products/${product.id}/img`);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'image_data');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove image from database</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       ) : (
                         <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
@@ -769,13 +904,34 @@ export default function AdminProductsPage() {
                     {/* PDF File column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.pdf_file ? (
-                        <PDFThumbnail
-                          pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
-                          onClick={() => {
-                            setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
-                            setIsPdfViewerOpen(true);
-                          }}
-                        />
+                        <div className="relative">
+                          <PDFThumbnail
+                            pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_file');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       ) : (
                         <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
@@ -784,13 +940,34 @@ export default function AdminProductsPage() {
                     {/* PDF DB column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.pdf_data ? (
-                        <PDFThumbnail
-                          pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
-                          onClick={() => {
-                            setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
-                            setIsPdfViewerOpen(true);
-                          }}
-                        />
+                        <div className="relative">
+                          <PDFThumbnail
+                            pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_data');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF from database</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       ) : (
                         <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
@@ -915,6 +1092,32 @@ export default function AdminProductsPage() {
         onOpenChange={setIsImageViewerOpen}
         url={selectedImage}
       />
+
+      {/* Confirmation Dialog for Storage Removal */}
+      <AlertDialog
+        open={!!storageToRemove}
+        onOpenChange={(open) => !open && setStorageToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Storage</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the{" "}
+              {storageToRemove ? getStorageLabel(storageToRemove.type) : ""} from
+              this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveStorage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
