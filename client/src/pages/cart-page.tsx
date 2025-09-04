@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 
 export default function CartPage() {
   const { items: cart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -41,6 +42,7 @@ export default function CartPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+  const [, setLocation] = useLocation();
 
   // Add timestamp refresh to prevent stale cache
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function CartPage() {
   };
 
   const navigateToCheckout = () => {
-    window.location.href = "/checkout";
+    setLocation("/checkout");  // Use wouter's setLocation instead of direct window.location
   };
 
   const total = cart.reduce(

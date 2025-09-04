@@ -759,7 +759,7 @@ export function registerRoutes(app: Express): Server {
         items,
         `${origin}/checkout/success`,
         `${origin}/cart`,
-        req.user.id // Pass user ID as number, not string
+        req.user.id
       );
 
       console.log("Checkout session created:", session.id);
@@ -824,6 +824,10 @@ export function registerRoutes(app: Express): Server {
 
         console.log("Creating order for user:", userId);
         try {
+          // Wrap the order creation in a transaction if possible
+          // Add more detailed logging
+          console.log(`Starting order creation for userId: ${userId}, session: ${session.id}`);
+          
           const [order] = await db
             .insert(orders)
             .values({
@@ -874,10 +878,18 @@ export function registerRoutes(app: Express): Server {
           }
 
           console.log("Order processing completed successfully");
-          res.json({ received: true });
+          res.json({ received: true, orderId: order.id });
         } catch (error) {
-          console.error("Failed to create order:", error);
-          res.status(500).json({ error: "Failed to create order" });
+          // More detailed error logging
+          console.error("Order creation failed:", error);
+          console.error("Session data:", JSON.stringify(session));
+          
+          // Still return 200 to Stripe (prevents retries) but include error info
+          res.status(200).json({ 
+            received: true, 
+            error: error instanceof Error ? error.message : "Unknown error",
+            orderCreated: false
+          });
         }
       } else {
         console.log("Unhandled event type:", event.type);

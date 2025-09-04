@@ -17,6 +17,7 @@ import Navbar from "./components/navbar";
 import { initPdfWorker } from '@/lib/pdf-worker';
 import { SearchProvider } from '@/contexts/search-context';
 import { SortProvider } from '@/contexts/sort-context';
+import CheckoutPage from "@/pages/checkout-page";
 
 // Initialize PDF worker
 initPdfWorker();
@@ -34,6 +35,7 @@ function Router() {
         <ProtectedRoute path="/checkout/success" component={CheckoutSuccessPage} />
         <ProtectedRoute path="/admin/products" component={AdminProductsPage} adminOnly />
         <ProtectedRoute path="/admin/orders" component={AdminOrdersPage} adminOnly />
+        <Route path="/checkout" component={CheckoutPage} />
         <Route component={NotFound} />
       </Switch>
     </>
