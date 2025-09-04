@@ -807,23 +807,39 @@ export default function AdminProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                {/* Removed Image and PDF columns */}
-                {/* Display storage columns with content instead of checkmarks */}
-                <TableHead className="px-0 text-center w-[90px]">Image File</TableHead>
-                <TableHead className="px-0 text-center w-[90px]">Image DB</TableHead>
-                <TableHead className="px-0 text-center w-[90px]">PDF File</TableHead>
-                <TableHead className="px-0 text-center w-[90px]">PDF DB</TableHead>
-                <SortHeader column="name" label="Name" className="w-[300px]" />
-                <SortHeader column="description" label="Description" className="w-[300px]" />
-                <SortHeader column="price" label="Price" className="w-[120px]" />
-                <SortHeader column="stock" label="Stock" className="w-[100px]" />
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                <TableHead className="text-center w-[35px]">Item</TableHead>
+                <TableHead className="px-3">Name</TableHead>
+                <TableHead className="px-0 text-center">Image File</TableHead>
+                <TableHead className="px-0 text-center">Image DB</TableHead>
+                <TableHead className="px-0 text-center">PDF File</TableHead>
+                <TableHead className="px-0 text-center">PDF DB</TableHead>
+                <TableHead className="text-center">Price</TableHead>
+                <TableHead className="text-center">Stock</TableHead>
+                <TableHead className="text-right px-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products &&
-                paginateProducts(sortProducts(products)).map((product) => (
+                paginateProducts(sortProducts(products)).map((product, index) => (
                   <TableRow key={product.id}>
+                    <TableCell className="text-center align-middle font-medium">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell className="px-3 align-middle">
+                      <div className="flex items-center gap-2">
+                        <ImageThumbnail
+                          productId={product.id}
+                          imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
+                          imageData={null}
+                          alt={product.name}
+                          onClick={() => {
+                            setSelectedImage(product.image_file);
+                            setIsImageViewerOpen(true);
+                          }}
+                        />
+                        <span className="table-cell-text">{product.name}</span>
+                      </div>
+                    </TableCell>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.image_file ? (
