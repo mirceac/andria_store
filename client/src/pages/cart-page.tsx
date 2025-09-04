@@ -1,5 +1,23 @@
+import { useState, useEffect } from "react";
 import { useCart } from "@/hooks/use-cart";
+import { SelectProduct } from "@db/schema";
+import { 
+  ShoppingBag, 
+  X, 
+  Plus, 
+  Minus, 
+  Trash2, 
+  ArrowLeft, 
+  XCircle,
+  ShoppingCart 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { ImageThumbnail } from "@/components/image-thumbnail";
+import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { ImageViewerDialog } from "@/components/image-viewer-dialog";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -8,164 +26,359 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Trash2, CreditCard, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { Link } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { PDFThumbnail } from "@/components/pdf-thumbnail";
-import { getPdfUrl } from "@/lib/pdf-worker";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { items: cart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
 
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/create-checkout-session", {
-        items: items.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
-        })),
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      window.location.href = data.url;
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Checkout failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // Add timestamp refresh to prevent stale cache
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTimestamp(Date.now());
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  if (items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-        <p className="text-muted-foreground mb-8">
-          Add some products to your cart to get started
-        </p>
-        <Link href="/">
-          <Button>Continue Shopping</Button>
-        </Link>
-      </div>
-    );
-  }
+  const navigateToHome = () => {
+    // Instead of using window.location.href which causes a full page reload
+    // Use a more controlled navigation approach that preserves state
+    // Check if history API is available
+    if (typeof window !== 'undefined' && window.history) {
+      // This will add a new entry to the history stack without full reload
+      window.history.pushState({}, '', '/');
+      
+      // Dispatch a popstate event to notify the app about the navigation
+      window.dispatchEvent(new Event('popstate'));
+    } else {
+      // Fallback to traditional navigation if needed
+      window.location.href = '/';
+    }
+  };
+
+  const navigateToCheckout = () => {
+    window.location.href = "/checkout";
+  };
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Shopping Cart</h1>
+        <Button variant="outline" onClick={navigateToHome}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Continue Shopping
+        </Button>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.product.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      <PDFThumbnail
-                        pdfUrl={getPdfUrl(item.product.id)}
-                        width={60}    // Smaller thumbnail for the table
-                        height={84}   // Maintaining 1.4 aspect ratio
-                        className="shrink-0"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.product.name}</span>
-                        <span className="text-sm text-gray-500">
-                          ${item.product.price.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min="1"
-                      max={item.product.stock}
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQuantity(
-                          item.product.id,
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                      className="w-20"
-                    />
-                  </TableCell>
-                  <TableCell className="font-semibold">
-                    ${(item.product.price * item.quantity).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      className="btn-danger h-8 w-8 p-0"
-                      onClick={() => removeFromCart(item.product.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+      {cart.length === 0 ? (
+        <div className="text-center py-12 border rounded-md bg-white">
+          <ShoppingBag className="h-12 w-12 mx-auto text-gray-300" />
+          <h2 className="mt-4 text-xl font-semibold">Your cart is empty</h2>
+          <p className="mt-2 text-muted-foreground">
+            Looks like you haven't added anything to your cart yet.
+          </p>
+          <Button className="mt-6" onClick={navigateToHome}>
+            Browse Products
+          </Button>
         </div>
-
-        <div>
-          <div className="bg-card p-6 rounded-lg space-y-6">
-            <h3 className="text-xl font-semibold">Order Summary</h3>
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+      ) : (
+        <div className="space-y-4">
+          <div className="w-full flex justify-between items-center mb-3">
+            <div>
+              <h3 className="text-lg font-semibold">Cart Items</h3>
+              <p className="text-sm text-muted-foreground">
+                Review your items before checkout
+              </p>
             </div>
-            {user ? (
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                  onClick={() => checkoutMutation.mutate()}
-                  disabled={checkoutMutation.isPending}
+            <Button
+              variant="outline"
+              onClick={clearCart}
+              className="mr-3 py-1 px-3 text-sm"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clear Cart
+            </Button>
+          </div>
+
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="text-center w-[35px]">Item</TableHead>
+                  <TableHead className="px-0 text-center w-[110px]">Image File</TableHead>
+                  <TableHead className="px-0 text-center w-[110px]">Image DB</TableHead>
+                  <TableHead className="px-0 text-center w-[110px]">PDF File</TableHead>
+                  <TableHead className="px-0 text-center w-[110px]">PDF DB</TableHead>
+                  <TableHead className="px-3">Details</TableHead>
+                  <TableHead className="w-[150px] text-center">Quantity</TableHead>
+                  <TableHead className="w-[120px] text-center">Price</TableHead>
+                  <TableHead className="w-[60px] text-right pr-4">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cart.map((item, index) => (
+                  <TableRow key={item.product.id}>
+                    <TableCell className="text-center align-middle font-medium">
+                      {index + 1}
+                    </TableCell>
+                    
+                    {/* Image File */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {item.product.image_file ? (
+                        <div className="relative">
+                          {item.product.image_file && !item.product.image_data && !item.product.pdf_file && !item.product.pdf_data && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
+                          <ImageThumbnail
+                            productId={item.product.id}
+                            imageUrl={`${item.product.image_file}?v=${refreshTimestamp}`}
+                            imageData={null}
+                            alt={item.product.name}
+                            onClick={() => {
+                              setSelectedImage(`${item.product.image_file}?v=${refreshTimestamp}`);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+                    
+                    {/* Image DB */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {item.product.image_data ? (
+                        <div className="relative">
+                          {!item.product.image_file && item.product.image_data && !item.product.pdf_file && !item.product.pdf_data && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
+                          <ImageThumbnail
+                            productId={item.product.id}
+                            imageUrl={null}
+                            imageData={item.product.image_data}
+                            alt={item.product.name}
+                            onClick={() => {
+                              setSelectedImage(`/api/products/${item.product.id}/img?v=${refreshTimestamp}`);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+                    
+                    {/* PDF File */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {item.product.pdf_file ? (
+                        <div className="relative">
+                          {!item.product.image_file && !item.product.image_data && item.product.pdf_file && !item.product.pdf_data && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
+                          <PDFThumbnail
+                            pdfUrl={`${item.product.pdf_file}?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(`${item.product.pdf_file}?v=${refreshTimestamp}`);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+                    
+                    {/* PDF DB */}
+                    <TableCell className="px-0 text-center align-middle">
+                      {item.product.pdf_data ? (
+                        <div className="relative">
+                          {!item.product.image_file && !item.product.image_data && !item.product.pdf_file && item.product.pdf_data && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
+                          <PDFThumbnail
+                            pdfUrl={`/api/products/${item.product.id}/pdf?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(`/api/products/${item.product.id}/pdf?v=${refreshTimestamp}`);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+                    
+                    {/* Product Details */}
+                    <TableCell className="align-middle">
+                      <div className="space-y-1">
+                        <p className="font-medium">{item.product.name}</p>
+                        <p className="text-sm text-muted-foreground truncate max-w-[250px]">
+                          {item.product.description}
+                        </p>
+                        <Badge 
+                          variant={item.product.stock > 0 ? "outline" : "destructive"} 
+                          className={cn(
+                            "text-xs mt-1",
+                            item.product.stock > 0 
+                              ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" 
+                              : "bg-red-50 text-red-700 hover:bg-red-100"
+                          )}
+                        >
+                          {item.product.stock > 0 ? `In Stock: ${item.product.stock}` : "Out of Stock"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    
+                    {/* Quantity */}
+                    <TableCell className="align-middle">
+                      <div className="flex items-center justify-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Decrease quantity</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <Input
+                          type="number"
+                          min="1"
+                          max={item.product.stock}
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val > 0 && val <= item.product.stock) {
+                              updateQuantity(item.product.id, val);
+                            }
+                          }}
+                          className="h-7 w-12 mx-2 text-center px-1"
+                        />
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                onClick={() => updateQuantity(item.product.id, Math.min(item.product.stock, item.quantity + 1))}
+                                disabled={item.quantity >= item.product.stock}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Increase quantity</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      {item.quantity >= item.product.stock && (
+                        <p className="text-xs text-center text-amber-600 mt-1">
+                          Max stock reached
+                        </p>
+                      )}
+                    </TableCell>
+                    
+                    {/* Price */}
+                    <TableCell className="text-center align-middle">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">${item.product.price.toFixed(2)} each</p>
+                        <p className="text-sm font-bold">
+                          ${(item.product.price * item.quantity).toFixed(2)} total
+                        </p>
+                      </div>
+                    </TableCell>
+                    
+                    {/* Actions */}
+                    <TableCell className="text-right align-middle pr-4">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 bg-red-50 text-red-500 hover:text-red-600 hover:bg-red-100 rounded-full"
+                              onClick={() => removeFromCart(item.product.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remove from cart</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Cart Summary Section */}
+            <div className="border-t p-4 bg-gray-50">
+              <div className="max-w-md ml-auto">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Subtotal:</span>
+                  <span className="text-sm font-medium">${total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-sm text-muted-foreground">Shipping:</span>
+                  <span className="text-sm font-medium">Free</span>
+                </div>
+                <div className="flex justify-between border-t pt-4">
+                  <span className="text-base font-semibold">Total:</span>
+                  <span className="text-lg font-bold">${total.toFixed(2)}</span>
+                </div>
+                <Button 
+                  className="w-full mt-4 py-2 text-base"
+                  onClick={navigateToCheckout}
                 >
-                  {checkoutMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Checkout
-                    </>
-                  )}
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Proceed to Checkout
                 </Button>
-                <Link href="/">
-                  <Button variant="outline" className="flex-1">
-                    Continue Shopping
-                  </Button>
-                </Link>
               </div>
-            ) : (
-              <Link href="/auth" className="w-full">
-                <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
-                  Login to Checkout
-                </Button>
-              </Link>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* PDF Viewer Dialog */}
+      <PDFViewerDialog
+        open={isPdfViewerOpen}
+        onOpenChange={setIsPdfViewerOpen}
+        pdfUrl={selectedPdf}
+      />
+
+      {/* Image Viewer Dialog */}
+      <ImageViewerDialog
+        open={isImageViewerOpen}
+        onOpenChange={setIsImageViewerOpen}
+        url={selectedImage}
+      />
     </div>
   );
 }
