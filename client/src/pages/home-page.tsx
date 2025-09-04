@@ -74,33 +74,37 @@ export default function HomePage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="w-full h-full flex items-center justify-center bg-white">
-          <img 
-            src={`${product.image_file}?v=${timestamp}`}
-            alt={product.name}
-            className="max-w-full max-h-full object-contain p-0.5"
-            onClick={() => {
-              setSelectedImage(`${product.image_file}?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsImageViewerOpen(true);
-            }}
-          />
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
+            <img 
+              src={`${product.image_file}?v=${timestamp}`}
+              alt={product.name}
+              className="max-h-[190px] object-contain cursor-pointer"
+              onClick={() => {
+                setSelectedImage(`${product.image_file}?v=${timestamp}`);
+                setSelectedProduct(product);
+                setIsImageViewerOpen(true);
+              }}
+            />
+          </div>
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="w-full h-full flex items-center justify-center bg-white">
-          <img 
-            src={`/api/products/${product.id}/img?v=${timestamp}`}
-            alt={product.name}
-            className="max-w-full max-h-full object-contain p-0.5"
-            onClick={() => {
-              setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsImageViewerOpen(true);
-            }}
-          />
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
+            <img 
+              src={`/api/products/${product.id}/img?v=${timestamp}`}
+              alt={product.name}
+              className="max-h-[190px] object-contain cursor-pointer"
+              onClick={() => {
+                setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
+                setSelectedProduct(product);
+                setIsImageViewerOpen(true);
+              }}
+            />
+          </div>
         </div>
       );
     } else if (product.pdf_file) {

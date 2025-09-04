@@ -78,7 +78,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ImageThumbnail } from "@/components/ui/image-thumbnail";
+import { ImageThumbnail } from "@/components/image-thumbnail";
 
 // Update the form schema
 const formSchema = z.object({
@@ -802,7 +802,8 @@ export default function AdminProductsPage() {
           {/* Add your create product button here */}
         </div>
 
-        <div className="border rounded-md">
+        {/* Add margin to the table container */}
+        <div className="border rounded-md mx-3">
           <Table>
             <TableHeader>
               <TableRow>
@@ -827,9 +828,10 @@ export default function AdminProductsPage() {
                     <TableCell className="px-0 text-center align-middle">
                       {product.image_file ? (
                         <div className="relative">
+                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
                           <ImageThumbnail
                             productId={product.id}
-                            imageUrl={product.image_file}
+                            imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
                             imageData={null}
                             alt={product.name}
                             onClick={() => {
@@ -858,14 +860,21 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        product.image_data ? null : (
+                          product.pdf_file ? null : (
+                            product.pdf_data ? null : (
+                              <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                            )
+                          )
+                        )
                       )}
                     </TableCell>
 
                     {/* Image DB column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.image_data ? (
+                      {product.image_data && !product.image_file ? (
                         <div className="relative">
+                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
                           <ImageThumbnail
                             productId={product.id}
                             imageUrl={null}
@@ -897,14 +906,49 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        product.image_data ? (
+                          <div className="relative">
+                            <ImageThumbnail
+                              productId={product.id}
+                              imageUrl={null}
+                              imageData={product.image_data}
+                              alt={product.name}
+                              onClick={() => {
+                                setSelectedImage(`/api/products/${product.id}/img`);
+                                setIsImageViewerOpen(true);
+                              }}
+                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveStorage(product.id, 'image_data');
+                                    }}
+                                  >
+                                    <XCircle className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Remove image from database</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        ) : (
+                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        )
                       )}
                     </TableCell>
 
                     {/* PDF File column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.pdf_file ? (
+                      {product.pdf_file && !product.image_file && !product.image_data ? (
                         <div className="relative">
+                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
                           <PDFThumbnail
                             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -933,14 +977,46 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        product.pdf_file ? (
+                          <div className="relative">
+                            <PDFThumbnail
+                              pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+                              onClick={() => {
+                                setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
+                                setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_file');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        ) : (
+                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        )
                       )}
                     </TableCell>
 
                     {/* PDF DB column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.pdf_data ? (
+                      {product.pdf_data && !product.image_file && !product.image_data && !product.pdf_file ? (
                         <div className="relative">
+                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
                           <PDFThumbnail
                             pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -969,7 +1045,38 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        product.pdf_data ? (
+                          <div className="relative">
+                            <PDFThumbnail
+                              pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+                              onClick={() => {
+                                setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
+                                setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_data');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF from database</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        ) : (
+                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        )
                       )}
                     </TableCell>
 
@@ -1043,7 +1150,7 @@ export default function AdminProductsPage() {
             </TableBody>
           </Table>
 
-          {/* Add pagination controls */}
+          {/* Update the pagination container too */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
             <div className="text-sm text-slate-500">
               Showing{" "}
