@@ -27,9 +27,10 @@ export default function CheckoutPage() {
         
         const response = await apiRequest("POST", "/api/create-checkout-session", {
           items: items.map(item => ({
-            product: item.product,
-            quantity: item.quantity,
-            price: item.product.price
+            productId: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity
           }))
         });
         

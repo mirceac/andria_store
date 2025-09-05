@@ -15,7 +15,7 @@ export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
 
 export async function createCheckoutSession(items: any[], success_url: string, cancel_url: string, userId: number) {
   console.log("Creating Stripe checkout session with params:", {
-    items: items.map(i => ({ name: i.product.name, quantity: i.quantity })),
+    items: items.map(i => ({ name: i.name, quantity: i.quantity })),
     success_url,
     cancel_url,
     userId
@@ -27,10 +27,10 @@ export async function createCheckoutSession(items: any[], success_url: string, c
       price_data: {
         currency: "usd",
         product_data: {
-          name: item.product.name,
-          images: [item.product.imageUrl],
+          name: item.name
+          
         },
-        unit_amount: Math.round(item.product.price * 100),
+        unit_amount: Math.round(item.price * 100),
       },
       quantity: item.quantity,
     })),

@@ -808,11 +808,12 @@ export default function AdminProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-center w-[35px]">Item</TableHead>
-                <TableHead className="px-3">Name</TableHead>
                 <TableHead className="px-0 text-center">Image File</TableHead>
                 <TableHead className="px-0 text-center">Image DB</TableHead>
                 <TableHead className="px-0 text-center">PDF File</TableHead>
                 <TableHead className="px-0 text-center">PDF DB</TableHead>
+                <TableHead className="text-center">Name</TableHead>
+                <TableHead className="text-center">Description</TableHead>
                 <TableHead className="text-center">Price</TableHead>
                 <TableHead className="text-center">Stock</TableHead>
                 <TableHead className="text-right px-4">Actions</TableHead>
@@ -825,26 +826,13 @@ export default function AdminProductsPage() {
                     <TableCell className="text-center align-middle font-medium">
                       {index + 1}
                     </TableCell>
-                    <TableCell className="px-3 align-middle">
-                      <div className="flex items-center gap-2">
-                        <ImageThumbnail
-                          productId={product.id}
-                          imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
-                          imageData={null}
-                          alt={product.name}
-                          onClick={() => {
-                            setSelectedImage(product.image_file);
-                            setIsImageViewerOpen(true);
-                          }}
-                        />
-                        <span className="table-cell-text">{product.name}</span>
-                      </div>
-                    </TableCell>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle">
                       {product.image_file ? (
                         <div className="relative">
-                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          {(!product.image_data && !product.pdf_file && !product.pdf_data) && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
                           <ImageThumbnail
                             productId={product.id}
                             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
@@ -888,9 +876,11 @@ export default function AdminProductsPage() {
 
                     {/* Image DB column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.image_data && !product.image_file ? (
+                      {product.image_data ? (
                         <div className="relative">
-                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          {(!product.image_file && !product.pdf_file && !product.pdf_data) && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
                           <ImageThumbnail
                             productId={product.id}
                             imageUrl={null}
@@ -922,49 +912,17 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        product.image_data ? (
-                          <div className="relative">
-                            <ImageThumbnail
-                              productId={product.id}
-                              imageUrl={null}
-                              imageData={product.image_data}
-                              alt={product.name}
-                              onClick={() => {
-                                setSelectedImage(`/api/products/${product.id}/img`);
-                                setIsImageViewerOpen(true);
-                              }}
-                            />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveStorage(product.id, 'image_data');
-                                    }}
-                                  >
-                                    <XCircle className="h-3 w-3 text-red-500" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Remove image from database</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        ) : (
-                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                        )
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
                     </TableCell>
 
                     {/* PDF File column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.pdf_file && !product.image_file && !product.image_data ? (
+                      {product.pdf_file ? (
                         <div className="relative">
-                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          {(!product.image_file && !product.image_data && !product.pdf_data) && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
                           <PDFThumbnail
                             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -993,46 +951,17 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        product.pdf_file ? (
-                          <div className="relative">
-                            <PDFThumbnail
-                              pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
-                              onClick={() => {
-                                setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
-                                setIsPdfViewerOpen(true);
-                            }}
-                          />
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveStorage(product.id, 'pdf_file');
-                                  }}
-                                >
-                                  <XCircle className="h-3 w-3 text-red-500" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Remove PDF file</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        ) : (
-                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                        )
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
                     </TableCell>
 
                     {/* PDF DB column */}
                     <TableCell className="px-0 text-center align-middle">
-                      {product.pdf_data && !product.image_file && !product.image_data && !product.pdf_file ? (
+                      {product.pdf_data ? (
                         <div className="relative">
-                          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          {(!product.image_file && !product.image_data && !product.pdf_file) && (
+                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+                          )}
                           <PDFThumbnail
                             pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -1061,46 +990,15 @@ export default function AdminProductsPage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        product.pdf_data ? (
-                          <div className="relative">
-                            <PDFThumbnail
-                              pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
-                              onClick={() => {
-                                setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
-                                setIsPdfViewerOpen(true);
-                            }}
-                          />
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveStorage(product.id, 'pdf_data');
-                                  }}
-                                >
-                                  <XCircle className="h-3 w-3 text-red-500" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Remove PDF from database</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        ) : (
-                          <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                        )
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
                       )}
                     </TableCell>
 
                     <TableCell className="w-[300px]">
-                      <p className="table-cell-text">{product.name}</p>
+                      <p className="text-sm text-gray-700">{product.name}</p>
                     </TableCell>
                     <TableCell className="w-[300px]">
-                      <p className="table-cell-text truncate">{product.description}</p>
+                      <p className="text-sm text-gray-700 truncate">{product.description}</p>
                     </TableCell>
                     <TableCell className="w-[120px]">
                       <p className="table-cell-subtext">

@@ -32,13 +32,35 @@ export function ImageThumbnail({
     setError(false);
 
     if (imageUrl) {
+      // If we have a direct URL, use it
       setImageSrc(imageUrl);
     } else if (imageData) {
-      // Convert base64 or blob data
-      setImageSrc(`data:image/jpeg;base64,${imageData}`);
-    } else {
-      // If neither URL nor data is provided, use the API endpoint
+      try {
+        // First, check if the imageData is a JSON string containing content type and data
+        try {
+          const parsedData = JSON.parse(imageData);
+          if (parsedData && parsedData.contentType && parsedData.data) {
+            // This is a JSON object with content type and base64 data
+            setImageSrc(`data:${parsedData.contentType};base64,${parsedData.data}`);
+            return;
+          }
+        } catch (e) {
+          // Not JSON, which is fine - continue with normal processing
+        }
+
+        // If it's not JSON, assume it's raw base64 data and try different MIME types
+        setImageSrc(`data:image/jpeg;base64,${imageData}`);
+      } catch (err) {
+        console.error('Error processing image data:', err);
+        setError(true);
+        setLoading(false);
+      }
+    } else if (productId) {
+      // If we have neither URL nor data, use the API endpoint
       setImageSrc(`/api/products/${productId}/img`);
+    } else {
+      setError(true);
+      setLoading(false);
     }
   }, [productId, imageUrl, imageData]);
 
@@ -47,6 +69,26 @@ export function ImageThumbnail({
   };
 
   const handleError = () => {
+    if (imageData) {
+      // If the first attempt with JPEG failed, try PNG
+      if (imageSrc && imageSrc.includes('image/jpeg')) {
+        setImageSrc(`data:image/png;base64,${imageData}`);
+        return;
+      }
+      
+      // If PNG failed, try a generic format
+      if (imageSrc && imageSrc.includes('image/png')) {
+        setImageSrc(`data:image/webp;base64,${imageData}`);
+        return;
+      }
+      
+      // If all else fails, use the API endpoint if we have a product ID
+      if (productId && !imageSrc?.includes('/api/')) {
+        setImageSrc(`/api/products/${productId}/img`);
+        return;
+      }
+    }
+    
     setLoading(false);
     setError(true);
   };
@@ -68,7 +110,21 @@ export function ImageThumbnail({
 
       {error ? (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 text-xs text-center p-2">
-          Failed to load image
+          <div className="text-center p-2">
+            {productId ? (
+              <a 
+                href={`/api/products/${productId}/img`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Image
+              </a>
+            ) : (
+              'Image preview unavailable'
+            )}
+          </div>
         </div>
       ) : (
         imageSrc && (
