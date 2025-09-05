@@ -887,7 +887,7 @@ export default function AdminProductsPage() {
                             imageData={product.image_data}
                             alt={product.name}
                             onClick={() => {
-                              setSelectedImage(`/api/products/${product.id}/img`);
+                              setSelectedImage(`/api/products/${product.id}/img?v=${refreshTimestamp}`);
                               setIsImageViewerOpen(true);
                             }}
                           />

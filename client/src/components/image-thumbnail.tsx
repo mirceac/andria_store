@@ -56,8 +56,9 @@ export function ImageThumbnail({
         setLoading(false);
       }
     } else if (productId) {
-      // If we have neither URL nor data, use the API endpoint
-      setImageSrc(`/api/products/${productId}/img`);
+      // If we have neither URL nor data, use the API endpoint with cache busting
+      const timestamp = Date.now();
+      setImageSrc(`/api/products/${productId}/img?v=${timestamp}`);
     } else {
       setError(true);
       setLoading(false);
@@ -84,7 +85,8 @@ export function ImageThumbnail({
       
       // If all else fails, use the API endpoint if we have a product ID
       if (productId && !imageSrc?.includes('/api/')) {
-        setImageSrc(`/api/products/${productId}/img`);
+        const timestamp = Date.now();
+        setImageSrc(`/api/products/${productId}/img?v=${timestamp}`);
         return;
       }
     }
@@ -113,7 +115,7 @@ export function ImageThumbnail({
           <div className="text-center p-2">
             {productId ? (
               <a 
-                href={`/api/products/${productId}/img`} 
+                href={`/api/products/${productId}/img?v=${Date.now()}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
