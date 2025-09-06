@@ -803,20 +803,20 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Add margin to the table container */}
-        <div className="border rounded-md mx-3">
+  <div className="border rounded-md mx-3 overflow-x-hidden" style={{maxWidth: '100vw'}}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center w-[35px]">Item</TableHead>
-                <TableHead className="px-0 text-center">Image File</TableHead>
-                <TableHead className="px-0 text-center">Image DB</TableHead>
-                <TableHead className="px-0 text-center">PDF File</TableHead>
-                <TableHead className="px-0 text-center">PDF DB</TableHead>
-                <TableHead className="text-center">Name</TableHead>
-                <TableHead className="text-center">Description</TableHead>
-                <TableHead className="text-center">Price</TableHead>
-                <TableHead className="text-center">Stock</TableHead>
-                <TableHead className="text-right px-4">Actions</TableHead>
+                <TableHead className="text-center w-[30px]">Item</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Image File</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Image DB</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
+                <TableHead className="text-center w-[120px]">Name</TableHead>
+                <TableHead className="text-center w-[180px]">Description</TableHead>
+                <TableHead className="text-center w-[80px]">Price</TableHead>
+                <TableHead className="text-center w-[60px]">Stock</TableHead>
+                <TableHead className="text-right px-4 w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -994,18 +994,18 @@ export default function AdminProductsPage() {
                       )}
                     </TableCell>
 
-                    <TableCell className="w-[300px]">
+                    <TableCell className="w-[120px]">
                       <p className="text-sm text-gray-700">{product.name}</p>
                     </TableCell>
-                    <TableCell className="w-[300px]">
-                      <p className="text-sm text-gray-700 truncate">{product.description}</p>
+                    <TableCell className="w-[180px] max-w-[180px] overflow-hidden">
+                      <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{product.description}</p>
                     </TableCell>
-                    <TableCell className="w-[120px]">
+                    <TableCell className="w-[80px]">
                       <p className="table-cell-subtext">
                         ${product.price.toFixed(2)}
                       </p>
                     </TableCell>
-                    <TableCell className="w-[100px]">
+                    <TableCell className="w-[60px]">
                       <p
                         className={cn(
                           "table-cell-subtext",

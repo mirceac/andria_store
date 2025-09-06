@@ -149,27 +149,34 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto px-0.5 py-1">
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10 gap-1">
+  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10 gap-1" style={{maxWidth: '100vw', overflow: 'hidden'}}>
         {filteredProducts?.map((product) => (
           <div 
             key={`${product.id}-${timestamp}`}
             className={cn(
-              "flex flex-col h-[290px] rounded border hover:shadow-sm transition-shadow bg-gray-50",
+              "flex flex-col h-[290px] rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden",
               product.stock > 0 
                 ? "border-slate-200 hover:border-blue-200" 
                 : "border-red-200 hover:border-red-300"
             )}
+            style={{maxWidth: '100%', minWidth: 0}}
           >
             {/* Content based on priority */}
-            <div className="relative w-full h-[200px] flex items-center justify-center p-0.5 border-b">
+            <div className="relative w-full h-[200px] flex items-center justify-center p-0.5 border-b overflow-hidden">
               {getContentByPriority(product)}
             </div>
             
             {/* Product info section with Add to Cart */}
-            <div className="px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow">
-              <h3 className="font-medium text-sm text-slate-900 line-clamp-1">{product.name}</h3>
-              <div className="flex items-center justify-between mt-0.5">
+                        <div className="px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0">
+              <h3 className="font-medium text-sm text-slate-900 line-clamp-1 truncate" style={{maxWidth: '100%'}}>{product.name}</h3>
+              
+              {/* Price on its own line */}
+              <div className="mt-0.5">
                 <span className="text-sm font-semibold text-slate-900">${product.price.toFixed(2)}</span>
+              </div>
+              
+              {/* Stock status on its own line */}
+              <div className="mt-0.5 mb-0.5">
                 <Badge 
                   variant={product.stock > 0 ? "default" : "destructive"} 
                   className={cn(
@@ -189,6 +196,7 @@ export default function HomePage() {
                 disabled={product.stock <= 0}
                 className="mt-1 w-full h-7 text-xs"
                 variant="default"
+                style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
               >
                 <ShoppingCart className="mr-1 h-3 w-3" />
                 Add to Cart
