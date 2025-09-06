@@ -30,12 +30,11 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [timestamp, setTimestamp] = useState(Date.now());
 
-  // Add timestamp refresh to prevent stale cache
+  // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimestamp(Date.now());
-    }, 10000);
-    return () => clearInterval(interval);
+    // Set timestamp only once when the component mounts
+    setTimestamp(Date.now());
+    // No interval to prevent reloading icons
   }, []);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
