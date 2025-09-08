@@ -167,27 +167,29 @@ export function PDFViewerDialog({
               cursor: isDragging ? 'grabbing' : 'grab'
             }}
           >
-            <Document
-              file={pdfUrl}
-              onLoadSuccess={() => {
-                setIsLoading(false);
-                setError(null);
-              }}
-              onLoadError={(err) => {
-                console.error('Error loading PDF:', err);
-                setIsLoading(false);
-                setError(err.message);
-              }}
-              loading={null}
-            >
-              <Page
-                pageNumber={1}
-                width={baseWidth * scale}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                scale={scale}
-              />
-            </Document>
+            {pdfUrl && (
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={() => {
+                  setIsLoading(false);
+                  setError(null);
+                }}
+                onLoadError={(err) => {
+                  console.error('Error loading PDF:', err);
+                  setIsLoading(false);
+                  setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                }}
+                loading={null}
+              >
+                <Page
+                  pageNumber={1}
+                  width={baseWidth * scale}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  scale={scale}
+                />
+              </Document>
+            )}
           </div>
         </div>
       </DialogContent>

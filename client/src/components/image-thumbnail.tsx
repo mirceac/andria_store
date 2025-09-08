@@ -89,8 +89,16 @@ export function ImageThumbnail({
         setImageSrc(`/api/products/${productId}/img?v=${timestamp}`);
         return;
       }
+    } else if (imageUrl && imageUrl.includes('/api/proxy/image')) {
+      // If we're using the proxy for an external URL and it failed,
+      // try again with a different query parameter to bypass cache
+      const newUrl = `${imageUrl}&retry=${Date.now()}`;
+      console.log('Retrying proxy with bypass cache:', newUrl);
+      setImageSrc(newUrl);
+      return;
     }
     
+    console.error('Failed to load image:', { imageUrl, imageData });
     setLoading(false);
     setError(true);
   };

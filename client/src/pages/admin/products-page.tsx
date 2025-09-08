@@ -89,6 +89,7 @@ const formSchema = z.object({
   file: z.custom<File | string | null>(),
   storage_type: z.enum(["pdf", "image"]),
   storage_location: z.enum(["database", "file"]).optional(),
+  storage_url: z.string().optional(),
 });
 
 // Add these types at the top of the file
@@ -119,6 +120,9 @@ export default function AdminProductsPage() {
 
   // Add a timestamp state to force refreshes
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+  
+  // Add a state to track failed image loads
+  const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
 
   // Add this after other state declarations (around line 60)
   const [storageToRemove, setStorageToRemove] = useState<{
@@ -146,6 +150,7 @@ export default function AdminProductsPage() {
       file: null,
       storage_type: "pdf", // Set a default value
       storage_location: "database", // Set a default value
+      storage_url: "",
     },
   });
 
@@ -161,20 +166,45 @@ export default function AdminProductsPage() {
         file: null,
         storage_type: "pdf",
         storage_location: "database",
+        storage_url: "",
       });
     }
   };
 
   const handleEditProduct = (product: SelectProduct) => {
+    // Determine storage type correctly
+    let storageType = "image"; // default to image
+    if (product.pdf_data || product.pdf_file) {
+      storageType = "pdf";
+    }
+    
+    // Determine storage location correctly
+    let storageLocation = "file"; // default to file
+    if (product.pdf_data || product.image_data) {
+      storageLocation = "database";
+    }
+    
+    console.log("Editing product:", {
+      id: product.id,
+      name: product.name,
+      storage_url: product.storage_url,
+      pdf_data: !!product.pdf_data,
+      pdf_file: !!product.pdf_file,
+      image_data: !!product.image_data,
+      image_file: !!product.image_file,
+      storage_type: storageType,
+      storage_location: storageLocation,
+    });
+    
     form.reset({
       name: product.name,
       description: product.description || "",
       price: Number(product.price),
       stock: product.stock,
       file: "",
-      storage_type: product.pdf_data ? "pdf" : "image",
-      storage_location:
-        product.pdf_data || product.image_data ? "database" : "file",
+      storage_type: storageType as "image" | "pdf",
+      storage_location: storageLocation as "database" | "file",
+      storage_url: product.storage_url || "",
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -191,6 +221,8 @@ export default function AdminProductsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Clear the failed URLs cache
+      setFailedImageUrls(new Set());
       toast({
         title: "Product created",
         description: "The product has been created successfully.",
@@ -235,6 +267,8 @@ export default function AdminProductsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       // Add this line to update the timestamp
       setRefreshTimestamp(Date.now());
+      // Clear the failed URLs cache
+      setFailedImageUrls(new Set());
       toast({
         title: "Product updated",
         description: "The product has been updated successfully.",
@@ -263,6 +297,8 @@ export default function AdminProductsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Clear the failed URLs cache
+      setFailedImageUrls(new Set());
       toast({
         title: "Product deleted",
         description: "The product has been removed successfully.",
@@ -323,6 +359,8 @@ export default function AdminProductsPage() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setRefreshTimestamp(Date.now()); // Force re-render
+      // Clear the failed URLs cache
+      setFailedImageUrls(new Set());
       toast({
         title: "Storage removed",
         description: `Successfully removed ${getStorageLabel(variables.type)} from product.`,
@@ -359,6 +397,9 @@ export default function AdminProductsPage() {
         if (Number(data.stock) !== selectedProduct.stock) {
           formData.append("stock", Number(data.stock).toString());
         }
+        
+        // Always include storage_url to ensure it's updated correctly
+        formData.append("storage_url", data.storage_url || "");
 
         // Add a flag if we're switching file types
         const currentType =
@@ -374,6 +415,7 @@ export default function AdminProductsPage() {
           hasPdfFile: !!selectedProduct?.pdf_file,
           hasImageData: !!selectedProduct?.image_data,
           hasImageFile: !!selectedProduct?.image_file,
+          storage_url: data.storage_url
         });
 
         // IMPORTANT: Only include storage_type ONCE!
@@ -423,6 +465,7 @@ export default function AdminProductsPage() {
         formData.append("price", Number(data.price).toFixed(2));
         formData.append("stock", Number(data.stock).toString());
         formData.append("storage_type", data.storage_type);
+        formData.append("storage_url", data.storage_url || "");
 
         if (data.storage_location) {
           formData.append("storage_location", data.storage_location);
@@ -578,19 +621,65 @@ export default function AdminProductsPage() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Basic Product Information Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseFloat(e.target.value))
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -604,161 +693,161 @@ export default function AdminProductsPage() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                
+                {/* File Settings Row */}
+                <div className="grid grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
-                    name="price"
+                    name="storage_type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value))
-                            }
-                          />
-                        </FormControl>
+                        <FormLabel>File Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select file type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pdf">PDF Document</SelectItem>
+                            <SelectItem value="image">Image</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
                     control={form.control}
-                    name="stock"
+                    name="storage_location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Stock</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value))
-                            }
-                          />
-                        </FormControl>
+                        <FormLabel>Storage Location</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select storage location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="database">Database</SelectItem>
+                            <SelectItem value="file">File System</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="storage_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>File Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select file type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pdf">PDF Document</SelectItem>
-                          <SelectItem value="image">Image</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="storage_location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Storage Location</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select storage location" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="database">Database</SelectItem>
-                          <SelectItem value="file">File System</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
+                {/* External URL Row */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="col-span-2">
+                      <Label>External URL</Label>
+                      <Input
+                        {...form.register("storage_url")}
+                        placeholder="Enter public image/PDF URL (e.g., https://example.com/image.jpg)"
+                      />
+                    </div>
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="file"
-                  render={({ field: { value, onChange, ...field } }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {form.watch("storage_type") === "pdf"
-                          ? "PDF Document"
-                          : "Product Image"}
-                      </FormLabel>
-                      <FormControl>
-                        <div className="space-y-2 border rounded-lg p-4">
-                          {value && form.watch("storage_type") === "image" ? (
-                            <div className="w-32 h-32 relative mb-2">
-                              <img
-                                src={
-                                  typeof value === "string"
-                                    ? value
-                                    : URL.createObjectURL(value as File)
-                                }
-                                alt="Preview"
-                                className="object-cover rounded-md w-full h-full"
-                              />
-                            </div>
-                          ) : (
-                            value && (
-                              <div className="flex items-center gap-2 mb-2">
-                                <FileText className="h-5 w-5" />
-                                <span className="text-sm">
-                                  {(value as File)?.name || "Current PDF"}
-                                </span>
+                {/* File Upload Area */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="file"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {form.watch("storage_type") === "pdf"
+                            ? "PDF Document"
+                            : "Product Image"}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="space-y-2 border rounded-lg p-3">
+                            {value && form.watch("storage_type") === "image" ? (
+                              <div className="w-24 h-24 relative mb-2 mx-auto">
+                                <img
+                                  src={
+                                    typeof value === "string"
+                                      ? value
+                                      : URL.createObjectURL(value as File)
+                                  }
+                                  alt="Preview"
+                                  className="object-contain rounded-md w-full h-full"
+                                />
                               </div>
-                            )
-                          )}
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="file"
-                              accept={
-                                form.watch("storage_type") === "pdf"
-                                  ? ".pdf"
-                                  : ".jpg,.jpeg,.png"
-                              }
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) onChange(file);
-                              }}
-                              {...field}
-                            />
-                            {value instanceof File && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => onChange(null)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                            ) : (
+                              value && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <FileText className="h-5 w-5" />
+                                  <span className="text-sm">
+                                    {(value as File)?.name || "Current PDF"}
+                                  </span>
+                                </div>
+                              )
                             )}
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="file"
+                                accept={
+                                  form.watch("storage_type") === "pdf"
+                                    ? ".pdf"
+                                    : ".jpg,.jpeg,.png"
+                                }
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) onChange(file);
+                                }}
+                                {...field}
+                              />
+                              {value instanceof File && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => onChange(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex gap-2">
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Help Text */}
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="mb-2">
+                      <span className="font-medium">Storage Options:</span>
+                      <ul className="list-disc pl-4 mt-1">
+                        <li><span className="font-medium">File Type:</span> Choose between PDF or Image</li>
+                        <li><span className="font-medium">Storage Location:</span> Save in database or file system</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <span className="font-medium text-amber-600">For External URLs:</span>
+                      <ul className="list-disc pl-4 mt-1">
+                        <li>Use JPEG/PNG formats (HEIC may not display correctly)</li>
+                        <li>URL must be publicly accessible</li>
+                        <li>Include proper file extension (.jpg, .png, .pdf)</li>
+                        <li>For Google Photos: Use "Share" → "Create link", ensure "Anyone with the link" is selected</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
                   <Button
                     type="submit"
                     className="flex-1"
@@ -812,6 +901,7 @@ export default function AdminProductsPage() {
                 <TableHead className="px-0 text-center w-[60px]">Image DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
                 <TableHead className="text-center w-[120px]">Name</TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Price</TableHead>
@@ -823,16 +913,13 @@ export default function AdminProductsPage() {
               {products &&
                 paginateProducts(sortProducts(products)).map((product, index) => (
                   <TableRow key={product.id}>
-                    <TableCell className="text-center align-middle font-medium">
+                    <TableCell className="text-center align-middle font-medium w-[30px]">
                       {index + 1}
                     </TableCell>
                     {/* Image File column */}
-                    <TableCell className="px-0 text-center align-middle">
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.image_file ? (
                         <div className="relative">
-                          {(!product.image_data && !product.pdf_file && !product.pdf_data) && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
                           <ImageThumbnail
                             productId={product.id}
                             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
@@ -875,12 +962,9 @@ export default function AdminProductsPage() {
                     </TableCell>
 
                     {/* Image DB column */}
-                    <TableCell className="px-0 text-center align-middle">
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.image_data ? (
                         <div className="relative">
-                          {(!product.image_file && !product.pdf_file && !product.pdf_data) && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
                           <ImageThumbnail
                             productId={product.id}
                             imageUrl={null}
@@ -917,12 +1001,9 @@ export default function AdminProductsPage() {
                     </TableCell>
 
                     {/* PDF File column */}
-                    <TableCell className="px-0 text-center align-middle">
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.pdf_file ? (
                         <div className="relative">
-                          {(!product.image_file && !product.image_data && !product.pdf_data) && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
                           <PDFThumbnail
                             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -956,12 +1037,9 @@ export default function AdminProductsPage() {
                     </TableCell>
 
                     {/* PDF DB column */}
-                    <TableCell className="px-0 text-center align-middle">
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.pdf_data ? (
                         <div className="relative">
-                          {(!product.image_file && !product.image_data && !product.pdf_file) && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
                           <PDFThumbnail
                             pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
                             onClick={() => {
@@ -994,18 +1072,208 @@ export default function AdminProductsPage() {
                       )}
                     </TableCell>
 
-                    <TableCell className="w-[120px]">
+                    {/* Storage URL column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                      {product.storage_url ? (
+                        <div className="relative">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => {
+                                    // Try to determine if it's an image or a PDF
+                                    // First, check if the URL has a common image extension
+                                    const hasImageExtension = product.storage_url && product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i);
+                                    
+                                    // Second, if it doesn't have a known image extension but has .pdf, it's a PDF
+                                    const hasPdfExtension = product.storage_url && product.storage_url.match(/\.(pdf)$/i);
+                                    
+                                    // Third, try to guess by checking if the URL contains image-related keywords
+                                    const looksLikeImage = product.storage_url && 
+                                      (product.storage_url.includes('image') || 
+                                       product.storage_url.includes('img') || 
+                                       product.storage_url.includes('photo') ||
+                                       product.storage_url.includes('picture'));
+                                    
+                                    // Determine if we should treat it as an image
+                                    const isImage = hasImageExtension || (!hasPdfExtension && looksLikeImage);
+                                    
+                                    console.log('URL type detection:', {
+                                      url: product.storage_url,
+                                      hasImageExtension,
+                                      hasPdfExtension,
+                                      looksLikeImage,
+                                      treatAsImage: isImage
+                                    });
+                                    
+                                    // Always use the proxy URL for external URLs
+                                    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`;
+                                    
+                                    if (isImage) {
+                                      setSelectedImage(proxyUrl);
+                                      setIsImageViewerOpen(true);
+                                    } else {
+                                      // For PDFs, we try direct URL first
+                                      setSelectedPdf(product.storage_url);
+                                      setIsPdfViewerOpen(true);
+                                    }
+                                  }}
+                                >
+                                  {product.storage_url && (
+                                    product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
+                                    (!product.storage_url.match(/\.(pdf)$/i) && 
+                                     (product.storage_url.includes('image') || 
+                                      product.storage_url.includes('img') || 
+                                      product.storage_url.includes('photo') ||
+                                      product.storage_url.includes('picture'))) ? (
+                                      <div className="w-6 h-6 bg-gray-100 rounded-sm flex items-center justify-center overflow-hidden shadow-sm">
+                                        <img 
+                                          src={`/api/proxy/image?url=${encodeURIComponent(product.storage_url)}&thumbnail=1`}
+                                          alt="External URL" 
+                                          className="h-6 w-6 object-contain" 
+                                          onLoad={(e) => {
+                                            // Add a data attribute to track successful loading
+                                            e.currentTarget.setAttribute('data-loaded', 'true');
+                                          }}
+                                          onError={(e) => {
+                                            console.error("Failed to load image thumbnail:", product.storage_url);
+                                            // Add the URL to our failed URLs set
+                                            setFailedImageUrls(prev => {
+                                              const newSet = new Set(prev);
+                                              newSet.add(product.storage_url || '');
+                                              return newSet;
+                                            });
+                                            
+                                            // Replace the img element with a div containing a nicer icon
+                                            const parent = e.currentTarget.parentElement;
+                                            if (parent) {
+                                              // Remove the img element
+                                              e.currentTarget.remove();
+                                              
+                                              // Create a new div with a better icon and styling
+                                              const iconContainer = document.createElement('div');
+                                              iconContainer.className = 'w-full h-full flex items-center justify-center bg-amber-50';
+                                              iconContainer.innerHTML = `
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500">
+                                                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                                                  <circle cx="9" cy="9" r="2"></circle>
+                                                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                                                </svg>
+                                              `;
+                                              
+                                              // Add the new icon to the parent
+                                              parent.appendChild(iconContainer);
+                                            }
+                                          }}
+                                          loading="lazy"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-6 h-6 bg-blue-50 rounded-sm flex items-center justify-center shadow-sm">
+                                        <FileText className="h-4 w-4 text-blue-500" />
+                                      </div>
+                                    )
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={5} className="max-w-md">
+                                <div className="text-xs text-left">
+                                  <p className="font-semibold">External URL:</p>
+                                  <p className="break-all">{product.storage_url}</p>
+                                  {product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
+                                   (!product.storage_url.match(/\.(pdf)$/i) && 
+                                    (product.storage_url.includes('image') || 
+                                     product.storage_url.includes('img') || 
+                                     product.storage_url.includes('photo') ||
+                                     product.storage_url.includes('picture'))) ? (
+                                    <div className="mt-1">
+                                      <p className="text-amber-600 font-medium">
+                                        {failedImageUrls.has(product.storage_url || '') ? 
+                                          "⚠️ This image could not be loaded." : 
+                                          "Click to view full image"}
+                                      </p>
+                                      {failedImageUrls.has(product.storage_url || '') && (
+                                        <ul className="text-gray-500 mt-1 list-disc pl-3 text-[10px]">
+                                          <li>The URL might be private or restricted</li>
+                                          <li>The image format might not be supported (HEIC/HEIF)</li>
+                                          <li>The server might be blocking external access</li>
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute right-0 top-0 h-4 w-4 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Create a FormData to update the product
+                                    const formData = new FormData();
+                                    formData.append("storage_url", "");
+                                    
+                                    // Set the selected product temporarily so the mutation knows which ID to use
+                                    setSelectedProduct(product);
+                                    
+                                    // Use mutateAsync to ensure we complete the operation before resetting
+                                    updateProductMutation.mutateAsync(formData)
+                                      .then(() => {
+                                        toast({
+                                          title: "External URL removed",
+                                          description: "The external storage URL has been removed.",
+                                        });
+                                        // Force refresh of the data
+                                        setRefreshTimestamp(Date.now());
+                                        // Clear the failed URLs cache
+                                        setFailedImageUrls(new Set());
+                                      })
+                                      .catch(err => {
+                                        console.error("Error removing storage URL:", err);
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to remove external URL. Please try again.",
+                                          variant: "destructive",
+                                        });
+                                      })
+                                      .finally(() => {
+                                        // Reset selectedProduct to avoid issues with other operations
+                                        setSelectedProduct(null);
+                                      });
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove Storage URL</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-center w-[120px]">
                       <p className="text-sm text-gray-700">{product.name}</p>
                     </TableCell>
-                    <TableCell className="w-[180px] max-w-[180px] overflow-hidden">
+                    <TableCell className="text-center w-[180px] max-w-[180px] overflow-hidden">
                       <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{product.description}</p>
                     </TableCell>
-                    <TableCell className="w-[80px]">
+                    <TableCell className="text-center w-[80px]">
                       <p className="table-cell-subtext">
                         ${product.price.toFixed(2)}
                       </p>
                     </TableCell>
-                    <TableCell className="w-[60px]">
+                    <TableCell className="text-center w-[60px]">
                       <p
                         className={cn(
                           "table-cell-subtext",
@@ -1017,7 +1285,7 @@ export default function AdminProductsPage() {
                         {product.stock}
                       </p>
                     </TableCell>
-                    <TableCell className="w-[100px] text-right">
+                    <TableCell className="text-right px-4 w-[100px]">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
@@ -1141,4 +1409,8 @@ export default function AdminProductsPage() {
       </AlertDialog>
     </div>
   );
+}
+
+function register(arg0: string): import("react").JSX.IntrinsicAttributes & import("@/components/ui/input").InputProps & import("react").RefAttributes<HTMLInputElement> {
+  throw new Error("Function not implemented.");
 }

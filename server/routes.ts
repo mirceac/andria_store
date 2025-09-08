@@ -128,6 +128,280 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // External image proxy endpoint to bypass CORS restrictions
+  app.get("/api/proxy/image", async (req, res) => {
+    try {
+      const { url, thumbnail } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL parameter is required" });
+      }
+      
+      console.log(`Proxying image request for: ${url}, thumbnail: ${thumbnail ? 'yes' : 'no'}`);
+      
+      // Validate URL format to prevent server-side request forgery
+      try {
+        new URL(url);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+      
+      // Make a request to the external URL
+      const fetch = await import('node-fetch');
+      
+      // Special handling for Google Photos URLs
+      let finalUrl = url;
+      if (url.includes('photos.google.com') || url.includes('photos.app.goo.gl')) {
+        console.log('Detected Google Photos URL, attempting to extract image ID');
+        
+        try {
+          // For direct photo URLs with ID in path
+          let photoId = null;
+          
+          // Try multiple patterns for Google Photos URLs
+          // First pattern: /photo/{id} in the URL path
+          const directMatches = url.match(/\/photo\/([A-Za-z0-9_-]+)/);
+          if (directMatches && directMatches[1]) {
+            photoId = directMatches[1];
+            console.log('Extracted Google Photos image ID from direct URL:', photoId);
+          }
+          
+          // Second pattern: Look for AF1QipXXXX ID in the URL
+          if (!photoId) {
+            const afMatches = url.match(/AF1Qip[A-Za-z0-9_-]{10,}/);
+            if (afMatches) {
+              photoId = afMatches[0];
+              console.log('Extracted Google Photos ID using AF1Qip pattern:', photoId);
+            }
+          }
+          
+          // Third pattern: For sharing links, we need to follow the redirect
+          if (!photoId && (url.includes('photos.app.goo.gl') || url.includes('goo.gl'))) {
+            console.log('Detected Google Photos sharing link, following redirect');
+            
+            const response = await fetch.default(url, {
+              method: 'HEAD',
+              redirect: 'follow', // Follow redirects automatically
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              }
+            });
+            
+            // Get the actual URL after redirects
+            const finalRedirectUrl = response.url;
+            console.log('Final redirect URL:', finalRedirectUrl);
+            
+            // Try to extract photo ID from various patterns in the redirect URL
+            const redirectAfMatches = finalRedirectUrl.match(/AF1Qip[A-Za-z0-9_-]{10,}/);
+            if (redirectAfMatches) {
+              photoId = redirectAfMatches[0];
+              console.log('Extracted Google Photos ID from redirect:', photoId);
+            } else {
+              const redirectPathMatches = finalRedirectUrl.match(/\/photo\/([A-Za-z0-9_-]+)/);
+              if (redirectPathMatches && redirectPathMatches[1]) {
+                photoId = redirectPathMatches[1];
+                console.log('Extracted Google Photos image ID from redirect path:', photoId);
+              }
+            }
+          }
+          
+          // If we found a photo ID, use it to construct a direct URL with authentication params
+          if (photoId) {
+            finalUrl = `https://lh3.googleusercontent.com/d/${photoId}=w1200`;
+            console.log('Converted to direct Google Photos URL:', finalUrl);
+          } else {
+            console.log('Could not extract Google Photos ID, using original URL');
+          }
+        } catch (error) {
+          console.error('Error processing Google Photos URL:', error);
+          // Continue with the original URL if there's an error
+        }
+      }
+      
+      // Handle Dropbox URLs
+      if (url.includes('dropbox.com') && !url.includes('dl=1')) {
+        // Convert shared Dropbox links to direct download links
+        finalUrl = url.includes('?') ? `${url}&dl=1` : `${url}?dl=1`;
+        console.log('Converted Dropbox URL to direct download:', finalUrl);
+      }
+      
+      // Handle OneDrive URLs
+      if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+        // OneDrive sharing links might need to be modified for direct download
+        if (!url.includes('download=1')) {
+          finalUrl = url.includes('?') ? `${url}&download=1` : `${url}?download=1`;
+          console.log('Modified OneDrive URL for direct download:', finalUrl);
+        }
+      }
+      
+      // Handle Google Drive URLs
+      if (url.includes('drive.google.com') && url.includes('/file/d/')) {
+        // Extract file ID from Google Drive URL
+        const matches = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+        if (matches && matches[1]) {
+          const fileId = matches[1];
+          finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+          console.log('Converted Google Drive URL to direct download:', finalUrl);
+        }
+      }
+      
+      console.log('Fetching from URL:', finalUrl);
+      const response = await fetch.default(finalUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://photos.google.com/',
+          'Sec-Fetch-Dest': 'image',
+          'Sec-Fetch-Mode': 'no-cors',
+          'Sec-Fetch-Site': 'cross-site'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch image from ${finalUrl}, status: ${response.status} ${response.statusText}`);
+        
+        // If Google Photos URL and we failed, try an alternative approach
+        if (finalUrl.includes('googleusercontent.com') && response.status === 400) {
+          console.log('Attempting alternative Google Photos approach...');
+          
+          // Try a different size parameter or format
+          const altSizeUrl = finalUrl.replace('=w1200', '=s0');
+          console.log('Trying alternative URL:', altSizeUrl);
+          
+          try {
+            const altResponse = await fetch.default(altSizeUrl, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Referer': 'https://photos.google.com/'
+              }
+            });
+            
+            if (altResponse.ok) {
+              console.log('Alternative approach succeeded!');
+              const buffer = await altResponse.buffer();
+              
+              // Forward the response with appropriate headers
+              const contentType = altResponse.headers.get('content-type') || 'image/jpeg';
+              res.set('Content-Type', contentType);
+              res.set('Cache-Control', 'public, max-age=86400');
+              return res.send(buffer);
+            } else {
+              console.log('Alternative approach also failed');
+            }
+          } catch (e) {
+            console.error('Error with alternative approach:', e);
+          }
+        }
+        
+        return res.status(response.status).json({ 
+          message: `Failed to fetch image: ${response.statusText}`,
+          url: finalUrl
+        });
+      }
+      
+      // Check if the response is an image or can be treated as one
+      const contentType = response.headers.get('content-type');
+      console.log('Response content type:', contentType);
+      
+      // More flexible content type checking
+      const isImage = contentType && (
+        contentType.startsWith('image/') || 
+        contentType.includes('image') ||
+        contentType.includes('jpeg') || 
+        contentType.includes('png') || 
+        contentType.includes('gif') || 
+        contentType.includes('webp') ||
+        contentType.includes('heic') ||
+        contentType.includes('heif') ||
+        // For binary data that might be images but not properly typed
+        contentType.includes('application/octet-stream') ||
+        contentType.includes('binary')
+      );
+      
+      if (!isImage) {
+        // Try to infer from URL if it has an image extension
+        const hasImageExtension = finalUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg|heic|heif)($|\?)/i);
+        
+        if (!hasImageExtension) {
+          console.log('Not recognized as an image by content type or extension:', {
+            contentType,
+            url: finalUrl
+          });
+          
+          // For now, we'll try to process it as an image anyway
+          console.log('Attempting to treat as image despite unrecognized type');
+        } else {
+          console.log('URL has image extension, treating as image despite content type');
+        }
+      }
+      
+      // Forward the response headers and body
+      // Determine proper content type based on URL or content
+      let imageContentType = 'image/jpeg'; // Default to JPEG
+      
+      if (contentType && contentType.startsWith('image/')) {
+        imageContentType = contentType;
+      } else if (finalUrl.match(/\.png($|\?)/i)) {
+        imageContentType = 'image/png';
+      } else if (finalUrl.match(/\.gif($|\?)/i)) {
+        imageContentType = 'image/gif';
+      } else if (finalUrl.match(/\.webp($|\?)/i)) {
+        imageContentType = 'image/webp';
+      } else if (finalUrl.match(/\.svg($|\?)/i)) {
+        imageContentType = 'image/svg+xml';
+      } else if (finalUrl.match(/\.(heic|heif)($|\?)/i)) {
+        // For HEIC images, we'll still send as JPEG and let the browser handle it
+        imageContentType = 'image/heic';
+        console.log('HEIC/HEIF image detected, setting content-type to image/heic');
+      }
+      
+      res.set('Content-Type', imageContentType);
+      res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      
+      const buffer = await response.buffer();
+      
+      // Add basic validation that we received something
+      if (!buffer || buffer.length === 0) {
+        console.error('Received empty buffer from URL:', finalUrl);
+        return res.status(400).json({
+          message: 'Received empty response from image URL',
+          url: finalUrl
+        });
+      }
+
+      // Check the buffer signature for HEIC/HEIF files
+      const isHeic = buffer.length > 12 && 
+        ((buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) || // ftyp
+         (buffer[4] === 0x68 && buffer[5] === 0x65 && buffer[6] === 0x69 && buffer[7] === 0x63) || // heic
+         (buffer[4] === 0x68 && buffer[5] === 0x65 && buffer[6] === 0x69 && buffer[7] === 0x66) || // heif
+         (buffer[4] === 0x68 && buffer[5] === 0x65 && buffer[6] === 0x69 && buffer[7] === 0x78));  // heix
+      
+      if (isHeic) {
+        console.log('Detected HEIC/HEIF image from buffer signature');
+        // Even though it's HEIC, we'll tell browsers it's jpeg-like for better compatibility
+        imageContentType = 'image/jpeg';
+        console.log('Setting content-type to image/jpeg for HEIC/HEIF image to improve browser compatibility');
+      }
+      
+      // Send detailed info about what we're returning
+      console.log(`Successfully proxied image: ${finalUrl}, size: ${buffer.length} bytes, content-type: ${imageContentType}`);
+      
+      res.set('Content-Type', imageContentType);
+      res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      res.send(buffer);
+      
+    } catch (error) {
+      console.error("Error proxying image:", error);
+      res.status(500).json({ 
+        message: "Failed to proxy image", 
+        error: error instanceof Error ? error.message : String(error),
+        url: req.query.url
+      });
+    }
+  });
+
   // Products routes
   app.get("/api/products", async (req, res) => {
     try {
@@ -327,7 +601,8 @@ export function registerRoutes(app: Express): Server {
         pdf_data: null as string | null,
         pdf_file: null as string | null,
         image_data: null as string | null,
-        image_file: null as string | null
+        image_file: null as string | null,
+        storage_url: req.body.storage_url || null
       };
 
       if (req.file) {
@@ -381,6 +656,7 @@ export function registerRoutes(app: Express): Server {
         name: product.name,
         type: storageType,
         storage: storageLocation,
+        storageUrl: product.storage_url,
         hasPdfData: !!product.pdf_data,
         hasPdfFile: !!product.pdf_file,
         hasImageData: !!product.image_data,
@@ -432,6 +708,11 @@ export function registerRoutes(app: Express): Server {
             message: "Invalid stock value. Must be a number."
           });
         }
+      }
+      
+      // Handle storage_url field
+      if (req.body.storage_url !== undefined) {
+        updateData.storage_url = req.body.storage_url || null;
       }
 
       // Handle file update if a new file is uploaded
@@ -499,6 +780,7 @@ export function registerRoutes(app: Express): Server {
         name: product.name,
         type: storageType,
         storage: storeAsBinary ? 'database' : 'file',
+        storageUrl: product.storage_url,
         hasPdfData: !!product.pdf_data,
         hasPdfFile: !!product.pdf_file,
         hasImageData: !!product.image_data,

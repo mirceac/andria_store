@@ -11,6 +11,7 @@ interface ProductFormProps {
     price: number;
     stock: number;
     pdf_file: string;
+    storage_url?: string;
   };
   onSubmit: (data: FormData) => Promise<void>;
 }
@@ -50,6 +51,12 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
         min="0"
         placeholder="Stock"
         defaultValue={initialData?.stock}
+      />
+      <Input
+        name="storage_url"
+        type="url"
+        placeholder="External Storage URL (optional)"
+        defaultValue={initialData?.storage_url}
       />
       <div className="space-y-2">
         <Input
