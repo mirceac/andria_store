@@ -32,6 +32,7 @@ export const products = pgTable('products', {
   pdf_data: text('pdf_data'),
   image_file: varchar('image_file'),  // Make sure this exists
   image_data: text('image_data'),
+  storage_url: varchar('storage_url'),  // New field for universal storage URL
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
@@ -83,6 +84,7 @@ export const insertProductSchema = z.object({
   stock: z.number().min(0),
   pdf_file: z.instanceof(File).or(z.string()).nullable(),
   image_file: z.instanceof(File).or(z.string()).nullable(),  // Add image file validation
+  storage_url: z.string().url().nullable(),  // Add storage_url validation
 });
 
 export type SelectProduct = {
@@ -95,6 +97,7 @@ export type SelectProduct = {
   pdf_data: string | null;
   image_file: string | null;  // Add this
   image_data: string | null;  // Add this
+  storage_url: string | null;  // Add this
   created_at: Date;
   updated_at: Date;
 };

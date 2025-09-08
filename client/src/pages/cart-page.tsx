@@ -72,6 +72,114 @@ export default function CartPage() {
     setLocation("/checkout");  // Use wouter's setLocation instead of direct window.location
   };
 
+  // Helper function for rendering product media based on priority
+  const renderProductMedia = (product: SelectProduct) => {
+    if (product.image_file) {
+      // 1. Image File (highest priority)
+      return (
+        <div className="relative">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
+            imageData={null}
+            alt={product.name}
+            onClick={() => {
+              setSelectedImage(`${product.image_file}?v=${refreshTimestamp}`);
+              setIsImageViewerOpen(true);
+            }}
+          />
+        </div>
+      );
+    } else if (product.image_data) {
+      // 2. Image DB
+      return (
+        <div className="relative">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={null}
+            imageData={product.image_data}
+            alt={product.name}
+            onClick={() => {
+              setSelectedImage(`/api/products/${product.id}/img?v=${refreshTimestamp}`);
+              setIsImageViewerOpen(true);
+            }}
+          />
+        </div>
+      );
+    } else if (product.pdf_file) {
+      // 3. PDF File
+      return (
+        <div className="relative">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <PDFThumbnail
+            pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+            onClick={() => {
+              setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
+              setIsPdfViewerOpen(true);
+            }}
+          />
+        </div>
+      );
+    } else if (product.pdf_data) {
+      // 4. PDF DB
+      return (
+        <div className="relative">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <PDFThumbnail
+            pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+            onClick={() => {
+              setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
+              setIsPdfViewerOpen(true);
+            }}
+          />
+        </div>
+      );
+    } else if (product.storage_url) {
+      // 5. Storage URL (lowest priority)
+      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png)$/i);
+      if (isImage) {
+        return (
+          <div className="relative">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <ImageThumbnail
+              productId={product.id}
+              imageUrl={`${product.storage_url}?v=${refreshTimestamp}`}
+              imageData={null}
+              alt={product.name}
+              onClick={() => {
+                setSelectedImage(`${product.storage_url}?v=${refreshTimestamp}`);
+                setIsImageViewerOpen(true);
+              }}
+            />
+          </div>
+        );
+      } else {
+        // Assume it's a PDF or other document
+        return (
+          <div className="relative">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <PDFThumbnail
+              pdfUrl={`${product.storage_url}?v=${refreshTimestamp}`}
+              onClick={() => {
+                setSelectedPdf(`${product.storage_url}?v=${refreshTimestamp}`);
+                setIsPdfViewerOpen(true);
+              }}
+            />
+          </div>
+        );
+      }
+    } else {
+      // 6. No content available - show X icon
+      return (
+        <div className="flex items-center justify-center h-full">
+          <XCircle className="h-6 w-6 text-gray-300" />
+        </div>
+      );
+    }
+  };
+
   const total = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
@@ -122,10 +230,7 @@ export default function CartPage() {
               <TableHeader>
                 <TableRow className="bg-gray-50">
                   <TableHead className="text-center w-[35px]">Item</TableHead>
-                  <TableHead className="px-0 text-center w-[110px]">Image File</TableHead>
-                  <TableHead className="px-0 text-center w-[110px]">Image DB</TableHead>
-                  <TableHead className="px-0 text-center w-[110px]">PDF File</TableHead>
-                  <TableHead className="px-0 text-center w-[110px]">PDF DB</TableHead>
+                  <TableHead className="px-0 text-center w-[120px]">Product Image</TableHead>
                   <TableHead className="px-3">Details</TableHead>
                   <TableHead className="w-[150px] text-center">Quantity</TableHead>
                   <TableHead className="w-[120px] text-center">Price</TableHead>
@@ -139,90 +244,9 @@ export default function CartPage() {
                       {index + 1}
                     </TableCell>
                     
-                    {/* Image File */}
+                    {/* Product Media (using priority logic) */}
                     <TableCell className="px-0 text-center align-middle">
-                      {item.product.image_file ? (
-                        <div className="relative">
-                          {item.product.image_file && !item.product.image_data && !item.product.pdf_file && !item.product.pdf_data && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
-                          <ImageThumbnail
-                            productId={item.product.id}
-                            imageUrl={`${item.product.image_file}?v=${refreshTimestamp}`}
-                            imageData={null}
-                            alt={item.product.name}
-                            onClick={() => {
-                              setSelectedImage(`${item.product.image_file}?v=${refreshTimestamp}`);
-                              setIsImageViewerOpen(true);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                      )}
-                    </TableCell>
-                    
-                    {/* Image DB */}
-                    <TableCell className="px-0 text-center align-middle">
-                      {item.product.image_data ? (
-                        <div className="relative">
-                          {!item.product.image_file && item.product.image_data && !item.product.pdf_file && !item.product.pdf_data && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
-                          <ImageThumbnail
-                            productId={item.product.id}
-                            imageUrl={null}
-                            imageData={item.product.image_data}
-                            alt={item.product.name}
-                            onClick={() => {
-                              setSelectedImage(`/api/products/${item.product.id}/img?v=${refreshTimestamp}`);
-                              setIsImageViewerOpen(true);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                      )}
-                    </TableCell>
-                    
-                    {/* PDF File */}
-                    <TableCell className="px-0 text-center align-middle">
-                      {item.product.pdf_file ? (
-                        <div className="relative">
-                          {!item.product.image_file && !item.product.image_data && item.product.pdf_file && !item.product.pdf_data && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
-                          <PDFThumbnail
-                            pdfUrl={`${item.product.pdf_file}?v=${refreshTimestamp}`}
-                            onClick={() => {
-                              setSelectedPdf(`${item.product.pdf_file}?v=${refreshTimestamp}`);
-                              setIsPdfViewerOpen(true);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                      )}
-                    </TableCell>
-                    
-                    {/* PDF DB */}
-                    <TableCell className="px-0 text-center align-middle">
-                      {item.product.pdf_data ? (
-                        <div className="relative">
-                          {!item.product.image_file && !item.product.image_data && !item.product.pdf_file && item.product.pdf_data && (
-                            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-                          )}
-                          <PDFThumbnail
-                            pdfUrl={`/api/products/${item.product.id}/pdf?v=${refreshTimestamp}`}
-                            onClick={() => {
-                              setSelectedPdf(`/api/products/${item.product.id}/pdf?v=${refreshTimestamp}`);
-                              setIsPdfViewerOpen(true);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
-                      )}
+                      {renderProductMedia(item.product)}
                     </TableCell>
                     
                     {/* Product Details */}
