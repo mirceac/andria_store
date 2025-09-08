@@ -153,11 +153,13 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
             <img
               src={url}
               alt="Full size"
-              className="object-contain transition-transform duration-75 select-none"
+              className="max-h-full max-w-full object-contain transition-transform duration-75 select-none"
               style={{ 
                 transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
                 cursor: isDragging ? 'grabbing' : 'grab',
-                display: imageError ? 'none' : 'block'
+                display: imageError ? 'none' : 'block',
+                height: 'auto',
+                width: 'auto'
               }}
               onMouseDown={handleMouseDown}
               draggable="false"

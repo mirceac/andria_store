@@ -136,14 +136,59 @@ export default function HomePage() {
           />
         </div>
       );
-    } else {
-      // 5. No content available - show X icon
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <XCircle className="h-8 w-8 text-gray-300" />
-        </div>
-      );
+    } else if (product.storage_url) {
+      // 5. External Storage URL
+      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
+                        (!product.storage_url.match(/\.(pdf)$/i) && 
+                         (product.storage_url.includes('image') || 
+                          product.storage_url.includes('img') || 
+                          product.storage_url.includes('photo') ||
+                          product.storage_url.includes('picture')));
+      
+      const isPdfUrl = product.storage_url.match(/\.(pdf)$/i);
+      
+      if (isImageUrl) {
+        // External Image URL
+        return (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
+              <img 
+                src={`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}&v=${timestamp}`}
+                alt={product.name}
+                className="max-h-[190px] object-contain cursor-pointer"
+                onClick={() => {
+                  setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                  setSelectedProduct(product);
+                  setIsImageViewerOpen(true);
+                }}
+              />
+            </div>
+          </div>
+        );
+      } else if (isPdfUrl) {
+        // External PDF URL
+        return (
+          <div className="w-full h-full flex items-center justify-center">
+            <PDFThumbnail
+              pdfUrl={product.storage_url}
+              onClick={() => {
+                setSelectedPdf(product.storage_url);
+                setSelectedProduct(product);
+                setIsPdfViewerOpen(true);
+              }}
+              className="h-full"
+            />
+          </div>
+        );
+      }
     }
+    
+    // 6. No content available - show X icon
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <XCircle className="h-8 w-8 text-gray-300" />
+      </div>
+    );
   };
 
   return (

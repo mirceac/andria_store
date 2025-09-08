@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1073,7 +1074,7 @@ export default function AdminProductsPage() {
                     </TableCell>
 
                     {/* Storage URL column */}
-                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                    <TableCell className="px-0 text-center align-middle" style={{ width: '130px', height: '182px' }}>
                       {product.storage_url ? (
                         <div className="relative">
                           <TooltipProvider>
@@ -1081,7 +1082,8 @@ export default function AdminProductsPage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  className="h-8 w-8 p-0"
+                                  className="p-0"
+                                  style={{ width: '130px', height: '182px' }}
                                   onClick={() => {
                                     // Try to determine if it's an image or a PDF
                                     // First, check if the URL has a common image extension
@@ -1128,52 +1130,27 @@ export default function AdminProductsPage() {
                                       product.storage_url.includes('img') || 
                                       product.storage_url.includes('photo') ||
                                       product.storage_url.includes('picture'))) ? (
-                                      <div className="w-6 h-6 bg-gray-100 rounded-sm flex items-center justify-center overflow-hidden shadow-sm">
-                                        <img 
-                                          src={`/api/proxy/image?url=${encodeURIComponent(product.storage_url)}&thumbnail=1`}
-                                          alt="External URL" 
-                                          className="h-6 w-6 object-contain" 
-                                          onLoad={(e) => {
-                                            // Add a data attribute to track successful loading
-                                            e.currentTarget.setAttribute('data-loaded', 'true');
-                                          }}
-                                          onError={(e) => {
-                                            console.error("Failed to load image thumbnail:", product.storage_url);
-                                            // Add the URL to our failed URLs set
-                                            setFailedImageUrls(prev => {
-                                              const newSet = new Set(prev);
-                                              newSet.add(product.storage_url || '');
-                                              return newSet;
-                                            });
-                                            
-                                            // Replace the img element with a div containing a nicer icon
-                                            const parent = e.currentTarget.parentElement;
-                                            if (parent) {
-                                              // Remove the img element
-                                              e.currentTarget.remove();
-                                              
-                                              // Create a new div with a better icon and styling
-                                              const iconContainer = document.createElement('div');
-                                              iconContainer.className = 'w-full h-full flex items-center justify-center bg-amber-50';
-                                              iconContainer.innerHTML = `
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500">
-                                                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                                                  <circle cx="9" cy="9" r="2"></circle>
-                                                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                                                </svg>
-                                              `;
-                                              
-                                              // Add the new icon to the parent
-                                              parent.appendChild(iconContainer);
-                                            }
-                                          }}
-                                          loading="lazy"
-                                        />
-                                      </div>
+                                      <ExternalUrlThumbnail
+                                        url={product.storage_url}
+                                        onClick={() => {
+                                          setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                                          setIsImageViewerOpen(true);
+                                        }}
+                                        width={130}
+                                        height={182}
+                                        className=""
+                                      />
                                     ) : (
-                                      <div className="w-6 h-6 bg-blue-50 rounded-sm flex items-center justify-center shadow-sm">
-                                        <FileText className="h-4 w-4 text-blue-500" />
-                                      </div>
+                                      <ExternalUrlThumbnail
+                                        url={product.storage_url}
+                                        onClick={() => {
+                                          setSelectedPdf(product.storage_url);
+                                          setIsPdfViewerOpen(true);
+                                        }}
+                                        width={130}
+                                        height={182}
+                                        className=""
+                                      />
                                     )
                                   )}
                                 </Button>
