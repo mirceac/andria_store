@@ -8,11 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { getPdfUrl } from "@/lib/pdf-worker";
+import { ImageThumbnail } from "@/components/image-thumbnail";
+import { useState } from "react";
 
 interface OrderItem {
   id: number;
@@ -22,6 +24,10 @@ interface OrderItem {
     id: number;
     name: string;
     image_url: string;
+    image_file?: string;
+    image_data?: string;
+    pdf_file?: string;
+    pdf_data?: string;
   };
 }
 
@@ -35,6 +41,9 @@ export default function OrdersPage() {
     queryKey: ["/api/orders", user?.id],
     enabled: !!user,
   });
+  
+  // Add timestamp for cache busting
+  const timestamp = Date.now();
 
   if (isLoading) {
     return (
@@ -83,6 +92,79 @@ export default function OrdersPage() {
   }, [] as OrderWithItems[]);
 
   console.log('Processed orders:', processedOrders); // Debug log
+  
+  // Log one product to see available fields
+  if (processedOrders.length > 0 && processedOrders[0].items && processedOrders[0].items.length > 0) {
+    console.log('Sample product data:', processedOrders[0].items[0].product);
+  }
+
+  // Helper function to render product media with priority:
+  // 1. Image File > 2. Image DB > 3. PDF File > 4. PDF DB
+  const renderProductMedia = (product: OrderItem['product']) => {
+    if (product.image_file) {
+      // 1. Image File (highest priority)
+      return (
+        <div className="shrink-0">
+          <img 
+            src={`${product.image_file}?v=${timestamp}`}
+            alt={product.name}
+            className="w-[60px] h-[84px] object-contain rounded border"
+          />
+        </div>
+      );
+    } else if (product.image_data) {
+      // 2. Image DB
+      return (
+        <ImageThumbnail
+          productId={product.id}
+          imageUrl={null}
+          imageData={product.image_data}
+          alt={product.name}
+          width={60}
+          height={84}
+          className="shrink-0"
+        />
+      );
+    } else if (product.image_url) {
+      // 2.5 Legacy image_url field
+      return (
+        <div className="shrink-0">
+          <img 
+            src={`${product.image_url}?v=${timestamp}`}
+            alt={product.name}
+            className="w-[60px] h-[84px] object-contain rounded border"
+          />
+        </div>
+      );
+    } else if (product.pdf_file) {
+      // 3. PDF File
+      return (
+        <PDFThumbnail
+          pdfUrl={`${product.pdf_file}?v=${timestamp}`}
+          width={60}
+          height={84}
+          className="shrink-0"
+        />
+      );
+    } else if (product.pdf_data) {
+      // 4. PDF DB
+      return (
+        <PDFThumbnail
+          pdfUrl={getPdfUrl(product.id)}
+          width={60}
+          height={84}
+          className="shrink-0"
+        />
+      );
+    } else {
+      // 5. No content available - show X icon
+      return (
+        <div className="w-[60px] h-[84px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
+          <XCircle className="h-6 w-6 text-gray-300" />
+        </div>
+      );
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -134,12 +216,7 @@ export default function OrdersPage() {
                   <TableRow key={`${order.id}-${item.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-4">
-                        <PDFThumbnail
-                          pdfUrl={getPdfUrl(item.product.id)}
-                          width={60}    // Smaller thumbnail for the table
-                          height={84}   // Maintaining 1.4 aspect ratio
-                          className="shrink-0"
-                        />
+                        {renderProductMedia(item.product)}
                         <div className="flex flex-col">
                           <span className="font-medium">{item.product.name}</span>
                           <span className="text-sm text-gray-500">

@@ -631,7 +631,10 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
+                image_file: products.image_file,
+                image_data: products.image_data,
                 pdf_file: products.pdf_file,
+                pdf_data: products.pdf_data,
               },
             })
             .from(orderItems)
@@ -697,7 +700,10 @@ export function registerRoutes(app: Express): Server {
               product: {
                 id: products.id,
                 name: products.name,
+                image_file: products.image_file,
+                image_data: products.image_data,
                 pdf_file: products.pdf_file,
+                pdf_data: products.pdf_data,
               },
             })
             .from(orderItems)
