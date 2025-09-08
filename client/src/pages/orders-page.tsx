@@ -15,6 +15,8 @@ import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { getPdfUrl } from "@/lib/pdf-worker";
 import { ImageThumbnail } from "@/components/image-thumbnail";
 import { useState } from "react";
+import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 
 interface OrderItem {
   id: number;
@@ -44,6 +46,13 @@ export default function OrdersPage() {
   
   // Add timestamp for cache busting
   const timestamp = Date.now();
+  
+  // State for image/pdf viewer dialogs
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<OrderItem['product'] | null>(null);
 
   if (isLoading) {
     return (
@@ -108,22 +117,33 @@ export default function OrdersPage() {
           <img 
             src={`${product.image_file}?v=${timestamp}`}
             alt={product.name}
-            className="w-[60px] h-[84px] object-contain rounded border"
+            className="w-[60px] h-[84px] object-contain rounded border cursor-pointer"
+            onClick={() => {
+              setSelectedImage(`${product.image_file}?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsImageViewerOpen(true);
+            }}
           />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <ImageThumbnail
-          productId={product.id}
-          imageUrl={null}
-          imageData={product.image_data}
-          alt={product.name}
-          width={60}
-          height={84}
-          className="shrink-0"
-        />
+        <div className="shrink-0 cursor-pointer" onClick={() => {
+          setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
+          setSelectedProduct(product);
+          setIsImageViewerOpen(true);
+        }}>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={null}
+            imageData={product.image_data}
+            alt={product.name}
+            width={60}
+            height={84}
+            className="shrink-0"
+          />
+        </div>
       );
     } else if (product.image_url) {
       // 2.5 Legacy image_url field
@@ -132,29 +152,46 @@ export default function OrdersPage() {
           <img 
             src={`${product.image_url}?v=${timestamp}`}
             alt={product.name}
-            className="w-[60px] h-[84px] object-contain rounded border"
+            className="w-[60px] h-[84px] object-contain rounded border cursor-pointer"
+            onClick={() => {
+              setSelectedImage(`${product.image_url}?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsImageViewerOpen(true);
+            }}
           />
         </div>
       );
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <PDFThumbnail
-          pdfUrl={`${product.pdf_file}?v=${timestamp}`}
-          width={60}
-          height={84}
-          className="shrink-0"
-        />
+        <div className="cursor-pointer" onClick={() => {
+          setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
+          setSelectedProduct(product);
+          setIsPdfViewerOpen(true);
+        }}>
+          <PDFThumbnail
+            pdfUrl={`${product.pdf_file}?v=${timestamp}`}
+            width={60}
+            height={84}
+            className="shrink-0"
+          />
+        </div>
       );
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <PDFThumbnail
-          pdfUrl={getPdfUrl(product.id)}
-          width={60}
-          height={84}
-          className="shrink-0"
-        />
+        <div className="cursor-pointer" onClick={() => {
+          setSelectedPdf(`${getPdfUrl(product.id)}?v=${timestamp}`);
+          setSelectedProduct(product);
+          setIsPdfViewerOpen(true);
+        }}>
+          <PDFThumbnail
+            pdfUrl={getPdfUrl(product.id)}
+            width={60}
+            height={84}
+            className="shrink-0"
+          />
+        </div>
       );
     } else {
       // 5. No content available - show X icon
@@ -167,76 +204,93 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
-      <div className="space-y-6">
-        {processedOrders.map((order) => (
-          <div key={order.id} className="border rounded-lg p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Order #{order.id}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Placed{" "}
-                  {order.created_at
-                    ? formatDistanceToNow(new Date(order.created_at), {
-                        addSuffix: true,
-                      })
-                    : "Unknown date"}
-                </p>
+    <>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+        <div className="space-y-6">
+          {processedOrders.map((order) => (
+            <div key={order.id} className="border rounded-lg p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Order #{order.id}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Placed{" "}
+                    {order.created_at
+                      ? formatDistanceToNow(new Date(order.created_at), {
+                          addSuffix: true,
+                        })
+                      : "Unknown date"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">
+                    Total: ${order.total.toFixed(2)}
+                  </p>
+                  <p
+                    className={`text-sm ${
+                      order.status === "completed"
+                        ? "text-green-600"
+                        : "text-orange-600"
+                    }`}
+                  >
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold">
-                  Total: ${order.total.toFixed(2)}
-                </p>
-                <p
-                  className={`text-sm ${
-                    order.status === "completed"
-                      ? "text-green-600"
-                      : "text-orange-600"
-                  }`}
-                >
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                </p>
-              </div>
-            </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {order.items && order.items.map((item) => (
-                  <TableRow key={`${order.id}-${item.id}`}>
-                    <TableCell>
-                      <div className="flex items-center gap-4">
-                        {renderProductMedia(item.product)}
-                        <div className="flex flex-col">
-                          <span className="font-medium">{item.product.name}</span>
-                          <span className="text-sm text-gray-500">
-                            ${(item.price / item.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>${item.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Unit Price</TableHead>
+                    <TableHead>Total</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ))}
+                </TableHeader>
+                <TableBody>
+                  {order.items && order.items.map((item) => (
+                    <TableRow key={`${order.id}-${item.id}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-4">
+                          {renderProductMedia(item.product)}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.product.name}</span>
+                            <span className="text-sm text-gray-500">
+                              ${(item.price / item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>${item.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+      
+      {/* PDF Viewer Dialog */}
+      <PDFViewerDialog
+        open={isPdfViewerOpen}
+        onOpenChange={setIsPdfViewerOpen}
+        pdfUrl={selectedPdf}
+        title={selectedProduct?.name}
+      />
+      
+      {/* Image Viewer Dialog */}
+      <ImageViewerDialog
+        open={isImageViewerOpen}
+        onOpenChange={setIsImageViewerOpen}
+        url={selectedImage}
+      />
+    </>
   );
 }
