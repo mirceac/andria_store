@@ -30,13 +30,6 @@ export function ImageThumbnail({
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(imageUrl);
 
   useEffect(() => {
-    // If we've already successfully loaded this image before, don't reload
-    if (imageUrl && hasBeenLoaded()) {
-      setLoading(false);
-      setError(false);
-      return;
-    }
-
     setLoading(true);
     setError(false);
 
@@ -44,35 +37,22 @@ export function ImageThumbnail({
       // If we have a direct URL, use it
       setImageSrc(imageUrl);
     } else if (imageData) {
-      try {
-        // First, check if the imageData is a JSON string containing content type and data
-        try {
-          const parsedData = JSON.parse(imageData);
-          if (parsedData && parsedData.contentType && parsedData.data) {
-            // This is a JSON object with content type and base64 data
-            setImageSrc(`data:${parsedData.contentType};base64,${parsedData.data}`);
-            return;
-          }
-        } catch (e) {
-          // Not JSON, which is fine - continue with normal processing
-        }
-
-        // If it's not JSON, assume it's raw base64 data and try different MIME types
-        setImageSrc(`data:image/jpeg;base64,${imageData}`);
-      } catch (err) {
-        console.error('Error processing image data:', err);
+      // For database-stored images, always use the API endpoint to avoid issues
+      // This is safer and more reliable than trying to parse the data client-side
+      if (productId) {
+        setImageSrc(`/api/products/${productId}/img`);
+      } else {
         setError(true);
         setLoading(false);
       }
     } else if (productId) {
-      // If we have neither URL nor data, use the API endpoint with cache busting
-      const timestamp = Date.now();
-      setImageSrc(`/api/products/${productId}/img?v=${timestamp}`);
+      // If we have neither URL nor data, use the API endpoint
+      setImageSrc(`/api/products/${productId}/img`);
     } else {
       setError(true);
       setLoading(false);
     }
-  }, [productId, imageUrl, imageData, hasBeenLoaded]);
+  }, [productId, imageUrl, imageData]);
 
   const handleLoad = () => {
     setLoading(false);
@@ -82,35 +62,6 @@ export function ImageThumbnail({
   };
 
   const handleError = () => {
-    if (imageData) {
-      // If the first attempt with JPEG failed, try PNG
-      if (imageSrc && imageSrc.includes('image/jpeg')) {
-        setImageSrc(`data:image/png;base64,${imageData}`);
-        return;
-      }
-      
-      // If PNG failed, try a generic format
-      if (imageSrc && imageSrc.includes('image/png')) {
-        setImageSrc(`data:image/webp;base64,${imageData}`);
-        return;
-      }
-      
-      // If all else fails, use the API endpoint if we have a product ID
-      if (productId && !imageSrc?.includes('/api/')) {
-        const timestamp = Date.now();
-        setImageSrc(`/api/products/${productId}/img?v=${timestamp}`);
-        return;
-      }
-    } else if (imageUrl && imageUrl.includes('/api/proxy/image')) {
-      // If we're using the proxy for an external URL and it failed,
-      // try again with a different query parameter to bypass cache
-      const newUrl = `${imageUrl}&retry=${Date.now()}`;
-      console.log('Retrying proxy with bypass cache:', newUrl);
-      clearCache(); // Clear cache for this URL since we're having to retry
-      setImageSrc(newUrl);
-      return;
-    }
-    
     console.error('Failed to load image:', { imageUrl, imageData });
     setLoading(false);
     setError(true);
