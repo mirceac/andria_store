@@ -19,6 +19,7 @@ import { getPdfUrl } from "@/lib/pdf-worker";
 import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
 import { cn } from "@/lib/utils";
+import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 
 export default function HomePage() {
   const { search } = useSearch();
@@ -151,18 +152,17 @@ export default function HomePage() {
         // External Image URL
         return (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
-              <img 
-                src={`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}&v=${timestamp}`}
-                alt={product.name}
-                className="max-h-[190px] object-contain cursor-pointer"
-                onClick={() => {
-                  setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
-                  setSelectedProduct(product);
-                  setIsImageViewerOpen(true);
-                }}
-              />
-            </div>
+            <ExternalUrlThumbnail
+              url={product.storage_url}
+              onClick={() => {
+                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                setSelectedProduct(product);
+                setIsImageViewerOpen(true);
+              }}
+              width={190}
+              height={190}
+              className="h-full"
+            />
           </div>
         );
       } else if (isPdfUrl) {

@@ -18,6 +18,7 @@ import { ImageThumbnail } from "@/components/image-thumbnail";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { cn } from "@/lib/utils";
+import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import {
   Table,
   TableBody,
@@ -138,18 +139,20 @@ export default function CartPage() {
       );
     } else if (product.storage_url) {
       // 5. Storage URL (lowest priority)
-      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png)$/i);
+      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
+                     (product.storage_url.includes('image') || 
+                      product.storage_url.includes('img') || 
+                      product.storage_url.includes('photo') ||
+                      product.storage_url.includes('picture'));
+      
       if (isImage) {
         return (
           <div className="relative">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
-            <ImageThumbnail
-              productId={product.id}
-              imageUrl={`${product.storage_url}?v=${refreshTimestamp}`}
-              imageData={null}
-              alt={product.name}
+            <ExternalUrlThumbnail
+              url={product.storage_url}
               onClick={() => {
-                setSelectedImage(`${product.storage_url}?v=${refreshTimestamp}`);
+                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
                 setIsImageViewerOpen(true);
               }}
             />

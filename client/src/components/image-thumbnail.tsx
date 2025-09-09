@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { useStorageCache } from "@/hooks/use-storage-cache";
 
 interface ImageThumbnailProps {
   productId: number;
@@ -26,8 +27,16 @@ export function ImageThumbnail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(imageUrl);
 
   useEffect(() => {
+    // If we've already successfully loaded this image before, don't reload
+    if (imageUrl && hasBeenLoaded()) {
+      setLoading(false);
+      setError(false);
+      return;
+    }
+
     setLoading(true);
     setError(false);
 
@@ -63,10 +72,13 @@ export function ImageThumbnail({
       setError(true);
       setLoading(false);
     }
-  }, [productId, imageUrl, imageData]);
+  }, [productId, imageUrl, imageData, hasBeenLoaded]);
 
   const handleLoad = () => {
     setLoading(false);
+    if (imageUrl) {
+      markAsLoaded(); // Mark as successfully loaded
+    }
   };
 
   const handleError = () => {
@@ -94,6 +106,7 @@ export function ImageThumbnail({
       // try again with a different query parameter to bypass cache
       const newUrl = `${imageUrl}&retry=${Date.now()}`;
       console.log('Retrying proxy with bypass cache:', newUrl);
+      clearCache(); // Clear cache for this URL since we're having to retry
       setImageSrc(newUrl);
       return;
     }

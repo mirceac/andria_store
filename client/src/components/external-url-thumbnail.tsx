@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2, XCircle, FileText } from "lucide-react";
+import { Loader2, XCircle, FileText, RefreshCw } from "lucide-react";
+import { useImageLoader } from "@/hooks/use-image-loader";
 
 interface ExternalUrlThumbnailProps {
   url: string | null;
@@ -19,52 +20,19 @@ export function ExternalUrlThumbnail({
   height = 182,
   size
 }: ExternalUrlThumbnailProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
-
   // Check if it's a PDF
   const isPdf = url ? url.match(/\.(pdf)$/i) !== null : false;
-
-  useEffect(() => {
-    setLoading(true);
-    setError(false);
-
-    if (!url) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
-
-    // Create a proxy URL for external images
-    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}&thumbnail=1`;
-    setImageSrc(proxyUrl);
-    
-    // For PDFs, we don't need to show loading state
-    if (isPdf) {
-      setLoading(false);
-    }
-  }, [url, isPdf]);
-
-  const handleLoad = () => {
-    setLoading(false);
-  };
-
-  const handleError = () => {
-    if (imageSrc && imageSrc.includes('/api/proxy/image')) {
-      // If we're using the proxy for an external URL and it failed,
-      // try again with a different query parameter to bypass cache
-      const newUrl = `${imageSrc}&retry=${Date.now()}`;
-      console.log('Retrying proxy with bypass cache:', newUrl);
-      setImageSrc(newUrl);
-      return;
-    }
-    
-    console.error('Failed to load external image:', url);
-    setLoading(false);
-    setError(true);
-  };
-
+  
+  // Format the image source with a proxy for non-PDF URLs
+  const formattedSrc = url && !isPdf 
+    ? `/api/proxy/image?url=${encodeURIComponent(url)}` 
+    : null;
+  
+  // Use our custom hook for image loading
+  const { loading, error, retry, actualSrc } = useImageLoader(formattedSrc, { 
+    timeoutMs: 3000 
+  });
+  
   // Size presets similar to ImageThumbnail
   let finalWidth = width;
   let finalHeight = height;
@@ -86,9 +54,6 @@ export function ExternalUrlThumbnail({
     }
   }
   
-  // Don't allow className to override dimensions
-  // We want exact consistency with other thumbnails
-
   // If it's a PDF, render a PDF icon
   if (isPdf) {
     return (
@@ -124,18 +89,26 @@ export function ExternalUrlThumbnail({
       )}
 
       {error ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 text-xs text-center p-2">
-          <XCircle className="h-6 w-6 text-gray-400" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 text-xs text-center p-2">
+          <XCircle className="h-6 w-6 text-gray-400 mb-1" />
+          <span>Failed to load</span>
+          <button
+            className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              retry();
+            }}
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Retry
+          </button>
         </div>
       ) : (
-        imageSrc && (
+        !loading && actualSrc && (
           <img
-            src={imageSrc}
+            src={actualSrc}
             alt="External URL"
             className="max-h-full max-w-full object-contain"
-            style={{ opacity: loading ? 0 : 1 }}
-            onLoad={handleLoad}
-            onError={handleError}
           />
         )
       )}

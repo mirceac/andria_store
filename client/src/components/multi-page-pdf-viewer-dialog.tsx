@@ -1,62 +1,30 @@
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, ZoomIn, ZoomOut, X, RefreshCw, FileText, RotateCw } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Loader2, ZoomIn, ZoomOut, X, RefreshCw, FileText, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page } from 'react-pdf';
 import { initPdfWorker } from '@/lib/pdf-worker';
 import { useStorageCache } from "@/hooks/use-storage-cache";
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-import './pdf-viewer.css';
+import '../components/pdf-viewer.css';
 
 // Initialize PDF worker
 initPdfWorker();
 
-export function PDFViewer({ url, scale = 1.0 }: { url: string; scale?: number }) {
-  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    // Set initial dimensions based on container width
-    setDimensions({
-      width: 400, // thumbnail width
-      height: 160 // thumbnail height (40px container)
-    });
-  };
-
-  return (
-    <div className="w-full h-40 flex items-center justify-center bg-white">
-      <Document
-        file={url}
-        loading={<Loader2 className="h-8 w-8 animate-spin" />}
-        error={<p>Unable to load PDF file.</p>}
-        onLoadSuccess={onDocumentLoadSuccess}
-      >
-        <Page
-          pageNumber={1}
-          scale={scale}
-          renderTextLayer={false}
-          renderAnnotationLayer={false}
-          loading={null}
-          width={400}
-        />
-      </Document>
-    </div>
-  );
-}
-
-interface PDFViewerDialogProps {
+interface MultiPagePDFViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pdfUrl: string | null;
   title?: string;
 }
 
-export function PDFViewerDialog({
+export function MultiPagePDFViewerDialog({
   open,
   onOpenChange,
   pdfUrl,
   title
-}: PDFViewerDialogProps) {
+}: MultiPagePDFViewerDialogProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
@@ -66,6 +34,8 @@ export function PDFViewerDialog({
   const [rotation, setRotation] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(pdfUrl);
@@ -73,6 +43,8 @@ export function PDFViewerDialog({
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
+  const handleNextPage = () => setPageNumber(prev => Math.min(prev + 1, numPages));
+  const handlePrevPage = () => setPageNumber(prev => Math.max(prev - 1, 1));
 
   // Update URL with retry count
   useEffect(() => {
@@ -128,6 +100,16 @@ export function PDFViewerDialog({
     setRetryCount(prev => prev + 1);
   };
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setIsLoading(false);
+    setError(null);
+    markAsLoaded(); // Mark this URL as successfully loaded
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  };
+
   // Set up loading timeout
   useEffect(() => {
     if (open && currentUrl) {
@@ -168,14 +150,15 @@ export function PDFViewerDialog({
       setScale(1);
       setPosition({ x: 0, y: 0 });
       setRotation(0);
+      setPageNumber(1);
       // Reset retry count when dialog is opened
       setRetryCount(0);
     }
   }, [open]);
 
   // Adjusted dimensions to better fit the dialog
-  const baseWidth = 350;
-  const baseHeight = 500;
+  const baseWidth = 400;
+  const baseHeight = 550;
 
   // Calculate the dimensions based on rotation
   const isLandscape = rotation === 90 || rotation === 270;
@@ -275,14 +258,7 @@ export function PDFViewerDialog({
               {currentUrl && !error && (
                 <Document
                   file={currentUrl}
-                  onLoadSuccess={() => {
-                    setIsLoading(false);
-                    setError(null);
-                    markAsLoaded(); // Mark this URL as successfully loaded
-                    if (timeoutRef.current) {
-                      clearTimeout(timeoutRef.current);
-                    }
-                  }}
+                  onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={(err) => {
                     console.error('Error loading PDF:', err);
                     setIsLoading(false);
@@ -295,7 +271,7 @@ export function PDFViewerDialog({
                   className="pdf-document"
                 >
                   <Page
-                    pageNumber={1}
+                    pageNumber={pageNumber}
                     width={displayWidth * scale}
                     height={displayHeight * scale}
                     renderTextLayer={false}
@@ -307,6 +283,33 @@ export function PDFViewerDialog({
             </div>
           </div>
         </div>
+        
+        {/* Page navigation */}
+        {numPages > 1 && (
+          <div className="flex items-center justify-center py-2 border-t gap-4">
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={handlePrevPage}
+              disabled={pageNumber <= 1}
+              title="Previous Page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
+              Page {pageNumber} of {numPages}
+            </span>
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={handleNextPage}
+              disabled={pageNumber >= numPages}
+              title="Next Page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
