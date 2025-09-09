@@ -45,13 +45,7 @@ export default function CartPage() {
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
   const [, setLocation] = useLocation();
 
-  // Add timestamp refresh to prevent stale cache
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshTimestamp(Date.now());
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  // Removed automatic refresh - timestamp is set once and only updated when needed
 
   const navigateToHome = () => {
     // Instead of using window.location.href which causes a full page reload

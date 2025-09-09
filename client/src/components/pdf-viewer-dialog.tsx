@@ -70,7 +70,7 @@ export function PDFViewerDialog({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(pdfUrl);
 
-  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
+  const handleZoomIn = () => setScale(prev => prev + 0.1);
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
@@ -212,7 +212,6 @@ export function PDFViewerDialog({
               variant="secondary"
               className="p-2"
               onClick={handleZoomIn}
-              disabled={scale >= 2}
               title="Zoom In"
             >
               <ZoomIn className="h-4 w-4" />
@@ -297,7 +296,6 @@ export function PDFViewerDialog({
                   <Page
                     pageNumber={1}
                     width={displayWidth * scale}
-                    height={displayHeight * scale}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
                     rotate={rotation}
