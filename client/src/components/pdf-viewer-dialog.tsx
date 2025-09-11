@@ -255,13 +255,16 @@ export function PDFViewerDialog({
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-4 text-center">
                 <FileText className="h-16 w-16 mb-2 text-gray-400" />
                 <p className="mb-4 text-gray-600">{error}</p>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
-                  onClick={handleRetry}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Retry Loading
-                </button>
+                {/* Only show retry button for temporary errors, not for missing or corrupted files */}
+                {error !== "File not found" && error !== "Invalid or corrupted PDF file" && (
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
+                    onClick={handleRetry}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry Loading
+                  </button>
+                )}
               </div>
             )}
             <div 
@@ -283,9 +286,63 @@ export function PDFViewerDialog({
                     }
                   }}
                   onLoadError={(err) => {
-                    console.error('Error loading PDF:', err);
+                    console.error('Error loading PDF:', err, currentUrl);
                     setIsLoading(false);
-                    setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                    
+                    // Check if this is an "Invalid PDF structure" error
+                    if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
+                      console.log('PDF viewer: Invalid PDF structure detected for', currentUrl);
+                      
+                      // First check if the server actually returned HTML (file not found case)
+                      fetch(currentUrl, { method: 'HEAD' })
+                        .then(response => {
+                          const contentType = response.headers.get('content-type') || '';
+                          const isHtml = contentType.includes('text/html');
+                          
+                          if (isHtml || response.status === 404) {
+                            console.log('PDF viewer: Server returned HTML/404, this is a missing file');
+                            setError("File not found");
+                          } else {
+                            console.log('PDF viewer: Server returned PDF content-type, this is a corrupted file');
+                            setError("Invalid or corrupted PDF file");
+                          }
+                        })
+                        .catch(() => {
+                          // If fetch fails, assume it's a missing file
+                          setError("File not found");
+                        });
+                      
+                      if (timeoutRef.current) {
+                        clearTimeout(timeoutRef.current);
+                      }
+                      return;
+                    }
+                    
+                    // Check if this is a file not found error
+                    if (currentUrl) {
+                      fetch(currentUrl, { method: 'HEAD' })
+                        .then(response => {
+                          console.log('PDF viewer fetch response:', response.status, response.headers.get('content-type'), currentUrl);
+                          
+                          // Check if it's a 404 OR if we got HTML/JSON instead of a PDF (fallback responses)
+                          const contentType = response.headers.get('content-type') || '';
+                          const isHtml = contentType.includes('text/html');
+                          const isJson = contentType.includes('application/json');
+                          
+                          if (response.status === 404 || isHtml || isJson) {
+                            setError("File not found");
+                          } else {
+                            setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                          }
+                        })
+                        .catch((fetchErr) => {
+                          console.log('PDF viewer fetch error:', fetchErr, currentUrl);
+                          setError("File not found"); // Assume network errors mean file not found
+                        });
+                    } else {
+                      setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                    }
+                    
                     if (timeoutRef.current) {
                       clearTimeout(timeoutRef.current);
                     }

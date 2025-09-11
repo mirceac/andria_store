@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Document, Page } from 'react-pdf';
 import { Loader2, FileText, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,73 +20,60 @@ export function PDFThumbnail({
   height = 182, // default height (maintaining 1.4 aspect ratio)
   className 
 }: PDFThumbnailProps) {
+  // Simplified state management
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [currentUrl, setCurrentUrl] = useState(pdfUrl);
-  const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(pdfUrl);
+  
+  // Generate URL using useMemo to prevent unnecessary re-renders
+  const currentUrl = useMemo(() => {
+    if (!pdfUrl) return null;
+    const baseUrl = pdfUrl.split('?')[0];
+    return retryCount > 0 
+      ? `${baseUrl}?retry=${retryCount}&t=${Date.now()}`
+      : `${baseUrl}?t=${Date.now()}`;
+  }, [pdfUrl, retryCount]);
 
   // Initialize the PDF worker
   useEffect(() => {
     initPdfWorker();
   }, []);
 
-  // Add cache-busting parameter for retries
+  // Single effect to handle loading state and timeout
   useEffect(() => {
-    // If we've already successfully loaded this PDF before, don't reload
-    if (hasBeenLoaded() && retryCount === 0) {
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
-    if (retryCount > 0) {
-      const urlWithRetry = pdfUrl.includes('?') 
-        ? `${pdfUrl}&retry=${retryCount}` 
-        : `${pdfUrl}?retry=${retryCount}`;
-      setCurrentUrl(urlWithRetry);
-    } else {
-      setCurrentUrl(pdfUrl);
-    }
-  }, [pdfUrl, retryCount, hasBeenLoaded]);
-
-  // Set up loading timeout
-  useEffect(() => {
-    // If we've already successfully loaded this PDF before, don't set up timeout
-    if (hasBeenLoaded() && retryCount === 0) {
+    if (!currentUrl) {
+      setError("No PDF available");
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    console.log('PDF thumbnail: Starting load for URL:', currentUrl);
     setError(null);
+    setIsLoading(true);
 
-    // Set a timeout to prevent infinite loading state
+    // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
+    // Set timeout for missing files
     timeoutRef.current = setTimeout(() => {
-      if (isLoading) {
-        console.log('PDF loading timed out:', pdfUrl);
-        setIsLoading(false);
-        setError("Loading timeout - PDF may be too large or unavailable");
-      }
-    }, 8000); // 8 seconds timeout
+      console.log('PDF thumbnail: Timeout reached, setting File not found');
+      setIsLoading(false);
+      setError("File not found");
+    }, 3000);
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [pdfUrl, retryCount, hasBeenLoaded, isLoading]);
+  }, [currentUrl]);
 
   const handleRetry = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsLoading(true);
-    setError(null);
-    clearCache(); // Clear the cache for this URL to force reload
+    console.log('PDF thumbnail: Retrying load');
     setRetryCount(prev => prev + 1);
   };
 
@@ -107,31 +94,104 @@ export function PDFThumbnail({
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-2 text-center">
           <FileText className="h-8 w-8 mb-1 text-gray-400" />
-          <span className="text-xs">PDF unavailable</span>
-          <button
-            className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-            onClick={handleRetry}
-          >
-            <RefreshCw className="w-3 h-3 mr-1" />
-            Retry
-          </button>
+          <span className="text-xs">
+            {error === "File not found" ? "File not found" : 
+             error === "Invalid PDF file" ? "Invalid PDF file" : 
+             "PDF unavailable"}
+          </span>
+          {error !== "File not found" && error !== "Invalid PDF file" && (
+            <button
+              className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+              onClick={handleRetry}
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry
+            </button>
+          )}
         </div>
       )}
-      <div key={`pdf-${retryCount}`}>
-        <Document
-          file={currentUrl}
+      {currentUrl && (
+        <div key={`pdf-${retryCount}`}>
+          <Document
+            file={currentUrl}
           onLoadSuccess={() => {
+            console.log('PDF thumbnail: onLoadSuccess called for', currentUrl);
             setIsLoading(false);
             setError(null);
-            markAsLoaded(); // Mark as successfully loaded
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
             }
           }}
           onLoadError={(err) => {
-            console.error('Error loading PDF thumbnail:', err);
+            console.log('PDF thumbnail: onLoadError called for', currentUrl, 'Error:', err);
             setIsLoading(false);
-            setError(err.message || "Failed to load PDF");
+            
+            // Check if this is an "Invalid PDF structure" error
+            if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
+              console.log('PDF thumbnail: Invalid PDF structure detected for', currentUrl);
+              
+              // First check if the server actually returned HTML (file not found case)
+              if (!currentUrl) {
+                setError("File not found");
+                return;
+              }
+              
+              fetch(currentUrl, { method: 'HEAD' })
+                .then(response => {
+                  const contentType = response.headers.get('content-type') || '';
+                  const isHtml = contentType.includes('text/html');
+                  
+                  if (isHtml || response.status === 404) {
+                    console.log('PDF thumbnail: Server returned HTML/404, this is a missing file');
+                    setError("File not found");
+                  } else {
+                    console.log('PDF thumbnail: Server returned PDF content-type, this is a corrupted file');
+                    setError("Invalid PDF file");
+                  }
+                })
+                .catch(() => {
+                  // If fetch fails, assume it's a missing file
+                  console.log('PDF thumbnail: Fetch failed, assuming missing file');
+                  setError("File not found");
+                });
+              
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
+              return;
+            }
+            
+            // For other errors, do a quick HEAD request to determine the issue
+            console.log('PDF thumbnail: Other error, testing URL:', currentUrl, 'Error type:', err?.name, 'Message:', err?.message);
+            
+            if (!currentUrl) {
+              setError("File not found");
+              return;
+            }
+            
+            fetch(currentUrl, { method: 'HEAD' })
+              .then(response => {
+                console.log('PDF thumbnail fetch response:', response.status, response.headers.get('content-type'), currentUrl);
+                
+                // Check if it's a 404 OR if we got HTML/JSON instead of a PDF (fallback responses)
+                const contentType = response.headers.get('content-type') || '';
+                const isHtml = contentType.includes('text/html');
+                const isJson = contentType.includes('application/json');
+                
+                if (response.status === 404 || isHtml || isJson) {
+                  console.log('PDF thumbnail: Setting "File not found" error for', currentUrl, 'Status:', response.status, 'Content-Type:', contentType);
+                  setError("File not found");
+                } else {
+                  console.log('PDF thumbnail: Setting generic error for', currentUrl);
+                  setError(err?.message || "Failed to load PDF");
+                }
+              })
+              .catch((fetchErr) => {
+                console.log('PDF thumbnail fetch error:', fetchErr, currentUrl);
+                console.log('PDF thumbnail: Setting "File not found" due to fetch error');
+                setError("File not found"); // Assume network errors mean file not found
+              });
+            
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
             }
@@ -147,7 +207,8 @@ export function PDFThumbnail({
             className="flex items-center justify-center"
           />
         </Document>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

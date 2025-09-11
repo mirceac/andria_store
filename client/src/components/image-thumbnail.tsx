@@ -26,28 +26,36 @@ export function ImageThumbnail({
 }: ImageThumbnailProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(imageUrl);
 
   useEffect(() => {
+    console.log('ImageThumbnail useEffect:', { productId, imageUrl, imageData: !!imageData });
     setLoading(true);
     setError(false);
+    setErrorMessage(null);
 
     if (imageUrl) {
       // If we have a direct URL, use it
+      console.log('Using imageUrl:', imageUrl);
       setImageSrc(imageUrl);
     } else if (imageData) {
       // For database-stored images, always use the API endpoint to avoid issues
       // This is safer and more reliable than trying to parse the data client-side
       if (productId) {
-        setImageSrc(`/api/products/${productId}/img`);
+        const apiUrl = `/api/products/${productId}/img`;
+        console.log('Using API endpoint for imageData:', apiUrl);
+        setImageSrc(apiUrl);
       } else {
         setError(true);
         setLoading(false);
       }
     } else if (productId) {
       // If we have neither URL nor data, use the API endpoint
-      setImageSrc(`/api/products/${productId}/img`);
+      const apiUrl = `/api/products/${productId}/img`;
+      console.log('Using API endpoint (no data):', apiUrl);
+      setImageSrc(apiUrl);
     } else {
       setError(true);
       setLoading(false);
@@ -62,9 +70,36 @@ export function ImageThumbnail({
   };
 
   const handleError = () => {
-    console.error('Failed to load image:', { imageUrl, imageData });
+    console.error('Failed to load image:', { imageUrl, imageData, imageSrc });
     setLoading(false);
-    setError(true);
+    
+    // Check if this is a file not found error
+    if (imageSrc) {
+      fetch(imageSrc, { method: 'HEAD' })
+        .then(response => {
+          console.log('Image fetch response:', response.status, response.headers.get('content-type'), imageSrc);
+          
+          // Check if it's a 404 OR if we got HTML/JSON instead of an image (fallback responses)
+          const contentType = response.headers.get('content-type') || '';
+          const isHtml = contentType.includes('text/html');
+          const isJson = contentType.includes('application/json');
+          
+          if (response.status === 404 || isHtml || isJson) {
+            setErrorMessage("File not found");
+          } else {
+            setErrorMessage(null);
+          }
+          setError(true);
+        })
+        .catch((err) => {
+          console.log('Image fetch error:', err, imageSrc);
+          setErrorMessage("File not found"); // Assume network errors mean file not found
+          setError(true);
+        });
+    } else {
+      setError(true);
+      setErrorMessage(null);
+    }
   };
 
   return (
@@ -85,7 +120,9 @@ export function ImageThumbnail({
       {error ? (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 text-xs text-center p-2">
           <div className="text-center p-2">
-            {productId ? (
+            {errorMessage === "File not found" ? (
+              <span className="text-red-500">File not found</span>
+            ) : productId ? (
               <a 
                 href={`/api/products/${productId}/img?v=${Date.now()}`} 
                 target="_blank" 

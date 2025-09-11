@@ -85,8 +85,32 @@ export function ImageThumbnail({
         className="w-full h-full object-cover"
         loading="lazy"
         onError={(e) => {
-          console.error('Image load error:', e);
-          setError('Failed to load image');
+          console.error('Image load error:', e, imageSource);
+          
+          // Check if this is a file not found error
+          if (imageSource) {
+            fetch(imageSource, { method: 'HEAD' })
+              .then(response => {
+                console.log('UI Image fetch response:', response.status, response.headers.get('content-type'), imageSource);
+                
+                // Check if it's a 404 OR if we got HTML/JSON instead of an image (fallback responses)
+                const contentType = response.headers.get('content-type') || '';
+                const isHtml = contentType.includes('text/html');
+                const isJson = contentType.includes('application/json');
+                
+                if (response.status === 404 || isHtml || isJson) {
+                  setError('File not found');
+                } else {
+                  setError('Failed to load image');
+                }
+              })
+              .catch((fetchErr) => {
+                console.log('UI Image fetch error:', fetchErr, imageSource);
+                setError('File not found'); // Assume network errors mean file not found
+              });
+          } else {
+            setError('Failed to load image');
+          }
         }}
       />
     </div>
