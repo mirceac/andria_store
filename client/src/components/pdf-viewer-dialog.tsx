@@ -59,6 +59,7 @@ export function PDFViewerDialog({
 }: PDFViewerDialogProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasErrorOccurred, setHasErrorOccurred] = useState(false);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -124,17 +125,28 @@ export function PDFViewerDialog({
   const handleRetry = () => {
     setIsLoading(true);
     setError(null);
+    setHasErrorOccurred(false);
     clearCache(); // Clear the cache for this URL to force a reload
     setRetryCount(prev => prev + 1);
   };
 
   // Set up loading timeout
   useEffect(() => {
-    if (open && currentUrl) {
+    if (open && currentUrl && !hasErrorOccurred) {
       // If we've already successfully loaded this PDF before and we're not explicitly retrying,
       // don't set up the loading process again
       if (hasBeenLoaded() && retryCount === 0) {
         setIsLoading(false);
+        return;
+      }
+
+      // Check if we've exceeded maximum retry attempts (3 tries total)
+      if (retryCount >= 3) {
+        console.log('PDF viewer: Maximum retry attempts reached, stopping');
+        setIsLoading(false);
+        setHasErrorOccurred(true);
+        setCurrentUrl(null);
+        setError("Cannot load PDF - Maximum retry attempts exceeded. The file may be corrupted or unavailable.");
         return;
       }
       
@@ -146,14 +158,20 @@ export function PDFViewerDialog({
         clearTimeout(timeoutRef.current);
       }
       
-      // Set a new timeout
+      // Set a new timeout - shorter timeout for quicker failure detection
       timeoutRef.current = setTimeout(() => {
-        if (isLoading) {
-          console.log('PDF viewer loading timed out:', currentUrl);
+        if (isLoading && retryCount < 3) {
+          console.log('PDF viewer loading timed out, attempt:', retryCount + 1);
+          // Auto-retry up to 3 times
+          setRetryCount(prev => prev + 1);
+        } else if (retryCount >= 3) {
+          console.log('PDF viewer: Maximum retries reached after timeout');
           setIsLoading(false);
-          setError("Loading timeout - PDF may be too large or unavailable");
+          setHasErrorOccurred(true);
+          setCurrentUrl(null);
+          setError("Cannot load PDF - The file appears to be unavailable or corrupted after multiple attempts.");
         }
-      }, 10000); // 10 seconds timeout
+      }, 3000); // Reduced to 3 seconds timeout
     }
     
     return () => {
@@ -161,7 +179,7 @@ export function PDFViewerDialog({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [open, currentUrl, retryCount, hasBeenLoaded, isLoading]);
+  }, [open, currentUrl, retryCount, hasBeenLoaded, isLoading, hasErrorOccurred]);
 
   useEffect(() => {
     if (open) {
@@ -170,6 +188,10 @@ export function PDFViewerDialog({
       setRotation(0);
       // Reset retry count when dialog is opened
       setRetryCount(0);
+      // Reset error states
+      setError(null);
+      setHasErrorOccurred(false);
+      setIsLoading(true);
     }
   }, [open]);
 
@@ -246,25 +268,36 @@ export function PDFViewerDialog({
           onMouseLeave={handleMouseUp}
         >
           <div className="w-full h-full flex items-center justify-center bg-black/10">
-            {isLoading && (
+            {isLoading && !error && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-4 text-center">
-                <FileText className="h-16 w-16 mb-2 text-gray-400" />
-                <p className="mb-4 text-gray-600">{error}</p>
-                {/* Only show retry button for temporary errors, not for missing or corrupted files */}
-                {error !== "File not found" && error !== "Invalid or corrupted PDF file" && (
-                  <button
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
-                    onClick={handleRetry}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Retry Loading
-                  </button>
-                )}
+              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
+                <div className="text-center max-w-md p-4">
+                  <div className="w-16 h-16 mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14,2 14,8 20,8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <line x1="10" y1="9" x2="8" y2="9"></line>
+                      <line x1="3" y1="21" x2="21" y2="3" className="text-red-500" strokeWidth="1.5"></line>
+                    </svg>
+                  </div>
+                  <p className="font-semibold text-lg text-amber-700 mb-2">Failed to load PDF</p>
+                  <p className="text-sm text-amber-600 mb-4">{error}</p>
+                  <div className="text-xs text-gray-500 text-left bg-white p-3 rounded-md shadow-sm">
+                    <p className="mb-2">Possible solutions:</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Check if the PDF file exists and is accessible</li>
+                      <li>Verify the file is not corrupted</li>
+                      <li>Try refreshing the page</li>
+                      <li>Contact support if the problem persists</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}
             <div 
@@ -274,7 +307,7 @@ export function PDFViewerDialog({
                 cursor: isDragging ? 'grabbing' : (error ? 'default' : 'grab')
               }}
             >
-              {currentUrl && !error && (
+              {currentUrl && !error && !hasErrorOccurred && (
                 <Document
                   file={currentUrl}
                   onLoadSuccess={() => {
@@ -286,31 +319,15 @@ export function PDFViewerDialog({
                     }
                   }}
                   onLoadError={(err) => {
-                    console.error('Error loading PDF:', err, currentUrl);
-                    setIsLoading(false);
+                    console.error('Error loading PDF:', err, currentUrl, 'Attempt:', retryCount + 1);
                     
-                    // Check if this is an "Invalid PDF structure" error
-                    if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
-                      console.log('PDF viewer: Invalid PDF structure detected for', currentUrl);
-                      
-                      // First check if the server actually returned HTML (file not found case)
-                      fetch(currentUrl, { method: 'HEAD' })
-                        .then(response => {
-                          const contentType = response.headers.get('content-type') || '';
-                          const isHtml = contentType.includes('text/html');
-                          
-                          if (isHtml || response.status === 404) {
-                            console.log('PDF viewer: Server returned HTML/404, this is a missing file');
-                            setError("File not found");
-                          } else {
-                            console.log('PDF viewer: Server returned PDF content-type, this is a corrupted file');
-                            setError("Invalid or corrupted PDF file");
-                          }
-                        })
-                        .catch(() => {
-                          // If fetch fails, assume it's a missing file
-                          setError("File not found");
-                        });
+                    // Check if we've reached maximum retry attempts
+                    if (retryCount >= 2) { // 0, 1, 2 = 3 attempts total
+                      console.log('PDF viewer: Maximum retry attempts reached after error');
+                      setIsLoading(false);
+                      setHasErrorOccurred(true);
+                      setCurrentUrl(null);
+                      setError("Cannot load PDF - The file appears to be corrupted or unavailable after multiple attempts.");
                       
                       if (timeoutRef.current) {
                         clearTimeout(timeoutRef.current);
@@ -318,29 +335,48 @@ export function PDFViewerDialog({
                       return;
                     }
                     
-                    // Check if this is a file not found error
-                    if (currentUrl) {
-                      fetch(currentUrl, { method: 'HEAD' })
+                    // For the first 2 attempts, try to determine the specific error type
+                    setIsLoading(false);
+                    
+                    // Check if this is an "Invalid PDF structure" error - could be HTML response (file not found)
+                    if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
+                      console.log('PDF viewer: Invalid PDF structure detected, checking if file exists, attempt:', retryCount + 1);
+                      
+                      // Check if the server actually returned HTML (file not found case)
+                      fetch(pdfUrl || '', { method: 'HEAD' })
                         .then(response => {
-                          console.log('PDF viewer fetch response:', response.status, response.headers.get('content-type'), currentUrl);
-                          
-                          // Check if it's a 404 OR if we got HTML/JSON instead of a PDF (fallback responses)
                           const contentType = response.headers.get('content-type') || '';
                           const isHtml = contentType.includes('text/html');
-                          const isJson = contentType.includes('application/json');
                           
-                          if (response.status === 404 || isHtml || isJson) {
-                            setError("File not found");
+                          if (isHtml || response.status === 404) {
+                            console.log('PDF viewer: Server returned HTML/404, file not found');
+                            setHasErrorOccurred(true);
+                            setCurrentUrl(null);
+                            setError("File not found - The PDF file does not exist");
                           } else {
-                            setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                            console.log('PDF viewer: Server returned PDF content-type, will retry');
+                            // Auto-retry for potentially corrupted PDF
+                            setTimeout(() => {
+                              if (retryCount < 2) {
+                                setRetryCount(prev => prev + 1);
+                              }
+                            }, 1000); // Wait 1 second before retry
                           }
                         })
-                        .catch((fetchErr) => {
-                          console.log('PDF viewer fetch error:', fetchErr, currentUrl);
-                          setError("File not found"); // Assume network errors mean file not found
+                        .catch(() => {
+                          console.log('PDF viewer: Fetch failed, file not found');
+                          setHasErrorOccurred(true);
+                          setCurrentUrl(null);
+                          setError("File not found - The PDF file does not exist");
                         });
                     } else {
-                      setError("Could not load this content as a PDF. It may be a different file type or the URL may be invalid.");
+                      // For other types of errors, retry
+                      console.log('PDF viewer: Other error, will retry, attempt:', retryCount + 1);
+                      setTimeout(() => {
+                        if (retryCount < 2) {
+                          setRetryCount(prev => prev + 1);
+                        }
+                      }, 1000); // Wait 1 second before retry
                     }
                     
                     if (timeoutRef.current) {

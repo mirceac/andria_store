@@ -86,7 +86,7 @@ export function PDFThumbnail({
       style={{ width: `${width}px`, height: `${height}px` }}
       onClick={onClick}
     >
-      {isLoading && (
+      {isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
@@ -143,15 +143,18 @@ export function PDFThumbnail({
                   
                   if (isHtml || response.status === 404) {
                     console.log('PDF thumbnail: Server returned HTML/404, this is a missing file');
+                    setIsLoading(false);
                     setError("File not found");
                   } else {
                     console.log('PDF thumbnail: Server returned PDF content-type, this is a corrupted file');
+                    setIsLoading(false);
                     setError("Invalid PDF file");
                   }
                 })
                 .catch(() => {
                   // If fetch fails, assume it's a missing file
                   console.log('PDF thumbnail: Fetch failed, assuming missing file');
+                  setIsLoading(false);
                   setError("File not found");
                 });
               
@@ -180,15 +183,18 @@ export function PDFThumbnail({
                 
                 if (response.status === 404 || isHtml || isJson) {
                   console.log('PDF thumbnail: Setting "File not found" error for', currentUrl, 'Status:', response.status, 'Content-Type:', contentType);
+                  setIsLoading(false);
                   setError("File not found");
                 } else {
                   console.log('PDF thumbnail: Setting generic error for', currentUrl);
+                  setIsLoading(false);
                   setError(err?.message || "Failed to load PDF");
                 }
               })
               .catch((fetchErr) => {
                 console.log('PDF thumbnail fetch error:', fetchErr, currentUrl);
                 console.log('PDF thumbnail: Setting "File not found" due to fetch error');
+                setIsLoading(false);
                 setError("File not found"); // Assume network errors mean file not found
               });
             
