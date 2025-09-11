@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileImage, RefreshCw } from "lucide-react";
 import { useStorageCache } from "@/hooks/use-storage-cache";
 
 interface ImageThumbnailProps {
@@ -118,24 +118,25 @@ export function ImageThumbnail({
       )}
 
       {error ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 text-xs text-center p-2">
-          <div className="text-center p-2">
-            {errorMessage === "File not found" ? (
-              <span className="text-red-500">File not found</span>
-            ) : productId ? (
-              <a 
-                href={`/api/products/${productId}/img?v=${Date.now()}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View Image
-              </a>
-            ) : (
-              'Image preview unavailable'
-            )}
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-2 text-center">
+          <FileImage className="h-8 w-8 mb-1 text-gray-400" />
+          <span className="text-xs">
+            {errorMessage === "File not found" ? "File not found" : "Image unavailable"}
+          </span>
+          {errorMessage !== "File not found" && (
+            <button
+              className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (productId) {
+                  window.open(`/api/products/${productId}/img?v=${Date.now()}`, '_blank');
+                }
+              }}
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Try Direct
+            </button>
+          )}
         </div>
       ) : (
         imageSrc && (

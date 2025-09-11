@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { Loader2, ShoppingCart, XCircle } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import {
   Select,
@@ -30,6 +30,7 @@ export default function HomePage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [timestamp, setTimestamp] = useState(Date.now());
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -37,6 +38,19 @@ export default function HomePage() {
     setTimestamp(Date.now());
     // No interval to prevent reloading icons
   }, []);
+
+  // Handle image load errors
+  const handleImageError = (productId: number) => {
+    setImageErrors(prev => new Set([...prev, productId]));
+  };
+
+  // Render error state for images
+  const renderImageError = () => (
+    <div className="h-[190px] flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-4">
+      <FileImage className="h-8 w-8 mb-1 text-gray-400" />
+      <span className="text-xs">File not found</span>
+    </div>
+  );
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -76,16 +90,21 @@ export default function HomePage() {
       return (
         <div className="w-full h-full flex items-center justify-center">
           <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
-            <img 
-              src={`${product.image_file}?v=${timestamp}`}
-              alt={product.name}
-              className="max-h-[190px] object-contain cursor-pointer"
-              onClick={() => {
-                setSelectedImage(`${product.image_file}?v=${timestamp}`);
-                setSelectedProduct(product);
-                setIsImageViewerOpen(true);
-              }}
-            />
+            {imageErrors.has(product.id) ? (
+              renderImageError()
+            ) : (
+              <img 
+                src={`${product.image_file}?v=${timestamp}`}
+                alt={product.name}
+                className="max-h-[190px] object-contain cursor-pointer"
+                onClick={() => {
+                  setSelectedImage(`${product.image_file}?v=${timestamp}`);
+                  setSelectedProduct(product);
+                  setIsImageViewerOpen(true);
+                }}
+                onError={() => handleImageError(product.id)}
+              />
+            )}
           </div>
         </div>
       );
@@ -94,16 +113,21 @@ export default function HomePage() {
       return (
         <div className="w-full h-full flex items-center justify-center">
           <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
-            <img 
-              src={`/api/products/${product.id}/img?v=${timestamp}`}
-              alt={product.name}
-              className="max-h-[190px] object-contain cursor-pointer"
-              onClick={() => {
-                setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
-                setSelectedProduct(product);
-                setIsImageViewerOpen(true);
-              }}
-            />
+            {imageErrors.has(product.id) ? (
+              renderImageError()
+            ) : (
+              <img 
+                src={`/api/products/${product.id}/img?v=${timestamp}`}
+                alt={product.name}
+                className="max-h-[190px] object-contain cursor-pointer"
+                onClick={() => {
+                  setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
+                  setSelectedProduct(product);
+                  setIsImageViewerOpen(true);
+                }}
+                onError={() => handleImageError(product.id)}
+              />
+            )}
           </div>
         </div>
       );

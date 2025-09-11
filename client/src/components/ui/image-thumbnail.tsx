@@ -55,17 +55,15 @@ export function ImageThumbnail({
     return (
       <div 
         className={cn(
-          "relative bg-white border border-gray-200 rounded overflow-hidden flex items-center justify-center",
+          "relative bg-white border border-gray-200 rounded overflow-hidden flex flex-col items-center justify-center",
           className
         )}
         style={{ width: `${width}px`, height: `${height}px` }}
       >
-        <FileImage className="h-10 w-10 text-muted-foreground" />
-        {error && (
-          <span className="absolute bottom-2 text-xs text-red-500 px-2 text-center">
-            {error}
-          </span>
-        )}
+        <FileImage className="h-10 w-10 text-gray-400 mb-2" />
+        <span className="text-xs text-gray-500 text-center">
+          {error === 'File not found' ? 'File not found' : error || 'No image'}
+        </span>
       </div>
     );
   }
