@@ -917,6 +917,7 @@ export function registerRoutes(app: Express): Server {
                 image_data: products.image_data,
                 pdf_file: products.pdf_file,
                 pdf_data: products.pdf_data,
+                storage_url: products.storage_url,
               },
             })
             .from(orderItems)
@@ -986,6 +987,7 @@ export function registerRoutes(app: Express): Server {
                 image_data: products.image_data,
                 pdf_file: products.pdf_file,
                 pdf_data: products.pdf_data,
+                storage_url: products.storage_url,
               },
             })
             .from(orderItems)

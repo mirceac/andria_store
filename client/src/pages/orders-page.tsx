@@ -15,8 +15,9 @@ import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { getPdfUrl } from "@/lib/pdf-worker";
 import { ImageThumbnail } from "@/components/image-thumbnail";
 import { useState } from "react";
-import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
+import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
+import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 
 interface OrderItem {
   id: number;
@@ -25,11 +26,11 @@ interface OrderItem {
   product: {
     id: number;
     name: string;
-    image_url: string;
     image_file?: string;
     image_data?: string;
     pdf_file?: string;
     pdf_data?: string;
+    storage_url?: string;
   };
 }
 
@@ -105,19 +106,24 @@ export default function OrdersPage() {
   // Log one product to see available fields
   if (processedOrders.length > 0 && processedOrders[0].items && processedOrders[0].items.length > 0) {
     console.log('Sample product data:', processedOrders[0].items[0].product);
+    console.log('Product has storage_url:', !!processedOrders[0].items[0].product.storage_url);
   }
 
-  // Helper function to render product media with priority:
-  // 1. Image File > 2. Image DB > 3. PDF File > 4. PDF DB
+  // Helper function to render product media with priority (matching cart grid exactly):
+  // 1. Image File > 2. Image DB > 3. PDF File > 4. PDF DB > 5. Storage URL
   const renderProductMedia = (product: OrderItem['product']) => {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="shrink-0">
-          <img 
-            src={`${product.image_file}?v=${timestamp}`}
+        <div className="relative shrink-0">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={`${product.image_file}?v=${timestamp}`}
+            imageData={null}
             alt={product.name}
-            className="w-[60px] h-[84px] object-contain rounded border cursor-pointer"
+            width={60}
+            height={84}
             onClick={() => {
               setSelectedImage(`${product.image_file}?v=${timestamp}`);
               setSelectedProduct(product);
@@ -129,11 +135,8 @@ export default function OrdersPage() {
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="shrink-0 cursor-pointer" onClick={() => {
-          setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
-          setSelectedProduct(product);
-          setIsImageViewerOpen(true);
-        }}>
+        <div className="relative shrink-0">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
@@ -141,20 +144,8 @@ export default function OrdersPage() {
             alt={product.name}
             width={60}
             height={84}
-            className="shrink-0"
-          />
-        </div>
-      );
-    } else if (product.image_url) {
-      // 2.5 Legacy image_url field
-      return (
-        <div className="shrink-0">
-          <img 
-            src={`${product.image_url}?v=${timestamp}`}
-            alt={product.name}
-            className="w-[60px] h-[84px] object-contain rounded border cursor-pointer"
             onClick={() => {
-              setSelectedImage(`${product.image_url}?v=${timestamp}`);
+              setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
               setSelectedProduct(product);
               setIsImageViewerOpen(true);
             }}
@@ -164,37 +155,82 @@ export default function OrdersPage() {
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="cursor-pointer" onClick={() => {
-          setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
-          setSelectedProduct(product);
-          setIsPdfViewerOpen(true);
-        }}>
+        <div className="relative shrink-0">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
             width={60}
             height={84}
-            className="shrink-0"
+            onClick={() => {
+              setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsPdfViewerOpen(true);
+            }}
           />
         </div>
       );
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="cursor-pointer" onClick={() => {
-          setSelectedPdf(`${getPdfUrl(product.id)}?v=${timestamp}`);
-          setSelectedProduct(product);
-          setIsPdfViewerOpen(true);
-        }}>
+        <div className="relative shrink-0">
+          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
-            pdfUrl={getPdfUrl(product.id)}
+            pdfUrl={`/api/products/${product.id}/pdf?v=${timestamp}`}
             width={60}
             height={84}
-            className="shrink-0"
+            onClick={() => {
+              setSelectedPdf(`/api/products/${product.id}/pdf?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsPdfViewerOpen(true);
+            }}
           />
         </div>
       );
+    } else if (product.storage_url) {
+      // 5. Storage URL (lowest priority) - matching cart grid exactly
+      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
+                     (product.storage_url.includes('image') || 
+                      product.storage_url.includes('img') || 
+                      product.storage_url.includes('photo') ||
+                      product.storage_url.includes('picture'));
+      
+      if (isImage) {
+        // External Image URL
+        return (
+          <div className="relative shrink-0">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <ExternalUrlThumbnail
+              url={product.storage_url}
+              width={60}
+              height={84}
+              onClick={() => {
+                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                setSelectedProduct(product);
+                setIsImageViewerOpen(true);
+              }}
+            />
+          </div>
+        );
+      } else {
+        // Assume it's a PDF or other document
+        return (
+          <div className="relative shrink-0">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <PDFThumbnail
+              pdfUrl={`${product.storage_url}?v=${timestamp}`}
+              width={60}
+              height={84}
+              onClick={() => {
+                setSelectedPdf(`${product.storage_url}?v=${timestamp}`);
+                setSelectedProduct(product);
+                setIsPdfViewerOpen(true);
+              }}
+            />
+          </div>
+        );
+      }
     } else {
-      // 5. No content available - show X icon
+      // 6. No content available - show X icon
       return (
         <div className="w-[60px] h-[84px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
           <XCircle className="h-6 w-6 text-gray-300" />
