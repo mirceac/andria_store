@@ -20,8 +20,11 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
-  const { items, removeFromCart, total } = useCart();
+  const { items, removeFromCart, getTotal } = useCart();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  
+  // Calculate total from current items
+  const total = getTotal();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -84,8 +87,8 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     </div>
                     <Button
                       variant="ghost"
-                      size="icon"
                       onClick={() => removeFromCart(item.product.id)}
+                      className="h-8 w-8 p-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -7,11 +7,14 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
 export default function CheckoutPage() {
-  const { items, total } = useCart();
+  const { items, getTotal } = useCart();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
+  
+  // Calculate total from current items
+  const total = getTotal();
 
   useEffect(() => {
     // If cart is empty, redirect to cart page
