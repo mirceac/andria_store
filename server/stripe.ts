@@ -40,6 +40,10 @@ export async function createCheckoutSession(items: any[], success_url: string, c
     client_reference_id: userId.toString(),
     metadata: {
       userId: userId.toString()
+    },
+    billing_address_collection: "required",
+    phone_number_collection: {
+      enabled: false
     }
   });
 

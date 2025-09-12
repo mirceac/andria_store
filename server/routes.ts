@@ -6,6 +6,8 @@ import { db } from "@db";
 import { products, orders, orderItems, users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { createCheckoutSession, stripe } from "./stripe";
+import { sendOrderConfirmationEmail } from "./email.js";
+import { testEmailConfiguration } from "./email.js";
 import type Stripe from "stripe";
 import * as express from 'express';
 import type { Session } from 'express-session';
@@ -1033,6 +1035,77 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Test send email endpoint (for debugging)
+  app.post("/api/test-send-email", async (req, res) => {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email address is required" });
+    }
+
+    console.log("Testing email send to:", email);
+    
+    try {
+      // Create a dummy order for testing
+      const testOrder = {
+        id: 999,
+        total: 25.99,
+        created_at: new Date(),
+        items: [
+          {
+            quantity: 1,
+            price: 25.99,
+            product: {
+              name: "Test Product",
+              description: "This is a test product for email testing"
+            }
+          }
+        ]
+      };
+
+      await sendOrderConfirmationEmail(testOrder as any, email);
+      
+      res.json({ 
+        success: true,
+        message: "Test email sent successfully",
+        recipient: email,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Test email send failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Test email send failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Test email configuration endpoint
+  app.get("/api/test-email-config", async (req, res) => {
+    console.log("Testing email configuration...");
+    try {
+      const isValid = await testEmailConfiguration();
+      res.json({ 
+        success: isValid,
+        message: isValid ? "Email configuration is valid" : "Email configuration failed",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Email configuration test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Email configuration test failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Stripe routes
   app.post("/api/create-checkout-session", async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -1099,6 +1172,18 @@ export function registerRoutes(app: Express): Server {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Processing checkout session:", session.id);
         console.log("Full session data:", JSON.stringify(session, null, 2));
+
+        // Try to get more detailed session information from Stripe API
+        console.log("Fetching detailed session information from Stripe API...");
+        try {
+          const detailedSession = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ['customer', 'customer_details']
+          });
+          console.log("Detailed session data:", JSON.stringify(detailedSession, null, 2));
+          console.log("Customer details from API:", JSON.stringify(detailedSession.customer_details, null, 2));
+        } catch (expandError) {
+          console.error("Failed to fetch detailed session:", expandError);
+        }
 
         // Get the user ID from the session metadata
         const userId = session.client_reference_id
@@ -1168,6 +1253,87 @@ export function registerRoutes(app: Express): Server {
           }
 
           console.log("Order processing completed successfully");
+          
+          // Send confirmation email
+          try {
+            console.log("\n=== EMAIL SENDING PROCESS STARTED ===");
+            console.log("Attempting to send confirmation email...");
+            console.log("Session ID:", session.id);
+            
+            // Try to get detailed session with customer info
+            let customerEmail = session.customer_details?.email || session.customer_email;
+            
+            // If no email found in webhook data, fetch from Stripe API
+            if (!customerEmail) {
+              console.log("No email in webhook data, fetching from Stripe API...");
+              try {
+                const detailedSession = await stripe.checkout.sessions.retrieve(session.id, {
+                  expand: ['customer', 'customer_details']
+                });
+                customerEmail = detailedSession.customer_details?.email || detailedSession.customer_email;
+                console.log("Email from Stripe API:", customerEmail);
+              } catch (apiError) {
+                console.error("Failed to fetch session from Stripe API:", apiError);
+              }
+            }
+            
+            console.log("Customer details from session:", JSON.stringify(session.customer_details, null, 2));
+            console.log("Customer email from customer_email field:", session.customer_email);
+            console.log("Final extracted customer email:", customerEmail);
+            
+            if (customerEmail) {
+              console.log("✓ Customer email found:", customerEmail);
+              console.log("Fetching order details for email...");
+              
+              // Fetch the complete order with items and products for email
+              const orderWithItems = await db.query.orders.findFirst({
+                where: eq(orders.id, order.id),
+                with: {
+                  items: {
+                    with: {
+                      product: true
+                    }
+                  }
+                }
+              });
+
+              console.log("Order with items query result:", JSON.stringify(orderWithItems, null, 2));
+
+              if (orderWithItems) {
+                console.log("✓ Order details fetched successfully");
+                console.log(`Order has ${orderWithItems.items.length} items`);
+                
+                // Check email configuration
+                console.log("Checking email configuration...");
+                console.log("SMTP_HOST:", process.env.SMTP_HOST || "not set");
+                console.log("SMTP_PORT:", process.env.SMTP_PORT || "not set");
+                console.log("SMTP_USER:", process.env.SMTP_USER || "not set");
+                console.log("SMTP_PASS:", process.env.SMTP_PASS ? "set (length: " + process.env.SMTP_PASS.length + ")" : "not set");
+                
+                // Type assertion to handle the database result
+                const emailOrder = orderWithItems as any;
+                console.log("Calling sendOrderConfirmationEmail...");
+                await sendOrderConfirmationEmail(emailOrder, customerEmail);
+                console.log("✓ Confirmation email sent successfully to:", customerEmail);
+                console.log("=== EMAIL SENDING PROCESS COMPLETED ===\n");
+              } else {
+                console.error("✗ Could not fetch order details for email");
+                console.error("Order ID used for query:", order.id);
+              }
+            } else {
+              console.error("✗ No customer email found in Stripe session");
+              console.error("Session customer_details:", session.customer_details);
+              console.error("Session customer_email:", session.customer_email);
+              console.error("Available session fields:", Object.keys(session));
+            }
+          } catch (emailError) {
+            console.error("\n=== EMAIL SENDING ERROR ===");
+            console.error("Failed to send confirmation email:", emailError);
+            console.error("Error stack:", emailError instanceof Error ? emailError.stack : "No stack available");
+            console.error("=== END EMAIL ERROR ===\n");
+            // Don't fail the webhook because of email issues
+          }
+
           res.json({ received: true, orderId: order.id });
         } catch (error) {
           // More detailed error logging
