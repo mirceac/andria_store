@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
-import { PDFViewerDialog, PDFViewer } from "@/components/pdf-viewer-dialog";
-import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { ImageThumbnail } from "@/components/image-thumbnail";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,11 +23,6 @@ import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [timestamp, setTimestamp] = useState(Date.now());
 
   // Initialize timestamp once, but don't refresh it periodically
@@ -83,12 +76,7 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            onClick={() => {
-              setSelectedImage(`${product.image_file}?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsImageViewerOpen(true);
-            }}
-            className="max-w-full max-h-full object-contain cursor-pointer"
+            className="max-w-full max-h-full object-contain pointer-events-none select-none"
           />
         </div>
       );
@@ -103,12 +91,7 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            onClick={() => {
-              setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsImageViewerOpen(true);
-            }}
-            className="max-w-full max-h-full object-contain cursor-pointer"
+            className="max-w-full max-h-full object-contain pointer-events-none select-none"
           />
         </div>
       );
@@ -120,12 +103,7 @@ export default function HomePage() {
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
             width={180}
             height={180}
-            onClick={() => {
-              setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsPdfViewerOpen(true);
-            }}
-            className="max-w-full max-h-full"
+            className="max-w-full max-h-full pointer-events-none select-none"
           />
         </div>
       );
@@ -137,12 +115,7 @@ export default function HomePage() {
             pdfUrl={`${getPdfUrl(product.id)}?v=${timestamp}`}
             width={180}
             height={180}
-            onClick={() => {
-              setSelectedPdf(`${getPdfUrl(product.id)}?v=${timestamp}`);
-              setSelectedProduct(product);
-              setIsPdfViewerOpen(true);
-            }}
-            className="max-w-full max-h-full"
+            className="max-w-full max-h-full pointer-events-none select-none"
           />
         </div>
       );
@@ -163,14 +136,9 @@ export default function HomePage() {
           <div className="w-full h-full flex items-center justify-center">
             <ExternalUrlThumbnail
               url={product.storage_url}
-              onClick={() => {
-                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
-                setSelectedProduct(product);
-                setIsImageViewerOpen(true);
-              }}
               width={180}
               height={180}
-              className="max-w-full max-h-full"
+              className="max-w-full max-h-full pointer-events-none select-none"
             />
           </div>
         );
@@ -182,12 +150,7 @@ export default function HomePage() {
               pdfUrl={product.storage_url}
               width={180}
               height={180}
-              onClick={() => {
-                setSelectedPdf(product.storage_url);
-                setSelectedProduct(product);
-                setIsPdfViewerOpen(true);
-              }}
-              className="max-w-full max-h-full"
+              className="max-w-full max-h-full pointer-events-none select-none"
             />
           </div>
         );
@@ -204,7 +167,11 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto px-0.5 py-1">
-  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10 gap-1" style={{maxWidth: '100vw', overflow: 'hidden'}}>
+  <div 
+    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10 gap-1" 
+    style={{maxWidth: '100vw', overflow: 'hidden'}}
+    onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
+  >
         {filteredProducts?.map((product) => (
           <div 
             key={`${product.id}-${timestamp}`}
@@ -215,9 +182,13 @@ export default function HomePage() {
                 : "border-red-200 hover:border-red-300"
             )}
             style={{maxWidth: '100%', minWidth: 0}}
+            onContextMenu={(e) => e.preventDefault()} // Prevent right-click on individual products
           >
             {/* Content based on priority */}
-            <div className="relative w-full h-[200px] flex items-center justify-center p-1 border-b overflow-hidden">
+            <div 
+              className="relative w-full h-[200px] flex items-center justify-center p-1 border-b overflow-hidden"
+              onContextMenu={(e) => e.preventDefault()} // Prevent right-click on thumbnails
+            >
               {getContentByPriority(product)}
             </div>
             
@@ -260,21 +231,6 @@ export default function HomePage() {
           </div>
         ))}
       </div>
-
-      {/* PDF Viewer Dialog */}
-      <PDFViewerDialog
-        open={isPdfViewerOpen}
-        onOpenChange={setIsPdfViewerOpen}
-        pdfUrl={selectedPdf}
-        title={selectedProduct?.name}
-      />
-      
-      {/* Image Viewer Dialog */}
-      <ImageViewerDialog
-        open={isImageViewerOpen}
-        onOpenChange={setIsImageViewerOpen}
-        url={selectedImage}
-      />
     </div>
   );
 }

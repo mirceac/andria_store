@@ -15,8 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
-import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
-import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { cn } from "@/lib/utils";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import {
@@ -38,10 +36,6 @@ import { useLocation } from "wouter";
 
 export default function CartPage() {
   const { items: cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
   const [, setLocation] = useLocation();
 
@@ -72,62 +66,46 @@ export default function CartPage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="relative">
+        <div className="relative pointer-events-none select-none">
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
             imageData={null}
             alt={product.name}
-            onClick={() => {
-              setSelectedImage(`${product.image_file}?v=${refreshTimestamp}`);
-              setIsImageViewerOpen(true);
-            }}
           />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="relative">
+        <div className="relative pointer-events-none select-none">
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
             imageData={product.image_data}
             alt={product.name}
-            onClick={() => {
-              setSelectedImage(`/api/products/${product.id}/img?v=${refreshTimestamp}`);
-              setIsImageViewerOpen(true);
-            }}
           />
         </div>
       );
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="relative">
+        <div className="relative pointer-events-none select-none">
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
-            onClick={() => {
-              setSelectedPdf(`${product.pdf_file}?v=${refreshTimestamp}`);
-              setIsPdfViewerOpen(true);
-            }}
           />
         </div>
       );
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="relative">
+        <div className="relative pointer-events-none select-none">
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
-            onClick={() => {
-              setSelectedPdf(`/api/products/${product.id}/pdf?v=${refreshTimestamp}`);
-              setIsPdfViewerOpen(true);
-            }}
           />
         </div>
       );
@@ -141,28 +119,20 @@ export default function CartPage() {
       
       if (isImage) {
         return (
-          <div className="relative">
+          <div className="relative pointer-events-none select-none">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <ExternalUrlThumbnail
               url={product.storage_url}
-              onClick={() => {
-                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
-                setIsImageViewerOpen(true);
-              }}
             />
           </div>
         );
       } else {
         // Assume it's a PDF or other document
         return (
-          <div className="relative">
+          <div className="relative pointer-events-none select-none">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <PDFThumbnail
               pdfUrl={`${product.storage_url}?v=${refreshTimestamp}`}
-              onClick={() => {
-                setSelectedPdf(`${product.storage_url}?v=${refreshTimestamp}`);
-                setIsPdfViewerOpen(true);
-              }}
             />
           </div>
         );
@@ -183,7 +153,10 @@ export default function CartPage() {
   );
 
   return (
-    <div className="container mx-auto py-8">
+    <div 
+      className="container mx-auto py-8"
+      onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
+    >
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Shopping Cart</h1>
         <Button variant="outline" onClick={navigateToHome}>
@@ -242,7 +215,10 @@ export default function CartPage() {
                     </TableCell>
                     
                     {/* Product Media (using priority logic) */}
-                    <TableCell className="px-0 text-center align-middle">
+                    <TableCell 
+                      className="px-0 text-center align-middle"
+                      onContextMenu={(e) => e.preventDefault()} // Prevent right-click
+                    >
                       {renderProductMedia(item.product)}
                     </TableCell>
                     
@@ -388,20 +364,6 @@ export default function CartPage() {
           </div>
         </div>
       )}
-
-      {/* PDF Viewer Dialog */}
-      <PDFViewerDialog
-        open={isPdfViewerOpen}
-        onOpenChange={setIsPdfViewerOpen}
-        pdfUrl={selectedPdf}
-      />
-
-      {/* Image Viewer Dialog */}
-      <ImageViewerDialog
-        open={isImageViewerOpen}
-        onOpenChange={setIsImageViewerOpen}
-        url={selectedImage}
-      />
     </div>
   );
 }
