@@ -122,8 +122,6 @@ export default function OrdersPage() {
             imageUrl={`${product.image_file}?v=${timestamp}`}
             imageData={null}
             alt={product.name}
-            width={60}
-            height={84}
             onClick={() => {
               setSelectedImage(`${product.image_file}?v=${timestamp}`);
               setSelectedProduct(product);
@@ -142,8 +140,6 @@ export default function OrdersPage() {
             imageUrl={null}
             imageData={product.image_data}
             alt={product.name}
-            width={60}
-            height={84}
             onClick={() => {
               setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
               setSelectedProduct(product);
@@ -159,8 +155,6 @@ export default function OrdersPage() {
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
-            width={60}
-            height={84}
             onClick={() => {
               setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
               setSelectedProduct(product);
@@ -176,8 +170,6 @@ export default function OrdersPage() {
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf?v=${timestamp}`}
-            width={60}
-            height={84}
             onClick={() => {
               setSelectedPdf(`/api/products/${product.id}/pdf?v=${timestamp}`);
               setSelectedProduct(product);
@@ -201,8 +193,6 @@ export default function OrdersPage() {
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <ExternalUrlThumbnail
               url={product.storage_url}
-              width={60}
-              height={84}
               onClick={() => {
                 setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
                 setSelectedProduct(product);
@@ -218,8 +208,6 @@ export default function OrdersPage() {
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <PDFThumbnail
               pdfUrl={`${product.storage_url}?v=${timestamp}`}
-              width={60}
-              height={84}
               onClick={() => {
                 setSelectedPdf(`${product.storage_url}?v=${timestamp}`);
                 setSelectedProduct(product);
@@ -232,7 +220,7 @@ export default function OrdersPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="w-[60px] h-[84px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
+        <div className="w-[130px] h-[182px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
           <XCircle className="h-6 w-6 text-gray-300" />
         </div>
       );
