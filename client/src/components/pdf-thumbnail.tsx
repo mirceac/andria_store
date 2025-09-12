@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Document, Page } from 'react-pdf';
-import { Loader2, FileText, RefreshCw } from "lucide-react";
+import { Loader2, FileText, RefreshCw, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initPdfWorker } from "@/lib/pdf-worker";
 import { useStorageCache } from "@/hooks/use-storage-cache";
@@ -80,7 +80,7 @@ export function PDFThumbnail({
   return (
     <div 
       className={cn(
-        "relative bg-white border border-gray-200 rounded overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center",
+        "relative bg-white border border-gray-200 rounded overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center group",
         className
       )}
       style={{ width: `${width}px`, height: `${height}px` }}
@@ -99,6 +99,18 @@ export function PDFThumbnail({
              error === "Invalid PDF file" ? "Invalid PDF file" : 
              "PDF unavailable"}
           </span>
+          {error === "Invalid PDF file" && (
+            <button
+              className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(pdfUrl, '_blank');
+              }}
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Try Direct
+            </button>
+          )}
           {error !== "File not found" && error !== "Invalid PDF file" && (
             <button
               className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
@@ -213,6 +225,22 @@ export function PDFThumbnail({
             className="flex items-center justify-center"
           />
         </Document>
+        </div>
+      )}
+
+      {/* Show "Try Direct" button on hover when PDF is successfully loaded */}
+      {!error && !isLoading && currentUrl && (
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(pdfUrl, '_blank');
+            }}
+            title="View original PDF in new tab"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </button>
         </div>
       )}
     </div>

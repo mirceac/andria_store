@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2, FileImage, RefreshCw } from "lucide-react";
+import { Loader2, FileImage, RefreshCw, ExternalLink } from "lucide-react";
 import { useStorageCache } from "@/hooks/use-storage-cache";
 
 interface ImageThumbnailProps {
@@ -105,7 +105,7 @@ export function ImageThumbnail({
   return (
     <div
       className={cn(
-        "relative rounded overflow-hidden border bg-white flex items-center justify-center cursor-pointer",
+        "relative rounded overflow-hidden border bg-white flex items-center justify-center cursor-pointer group",
         className
       )}
       style={{ width: `${width}px`, height: `${height}px` }}
@@ -149,6 +149,22 @@ export function ImageThumbnail({
             onError={handleError}
           />
         )
+      )}
+
+      {/* Show "Try Direct" button on hover when image is successfully loaded */}
+      {!error && !loading && productId && (
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`/api/products/${productId}/img?v=${Date.now()}`, '_blank');
+            }}
+            title="View original image in new tab"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
       )}
     </div>
   );

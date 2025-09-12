@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { PDFViewerDialog, PDFViewer } from "@/components/pdf-viewer-dialog";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
+import { ImageThumbnail } from "@/components/image-thumbnail";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPdfUrl } from "@/lib/pdf-worker";
@@ -30,7 +31,6 @@ export default function HomePage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [timestamp, setTimestamp] = useState(Date.now());
-  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -38,19 +38,6 @@ export default function HomePage() {
     setTimestamp(Date.now());
     // No interval to prevent reloading icons
   }, []);
-
-  // Handle image load errors
-  const handleImageError = (productId: number) => {
-    setImageErrors(prev => new Set([...prev, productId]));
-  };
-
-  // Render error state for images
-  const renderImageError = () => (
-    <div className="h-[190px] flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-4">
-      <FileImage className="h-8 w-8 mb-1 text-gray-400" />
-      <span className="text-xs">File not found</span>
-    </div>
-  );
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -89,46 +76,40 @@ export default function HomePage() {
       // 1. Image File (highest priority)
       return (
         <div className="w-full h-full flex items-center justify-center">
-          <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
-            {imageErrors.has(product.id) ? (
-              renderImageError()
-            ) : (
-              <img 
-                src={`${product.image_file}?v=${timestamp}`}
-                alt={product.name}
-                className="max-h-[190px] object-contain cursor-pointer"
-                onClick={() => {
-                  setSelectedImage(`${product.image_file}?v=${timestamp}`);
-                  setSelectedProduct(product);
-                  setIsImageViewerOpen(true);
-                }}
-                onError={() => handleImageError(product.id)}
-              />
-            )}
-          </div>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={`${product.image_file}?v=${timestamp}`}
+            imageData={null}
+            alt={product.name}
+            width={180}
+            height={180}
+            onClick={() => {
+              setSelectedImage(`${product.image_file}?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsImageViewerOpen(true);
+            }}
+            className="max-w-full max-h-full object-contain cursor-pointer"
+          />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
         <div className="w-full h-full flex items-center justify-center">
-          <div className="h-full flex items-center justify-center bg-white rounded overflow-hidden">
-            {imageErrors.has(product.id) ? (
-              renderImageError()
-            ) : (
-              <img 
-                src={`/api/products/${product.id}/img?v=${timestamp}`}
-                alt={product.name}
-                className="max-h-[190px] object-contain cursor-pointer"
-                onClick={() => {
-                  setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
-                  setSelectedProduct(product);
-                  setIsImageViewerOpen(true);
-                }}
-                onError={() => handleImageError(product.id)}
-              />
-            )}
-          </div>
+          <ImageThumbnail
+            productId={product.id}
+            imageUrl={`/api/products/${product.id}/img?v=${timestamp}`}
+            imageData={product.image_data}
+            alt={product.name}
+            width={180}
+            height={180}
+            onClick={() => {
+              setSelectedImage(`/api/products/${product.id}/img?v=${timestamp}`);
+              setSelectedProduct(product);
+              setIsImageViewerOpen(true);
+            }}
+            className="max-w-full max-h-full object-contain cursor-pointer"
+          />
         </div>
       );
     } else if (product.pdf_file) {
@@ -137,12 +118,14 @@ export default function HomePage() {
         <div className="w-full h-full flex items-center justify-center">
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
+            width={180}
+            height={180}
             onClick={() => {
               setSelectedPdf(`${product.pdf_file}?v=${timestamp}`);
               setSelectedProduct(product);
               setIsPdfViewerOpen(true);
             }}
-            className="h-full"
+            className="max-w-full max-h-full"
           />
         </div>
       );
@@ -152,12 +135,14 @@ export default function HomePage() {
         <div className="w-full h-full flex items-center justify-center">
           <PDFThumbnail
             pdfUrl={`${getPdfUrl(product.id)}?v=${timestamp}`}
+            width={180}
+            height={180}
             onClick={() => {
               setSelectedPdf(`${getPdfUrl(product.id)}?v=${timestamp}`);
               setSelectedProduct(product);
               setIsPdfViewerOpen(true);
             }}
-            className="h-full"
+            className="max-w-full max-h-full"
           />
         </div>
       );
@@ -183,9 +168,9 @@ export default function HomePage() {
                 setSelectedProduct(product);
                 setIsImageViewerOpen(true);
               }}
-              width={190}
-              height={190}
-              className="h-full"
+              width={180}
+              height={180}
+              className="max-w-full max-h-full"
             />
           </div>
         );
@@ -195,12 +180,14 @@ export default function HomePage() {
           <div className="w-full h-full flex items-center justify-center">
             <PDFThumbnail
               pdfUrl={product.storage_url}
+              width={180}
+              height={180}
               onClick={() => {
                 setSelectedPdf(product.storage_url);
                 setSelectedProduct(product);
                 setIsPdfViewerOpen(true);
               }}
-              className="h-full"
+              className="max-w-full max-h-full"
             />
           </div>
         );
@@ -230,7 +217,7 @@ export default function HomePage() {
             style={{maxWidth: '100%', minWidth: 0}}
           >
             {/* Content based on priority */}
-            <div className="relative w-full h-[200px] flex items-center justify-center p-0.5 border-b overflow-hidden">
+            <div className="relative w-full h-[200px] flex items-center justify-center p-1 border-b overflow-hidden">
               {getContentByPriority(product)}
             </div>
             

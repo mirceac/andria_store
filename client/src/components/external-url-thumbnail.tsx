@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2, XCircle, FileText, RefreshCw } from "lucide-react";
+import { Loader2, XCircle, FileText, RefreshCw, ExternalLink } from "lucide-react";
 import { useImageLoader } from "@/hooks/use-image-loader";
 
 interface ExternalUrlThumbnailProps {
@@ -59,7 +59,7 @@ export function ExternalUrlThumbnail({
     return (
       <div
         className={cn(
-          "relative rounded overflow-hidden border bg-blue-50 flex items-center justify-center cursor-pointer",
+          "relative rounded overflow-hidden border bg-blue-50 flex items-center justify-center cursor-pointer group",
           className
         )}
         style={{ width: `${finalWidth}px`, height: `${finalHeight}px` }}
@@ -69,6 +69,21 @@ export function ExternalUrlThumbnail({
           <FileText className="h-6 w-6 text-blue-500" />
           <span className="mt-1">PDF</span>
         </div>
+        {/* Show "Try Direct" button on hover for PDFs */}
+        {url && (
+          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <button
+              className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(url, '_blank');
+              }}
+              title="View original PDF in new tab"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -76,7 +91,7 @@ export function ExternalUrlThumbnail({
   return (
     <div
       className={cn(
-        "relative rounded overflow-hidden border bg-white flex items-center justify-center cursor-pointer",
+        "relative rounded overflow-hidden border bg-white flex items-center justify-center cursor-pointer group",
         className
       )}
       style={{ width: `${finalWidth}px`, height: `${finalHeight}px` }}
@@ -111,6 +126,22 @@ export function ExternalUrlThumbnail({
             className="max-h-full max-w-full object-contain"
           />
         )
+      )}
+
+      {/* Show "Try Direct" button on hover when content is successfully loaded */}
+      {!error && !loading && url && (
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(url, '_blank');
+            }}
+            title="View original content in new tab"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
       )}
     </div>
   );
