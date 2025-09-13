@@ -154,7 +154,7 @@ export default function CartPage() {
   };
 
   const total = cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
@@ -215,7 +215,7 @@ export default function CartPage() {
               </TableHeader>
               <TableBody>
                 {cart.map((item, index) => (
-                  <TableRow key={item.product.id}>
+                  <TableRow key={`${item.product.id}-${item.variant_type}`}>
                     <TableCell className="text-center align-middle font-medium">
                       {index + 1}
                     </TableCell>
@@ -235,17 +235,33 @@ export default function CartPage() {
                         <p className="text-sm text-muted-foreground truncate max-w-[250px]">
                           {item.product.description}
                         </p>
-                        <Badge 
-                          variant={item.product.stock > 0 ? "outline" : "destructive"} 
-                          className={cn(
-                            "text-xs mt-1",
-                            item.product.stock > 0 
-                              ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" 
-                              : "bg-red-50 text-red-700 hover:bg-red-100"
-                          )}
-                        >
-                          {item.product.stock > 0 ? `In Stock: ${item.product.stock}` : "Out of Stock"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {item.variant_type === 'digital' ? 'Digital' : 'Physical'}
+                          </Badge>
+                          <Badge 
+                            variant={
+                              item.variant_type === 'digital' || item.product.stock > 0
+                                ? "outline" 
+                                : "destructive"
+                            } 
+                            className={cn(
+                              "text-xs",
+                              item.variant_type === 'digital' || item.product.stock > 0
+                                ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" 
+                                : "bg-red-50 text-red-700 hover:bg-red-100"
+                            )}
+                          >
+                            {item.variant_type === 'digital' 
+                              ? "Always Available"
+                              : item.product.stock > 0 
+                                ? `In Stock: ${item.product.stock}` 
+                                : "Out of Stock"}
+                          </Badge>
+                        </div>
                       </div>
                     </TableCell>
                     
@@ -258,7 +274,7 @@ export default function CartPage() {
                               <Button
                                 variant="outline"
                                 className="h-7 w-7 p-0"
-                                onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
+                                onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.variant_type)}
                                 disabled={item.quantity <= 1}
                               >
                                 <Minus className="h-3 w-3" />
@@ -273,12 +289,13 @@ export default function CartPage() {
                         <Input
                           type="number"
                           min="1"
-                          max={item.product.stock}
+                          max={item.variant_type === 'digital' ? 999999 : item.product.stock}
                           value={item.quantity}
                           onChange={(e) => {
                             const val = parseInt(e.target.value);
-                            if (!isNaN(val) && val > 0 && val <= item.product.stock) {
-                              updateQuantity(item.product.id, val);
+                            const maxStock = item.variant_type === 'digital' ? 999999 : item.product.stock;
+                            if (!isNaN(val) && val > 0 && val <= maxStock) {
+                              updateQuantity(item.product.id, val, item.variant_type);
                             }
                           }}
                           className="h-7 w-12 mx-2 text-center px-1"
@@ -290,8 +307,11 @@ export default function CartPage() {
                               <Button
                                 variant="outline"
                                 className="h-7 w-7 p-0"
-                                onClick={() => updateQuantity(item.product.id, Math.min(item.product.stock, item.quantity + 1))}
-                                disabled={item.quantity >= item.product.stock}
+                                onClick={() => {
+                                  const maxStock = item.variant_type === 'digital' ? 999999 : item.product.stock;
+                                  updateQuantity(item.product.id, Math.min(maxStock, item.quantity + 1), item.variant_type);
+                                }}
+                                disabled={item.variant_type === 'physical' && item.quantity >= item.product.stock}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -302,7 +322,7 @@ export default function CartPage() {
                           </Tooltip>
                         </TooltipProvider>
                       </div>
-                      {item.quantity >= item.product.stock && (
+                      {item.variant_type === 'physical' && item.quantity >= item.product.stock && (
                         <p className="text-xs text-center text-amber-600 mt-1">
                           Max stock reached
                         </p>
@@ -312,9 +332,9 @@ export default function CartPage() {
                     {/* Price */}
                     <TableCell className="text-center align-middle">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">${item.product.price.toFixed(2)} each</p>
+                        <p className="text-sm font-medium">${(item.price || parseFloat(item.product.price)).toFixed(2)} each</p>
                         <p className="text-sm font-bold">
-                          ${(item.product.price * item.quantity).toFixed(2)} total
+                          ${((item.price || parseFloat(item.product.price)) * item.quantity).toFixed(2)} total
                         </p>
                       </div>
                     </TableCell>
@@ -327,7 +347,7 @@ export default function CartPage() {
                             <Button
                               variant="ghost"
                               className="h-8 w-8 p-0 bg-red-50 text-red-500 hover:text-red-600 hover:bg-red-100 rounded-full"
-                              onClick={() => removeFromCart(item.product.id)}
+                              onClick={() => removeFromCart(item.product.id, item.variant_type)}
                             >
                               <X className="h-4 w-4" />
                             </Button>

@@ -32,8 +32,9 @@ export default function CheckoutPage() {
           items: items.map(item => ({
             productId: item.product.id,
             name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity
+            price: item.price, // Use the stored price from the cart
+            quantity: item.quantity,
+            variant_type: item.variant_type
           }))
         });
         

@@ -27,8 +27,11 @@ export async function createCheckoutSession(items: any[], success_url: string, c
       price_data: {
         currency: "usd",
         product_data: {
-          name: item.name
-          
+          name: item.name,
+          metadata: {
+            variant_type: item.variant_type || 'digital',
+            product_id: item.productId?.toString() || '',
+          }
         },
         unit_amount: Math.round(item.price * 100),
       },

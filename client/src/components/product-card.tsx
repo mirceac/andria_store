@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { ShoppingCart, XCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface ProductCardProps {
   product: SelectProduct;
@@ -12,42 +12,54 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
-  const [timestamp] = useState(Date.now());
+  const [selectedVariant, setSelectedVariant] = useState<'digital' | 'physical'>('digital');
 
-  // Get product image based on priority
+  // Get product image from storage_url or image_data
   const getProductImageUrl = (product: SelectProduct): string | null => {
-    if (product.image_file) {
-      // 1. Image File (highest priority)
-      return `${product.image_file}?v=${timestamp}`;
-    } else if (product.image_data) {
-      // 2. Image DB
-      return `/api/products/${product.id}/img?v=${timestamp}`;
-    } else if (product.pdf_file) {
-      // 3. PDF File (show a generic PDF thumbnail)
-      return null; // Will render PDF thumbnail instead
-    } else if (product.pdf_data) {
-      // 4. PDF DB (show a generic PDF thumbnail)
-      return null; // Will render PDF thumbnail instead
-    } else if (product.storage_url) {
-      // 5. External Storage URL
-      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                        (!product.storage_url.match(/\.(pdf)$/i) && 
-                         (product.storage_url.includes('image') || 
-                          product.storage_url.includes('img') || 
-                          product.storage_url.includes('photo') ||
-                          product.storage_url.includes('picture')));
-      
-      if (isImageUrl) {
-        return `/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}&v=${timestamp}`;
-      }
-      return null; // Will render fallback if it's a PDF
+    if (product.storage_url) {
+      return product.storage_url;
     }
-    return null; // No image available
+    if (product.image_data) {
+      return product.image_data;
+    }
+    return null;
   };
 
   const imageUrl = getProductImageUrl(product);
-  const hasPdf = product.pdf_file || product.pdf_data || 
-                (product.storage_url && product.storage_url.match(/\.(pdf)$/i));
+  const hasPdf = product.pdf_file || product.pdf_data;
+
+  // Get pricing based on variant
+  const getPrice = () => {
+    if (selectedVariant === 'physical' && product.has_physical_variant) {
+      return parseFloat(product.physical_price || '0');
+    }
+    return parseFloat(product.price);
+  };
+
+  const getStock = () => {
+    if (selectedVariant === 'physical' && product.has_physical_variant) {
+      return product.stock; // Physical stock
+    }
+    return Infinity; // Digital products have unlimited stock
+  };
+
+  const getStockDisplay = () => {
+    if (selectedVariant === 'physical' && product.has_physical_variant) {
+      return `${product.stock} in stock`;
+    }
+    return 'Digital - Always Available';
+  };
+
+  const isOutOfStock = () => {
+    if (selectedVariant === 'physical' && product.has_physical_variant) {
+      return product.stock === 0;
+    }
+    return false; // Digital products are never out of stock
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product, 1, selectedVariant);
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -83,17 +95,64 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-xl font-bold mt-2">${product.price.toFixed(2)}</p>
+
+        {/* Variant Selection */}
+        {product.has_physical_variant && (
+          <div className="mt-2 mb-2">
+            <div className="flex gap-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedVariant('digital');
+                }}
+                className={`px-3 py-1 text-xs rounded-full border ${
+                  selectedVariant === 'digital'
+                    ? 'bg-blue-100 border-blue-300 text-blue-700'
+                    : 'bg-gray-100 border-gray-300 text-gray-600'
+                }`}
+              >
+                Digital
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedVariant('physical');
+                }}
+                className={`px-3 py-1 text-xs rounded-full border ${
+                  selectedVariant === 'physical'
+                    ? 'bg-green-100 border-green-300 text-green-700'
+                    : 'bg-gray-100 border-gray-300 text-gray-600'
+                }`}
+              >
+                Physical
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Pricing Display */}
+        <div className="mt-2">
+          <p className="text-xl font-bold">${getPrice().toFixed(2)}</p>
+          {product.has_physical_variant && (
+            <p className="text-sm text-gray-500">
+              {selectedVariant === 'digital' ? 'Digital version' : 'Physical version'}
+            </p>
+          )}
+          <p className="text-sm text-gray-500">
+            {getStockDisplay()}
+          </p>
+        </div>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
         <Button
           variant="secondary"
           className="w-full"
-          onClick={() => addToCart(product)}
+          onClick={handleAddToCart}
+          disabled={isOutOfStock()}
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
+          {isOutOfStock() ? 'Out of Stock' : 'Add to Cart'}
         </Button>
       </CardFooter>
     </Card>

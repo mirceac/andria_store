@@ -24,17 +24,22 @@ export const users = pgTable("users", {
 
 export const products = pgTable('products', {
   id: serial('id').primaryKey(),
-  name: varchar('name').notNull(),
+  name: text('name').notNull(),
   description: text('description'),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  stock: integer('stock').notNull().default(0),
-  pdf_file: varchar('pdf_file'),
-  pdf_data: text('pdf_data'),
-  image_file: varchar('image_file'),  // Make sure this exists
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(), // Digital price
+  stock: integer('stock').default(0), // Physical stock only
+  category: text('category'),
+  // Existing media fields - keep these!
+  image_file: text('image_file'),
   image_data: text('image_data'),
-  storage_url: varchar('storage_url'),  // New field for universal storage URL
+  pdf_file: text('pdf_file'),
+  pdf_data: text('pdf_data'),
+  storage_url: text('storage_url'),
+  // New variant fields
+  has_physical_variant: boolean('has_physical_variant').default(false),
+  physical_price: decimal('physical_price', { precision: 10, scale: 2 }),
   created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
 });
 
 export const orders = pgTable("orders", {
@@ -51,6 +56,7 @@ export const orderItems = pgTable("order_items", {
   product_id: integer("product_id").references(() => products.id).notNull(),
   quantity: integer("quantity").notNull(),
   price: doublePrecision("price").notNull(),
+  variant_type: text("variant_type").notNull().default('digital'), // 'digital' or 'physical'
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -80,26 +86,34 @@ export type SelectUser = typeof users.$inferSelect;
 export const insertProductSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable(),
-  price: z.number().min(0),
-  stock: z.number().min(0),
-  pdf_file: z.instanceof(File).or(z.string()).nullable(),
-  image_file: z.instanceof(File).or(z.string()).nullable(),  // Add image file validation
-  storage_url: z.string().url().nullable(),  // Add storage_url validation
+  price: z.number().min(0), // Digital price
+  stock: z.number().min(0), // Physical stock only
+  category: z.string().nullable(),
+  image_file: z.string().nullable(),
+  image_data: z.string().nullable(),
+  pdf_file: z.string().nullable(),
+  pdf_data: z.string().nullable(),
+  storage_url: z.string().nullable(),
+  has_physical_variant: z.boolean().default(false),
+  physical_price: z.number().min(0).nullable(),
 });
 
 export type SelectProduct = {
   id: number;
   name: string;
   description: string | null;
-  price: number;
-  stock: number;
+  price: string; // Digital price - Decimal comes as string from DB
+  stock: number; // Physical stock only
+  category: string | null;
+  image_file: string | null;
+  image_data: string | null;
   pdf_file: string | null;
   pdf_data: string | null;
-  image_file: string | null;  // Add this
-  image_data: string | null;  // Add this
-  storage_url: string | null;  // Add this
-  created_at: Date;
-  updated_at: Date;
+  storage_url: string | null;
+  has_physical_variant: boolean;
+  physical_price: string | null; // Decimal comes as string from DB
+  created_at: Date | null;
+  updated_at: Date | null;
 };
 
 export const insertOrderSchema = createInsertSchema(orders);

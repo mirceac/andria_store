@@ -410,7 +410,10 @@ export function registerRoutes(app: Express): Server {
       const allProducts = await db.select().from(products);
       const productsWithNumberPrice = allProducts.map(product => ({
         ...product,
-        price: Number(product.price)
+        price: Number(product.price),
+        // Ensure variant fields exist with defaults if migration hasn't run yet
+        has_physical_variant: product.has_physical_variant ?? false,
+        physical_price: product.physical_price ?? null,
       }));
       res.json(productsWithNumberPrice);
     } catch (error) {
@@ -431,7 +434,10 @@ export function registerRoutes(app: Express): Server {
       
       const productWithNumberPrice = {
         ...product,
-        price: Number(product.price)
+        price: Number(product.price),
+        // Ensure variant fields exist with defaults if migration hasn't run yet
+        has_physical_variant: product.has_physical_variant ?? false,
+        physical_price: product.physical_price ?? null,
       };
       res.json(productWithNumberPrice);
     } catch (error) {
@@ -587,6 +593,10 @@ export function registerRoutes(app: Express): Server {
       const stock = parseInt(req.body.stock);
       const storageType = req.body.storage_type;
       const storageLocation = req.body.storage_location;
+      
+      // Handle variant fields
+      const hasPhysicalVariant = req.body.has_physical_variant === 'true';
+      const physicalPrice = hasPhysicalVariant ? parseFloat(req.body.physical_price || '0') : null;
 
       // Add debug logging for the uploaded file
       console.log('Uploaded file details:', {
@@ -599,12 +609,14 @@ export function registerRoutes(app: Express): Server {
         name: req.body.name,
         description: req.body.description || null,
         price: price.toString(),
-        stock: stock,
+        stock: stock, // Physical stock only
         pdf_data: null as string | null,
         pdf_file: null as string | null,
         image_data: null as string | null,
         image_file: null as string | null,
-        storage_url: req.body.storage_url || null
+        storage_url: req.body.storage_url || null,
+        has_physical_variant: hasPhysicalVariant,
+        physical_price: physicalPrice?.toString() || null,
       };
 
       if (req.file) {
@@ -715,6 +727,16 @@ export function registerRoutes(app: Express): Server {
       // Handle storage_url field
       if (req.body.storage_url !== undefined) {
         updateData.storage_url = req.body.storage_url || null;
+      }
+      
+      // Handle variant fields
+      if (req.body.has_physical_variant !== undefined) {
+        updateData.has_physical_variant = req.body.has_physical_variant === 'true';
+      }
+      
+      if (req.body.physical_price !== undefined) {
+        const physicalPrice = parseFloat(req.body.physical_price);
+        updateData.physical_price = isNaN(physicalPrice) ? null : physicalPrice.toString();
       }
 
       // Handle file update if a new file is uploaded
@@ -912,6 +934,7 @@ export function registerRoutes(app: Express): Server {
               id: orderItems.id,
               quantity: orderItems.quantity,
               price: orderItems.price,
+              variant_type: orderItems.variant_type,
               product: {
                 id: products.id,
                 name: products.name,
@@ -982,6 +1005,7 @@ export function registerRoutes(app: Express): Server {
               id: orderItems.id,
               quantity: orderItems.quantity,
               price: orderItems.price,
+              variant_type: orderItems.variant_type,
               product: {
                 id: products.id,
                 name: products.name,
@@ -1240,7 +1264,10 @@ export function registerRoutes(app: Express): Server {
               continue;
             }
 
-            console.log("Creating order item for product:", dbProduct.name);
+            // Get variant type from product metadata if available
+            const variantType = product.metadata?.variant_type || 'digital';
+
+            console.log("Creating order item for product:", dbProduct.name, "variant:", variantType);
             await db
               .insert(orderItems)
               .values({
@@ -1248,6 +1275,7 @@ export function registerRoutes(app: Express): Server {
                 product_id: dbProduct.id,
                 quantity: item.quantity || 1,
                 price: (item.amount_total || 0) / 100,
+                variant_type: variantType as 'digital' | 'physical',
               });
             console.log("Created order item for product:", dbProduct.name);
           }

@@ -91,6 +91,8 @@ const formSchema = z.object({
   storage_type: z.enum(["pdf", "image"]),
   storage_location: z.enum(["database", "file"]).optional(),
   storage_url: z.string().optional(),
+  has_physical_variant: z.boolean().default(false),
+  physical_price: z.coerce.number().min(0, "Physical price must be positive").optional(),
 });
 
 // Add these types at the top of the file
@@ -152,6 +154,8 @@ export default function AdminProductsPage() {
       storage_type: "pdf", // Set a default value
       storage_location: "database", // Set a default value
       storage_url: "",
+      has_physical_variant: false,
+      physical_price: 0,
     },
   });
 
@@ -168,6 +172,8 @@ export default function AdminProductsPage() {
         storage_type: "pdf",
         storage_location: "database",
         storage_url: "",
+        has_physical_variant: false,
+        physical_price: 0,
       });
     }
   };
@@ -206,6 +212,8 @@ export default function AdminProductsPage() {
       storage_type: storageType as "image" | "pdf",
       storage_location: storageLocation as "database" | "file",
       storage_url: product.storage_url || "",
+      has_physical_variant: product.has_physical_variant || false,
+      physical_price: product.physical_price ? Number(product.physical_price) : 0,
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -401,6 +409,15 @@ export default function AdminProductsPage() {
         
         // Always include storage_url to ensure it's updated correctly
         formData.append("storage_url", data.storage_url || "");
+        
+        // Handle variant fields
+        if (data.has_physical_variant !== selectedProduct.has_physical_variant) {
+          formData.append("has_physical_variant", data.has_physical_variant.toString());
+        }
+        
+        if (data.has_physical_variant && Number(data.physical_price || 0) !== Number(selectedProduct.physical_price || 0)) {
+          formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
+        }
 
         // Add a flag if we're switching file types
         const currentType =
@@ -467,6 +484,12 @@ export default function AdminProductsPage() {
         formData.append("stock", Number(data.stock).toString());
         formData.append("storage_type", data.storage_type);
         formData.append("storage_url", data.storage_url || "");
+        
+        // Add variant fields
+        formData.append("has_physical_variant", data.has_physical_variant.toString());
+        if (data.has_physical_variant) {
+          formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
+        }
 
         if (data.storage_location) {
           formData.append("storage_location", data.storage_location);
@@ -848,6 +871,57 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
+                {/* Physical Variant Section */}
+                <div className="space-y-4 border rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <FormField
+                      control={form.control}
+                      name="has_physical_variant"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4"
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">
+                            Also sell as physical product
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {form.watch("has_physical_variant") && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <FormField
+                        control={form.control}
+                        name="physical_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Physical Price</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value) || 0)
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <Button
                     type="submit"
@@ -905,8 +979,9 @@ export default function AdminProductsPage() {
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
                 <TableHead className="text-center w-[120px]">Name</TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
-                <TableHead className="text-center w-[80px]">Price</TableHead>
-                <TableHead className="text-center w-[60px]">Stock</TableHead>
+                <TableHead className="text-center w-[80px]">Digital Price</TableHead>
+                <TableHead className="text-center w-[60px]">Physical Stock</TableHead>
+                <TableHead className="text-center w-[100px]">Variants</TableHead>
                 <TableHead className="text-right px-4 w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -1247,20 +1322,42 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell className="text-center w-[80px]">
                       <p className="table-cell-subtext">
-                        ${product.price.toFixed(2)}
+                        ${Number(product.price).toFixed(2)}
                       </p>
                     </TableCell>
                     <TableCell className="text-center w-[60px]">
-                      <p
-                        className={cn(
-                          "table-cell-subtext",
-                          product.stock === 0
-                            ? "text-red-500"
-                            : "text-green-600"
-                        )}
-                      >
-                        {product.stock}
-                      </p>
+                      {product.has_physical_variant ? (
+                        <p
+                          className={cn(
+                            "table-cell-subtext",
+                            (product.stock || 0) === 0
+                              ? "text-red-500"
+                              : "text-green-600"
+                          )}
+                        >
+                          {product.stock || 0}
+                        </p>
+                      ) : (
+                        <p className="table-cell-subtext text-gray-400">
+                          N/A
+                        </p>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center w-[100px]">
+                      {product.has_physical_variant ? (
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 text-green-700 border-green-200">
+                            Physical
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            ${Number(product.physical_price || 0).toFixed(2)} / {product.stock || 0} stock
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                          Digital Only
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right px-4 w-[100px]">
                       <div className="flex items-center justify-end gap-2">

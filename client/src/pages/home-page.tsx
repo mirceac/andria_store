@@ -1,14 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
 import { FileText, FileImage, Loader2, XCircle, ShoppingCart } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -19,11 +11,14 @@ import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
 import { cn } from "@/lib/utils";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
+import { VariantSelectionDialog } from "@/components/variant-selection-dialog";
 
 export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
   const [timestamp, setTimestamp] = useState(Date.now());
+  const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
+  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -36,7 +31,10 @@ export default function HomePage() {
     queryKey: ["/api/products"],
   });
 
-  const { addToCart } = useCart();
+  const handleAddToCartClick = (product: SelectProduct) => {
+    setSelectedProduct(product);
+    setIsVariantDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -46,22 +44,37 @@ export default function HomePage() {
     );
   }
 
-  const filteredProducts = products
-    ?.filter((product) =>
-      product.name.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      switch (sort) {
-        case "price_asc":
-          return a.price - b.price;
-        case "price_desc":
-          return b.price - a.price;
-        case "name":
-          return a.name.localeCompare(b.name);
-        default:
-          return 0;
-      }
-    });
+  const filteredProducts = products?.filter((product) => {
+    const matchesSearch = search
+      ? product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description?.toLowerCase().includes(search.toLowerCase())
+      : true;
+    
+    return matchesSearch;
+  }).sort((a, b) => {
+    switch (sort) {
+      case "price_asc":
+        const priceA = Math.min(
+          ...[Number(a.price || 0), a.physical_price ? Number(a.physical_price) : Infinity].filter(p => p > 0)
+        );
+        const priceB = Math.min(
+          ...[Number(b.price || 0), b.physical_price ? Number(b.physical_price) : Infinity].filter(p => p > 0)
+        );
+        return priceA - priceB;
+      case "price_desc":
+        const priceDescA = Math.max(
+          ...[Number(a.price || 0), a.physical_price ? Number(a.physical_price) : 0].filter(p => p > 0)
+        );
+        const priceDescB = Math.max(
+          ...[Number(b.price || 0), b.physical_price ? Number(b.physical_price) : 0].filter(p => p > 0)
+        );
+        return priceDescB - priceDescA;
+      case "name":
+        return a.name.localeCompare(b.name);
+      default:
+        return 0;
+    }
+  });
 
   // Helper function to get content based on priority
   const getContentByPriority = (product: SelectProduct) => {
@@ -199,33 +212,79 @@ export default function HomePage() {
             </div>
             
             {/* Product info section with Add to Cart */}
-                        <div className="px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0">
+            <div className="px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0">
               <h3 className="font-medium text-sm text-slate-900 line-clamp-1 truncate" style={{maxWidth: '100%'}}>{product.name}</h3>
               
-              {/* Price on its own line */}
+              {/* Price display - show range if multiple variants */}
               <div className="mt-0.5">
-                <span className="text-sm font-semibold text-slate-900">${product.price.toFixed(2)}</span>
+                {(() => {
+                  const digitalPrice = Number(product.price || 0); // price field is digital price
+                  const physicalPrice = product.physical_price ? Number(product.physical_price) : null;
+                  
+                  if (digitalPrice > 0 && physicalPrice && physicalPrice > 0) {
+                    const minPrice = Math.min(digitalPrice, physicalPrice);
+                    const maxPrice = Math.max(digitalPrice, physicalPrice);
+                    if (minPrice === maxPrice) {
+                      return <span className="text-sm font-semibold text-slate-900">${minPrice.toFixed(2)}</span>;
+                    }
+                    return <span className="text-sm font-semibold text-slate-900">${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>;
+                  } else if (digitalPrice > 0) {
+                    return <span className="text-sm font-semibold text-slate-900">${digitalPrice.toFixed(2)}</span>;
+                  } else if (physicalPrice && physicalPrice > 0) {
+                    return <span className="text-sm font-semibold text-slate-900">${physicalPrice.toFixed(2)}</span>;
+                  } else {
+                    return <span className="text-sm font-semibold text-slate-900">$0.00</span>;
+                  }
+                })()}
               </div>
               
-              {/* Stock status on its own line */}
+              {/* Availability status */}
               <div className="mt-0.5 mb-0.5">
-                <Badge 
-                  variant={product.stock > 0 ? "default" : "destructive"} 
-                  className={cn(
-                    "text-xs px-2 py-0.5",
-                    product.stock > 0 
-                      ? "bg-blue-50 text-blue-700 hover:bg-blue-100" 
-                      : "bg-red-50 text-red-700 hover:bg-red-100"
-                  )}
-                >
-                  {product.stock > 0 ? "In Stock" : "Out of Stock"}
-                </Badge>
+                {(() => {
+                  const hasDigital = Number(product.price || 0) > 0; // price field is digital price
+                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                  const physicalStock = product.stock || 0;
+                  const physicalAvailable = hasPhysical && physicalStock > 0;
+                  
+                  if (hasDigital && physicalAvailable) {
+                    return (
+                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                        Multiple Options Available
+                      </Badge>
+                    );
+                  } else if (hasDigital) {
+                    return (
+                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                        Digital Available
+                      </Badge>
+                    );
+                  } else if (physicalAvailable) {
+                    return (
+                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                        Physical ({physicalStock} left)
+                      </Badge>
+                    );
+                  } else {
+                    return (
+                      <Badge variant="destructive" className="text-xs px-2 py-0.5">
+                        Out of Stock
+                      </Badge>
+                    );
+                  }
+                })()}
               </div>
               
               {/* Add to Cart Button */}
               <Button 
-                onClick={() => addToCart(product)} 
-                disabled={product.stock <= 0}
+                onClick={() => handleAddToCartClick(product)}
+                disabled={(() => {
+                  const hasDigital = Number(product.price || 0) > 0; // price field is digital price
+                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                  const physicalStock = product.stock || 0;
+                  const physicalAvailable = hasPhysical && physicalStock > 0;
+                  
+                  return !hasDigital && !physicalAvailable;
+                })()}
                 className="mt-1 w-full h-7 text-xs"
                 variant="default"
                 style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
@@ -237,6 +296,15 @@ export default function HomePage() {
           </div>
         ))}
       </div>
+      
+      {/* Variant Selection Dialog */}
+      {selectedProduct && (
+        <VariantSelectionDialog
+          open={isVariantDialogOpen}
+          onOpenChange={setIsVariantDialogOpen}
+          product={selectedProduct}
+        />
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,6 +32,7 @@ interface OrderItem {
   id: number;
   quantity: number;
   price: number;
+  variant_type: 'digital' | 'physical';
   product: {
     id: number;
     name: string;
@@ -327,6 +329,7 @@ export default function AdminOrdersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
+                    <TableHead>Variant</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Total</TableHead>
@@ -341,15 +344,23 @@ export default function AdminOrdersPage() {
                           <div className="flex flex-col">
                             <span className="font-medium">{item.product.name}</span>
                             <span className="text-sm text-gray-500">
-                              ${(item.price / item.quantity).toFixed(2)}
+                              ${(item.price / item.quantity).toFixed(2)} per unit
                             </span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
                       <TableCell>
-                        ${(item.price * item.quantity).toFixed(2)}
+                        <Badge 
+                          variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {item.variant_type === 'digital' ? 'Digital' : 'Physical'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>${(item.price / item.quantity).toFixed(2)}</TableCell>
+                      <TableCell>
+                        ${item.price.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
