@@ -295,10 +295,12 @@ export default function OrdersPage() {
                           variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {item.variant_type === 'digital' ? 'Digital' : 'Physical'}
+                          {item.variant_type === 'digital' ? 'Digital' : 'Physical + Digital'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>
+                        {item.variant_type === 'physical' ? item.quantity : 'Digital License'}
+                      </TableCell>
                       <TableCell>${(item.price / item.quantity).toFixed(2)}</TableCell>
                       <TableCell>
                         ${item.price.toFixed(2)}

@@ -181,7 +181,7 @@ export function VariantSelectionDialog({
               </div>
               
               <p className="text-sm text-gray-600 mb-2">
-                Shipped to your address
+                Shipped to your address + includes digital access
               </p>
               
               <Badge 

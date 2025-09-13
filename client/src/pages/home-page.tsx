@@ -12,10 +12,12 @@ import { useSort } from "@/contexts/sort-context";
 import { cn } from "@/lib/utils";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import { VariantSelectionDialog } from "@/components/variant-selection-dialog";
+import { useCart } from "@/hooks/use-cart";
 
 export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
+  const { addToCart, items: cartItems } = useCart();
   const [timestamp, setTimestamp] = useState(Date.now());
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
@@ -32,6 +34,38 @@ export default function HomePage() {
   });
 
   const handleAddToCartClick = (product: SelectProduct) => {
+    const hasDigital = Number(product.price || 0) > 0; // price field is digital price
+    const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+    
+    // Check if product is already in cart
+    const existingPhysicalItem = cartItems.find(item => 
+      item.product.id === product.id && item.variant_type === 'physical'
+    );
+    const existingDigitalItem = cartItems.find(item => 
+      item.product.id === product.id && item.variant_type === 'digital'
+    );
+    
+    // If only digital is available (no physical variant exists at all), add directly to cart
+    if (hasDigital && !hasPhysical) {
+      // Don't add if physical version is already in cart (physical includes digital)
+      if (existingPhysicalItem) {
+        return;
+      }
+      addToCart(product, 1, 'digital');
+      return;
+    }
+    
+    // If physical variant exists, check stock limits before showing dialog
+    if (hasPhysical && existingPhysicalItem) {
+      const currentQuantity = existingPhysicalItem.quantity;
+      const maxStock = product.stock || 0;
+      if (currentQuantity >= maxStock) {
+        // Already at max stock, don't show dialog
+        return;
+      }
+    }
+    
+    // Show the variant selection dialog
     setSelectedProduct(product);
     setIsVariantDialogOpen(true);
   };
@@ -249,13 +283,13 @@ export default function HomePage() {
                   if (hasDigital && physicalAvailable) {
                     return (
                       <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
-                        Multiple Options Available
+                        Physical
                       </Badge>
                     );
                   } else if (hasDigital) {
                     return (
                       <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100">
-                        Digital Available
+                        Digital
                       </Badge>
                     );
                   } else if (physicalAvailable) {
@@ -283,14 +317,42 @@ export default function HomePage() {
                   const physicalStock = product.stock || 0;
                   const physicalAvailable = hasPhysical && physicalStock > 0;
                   
-                  return !hasDigital && !physicalAvailable;
+                  // Check if already at stock limit for physical items
+                  const existingPhysicalItem = cartItems.find(item => 
+                    item.product.id === product.id && item.variant_type === 'physical'
+                  );
+                  const existingDigitalItem = cartItems.find(item => 
+                    item.product.id === product.id && item.variant_type === 'digital'
+                  );
+                  
+                  // Disable if no variants available
+                  if (!hasDigital && !physicalAvailable) return true;
+                  
+                  // Disable if physical is at max stock
+                  if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) return true;
+                  
+                  // Disable if trying to add digital but physical already in cart
+                  if (hasDigital && !hasPhysical && existingPhysicalItem) return true;
+                  
+                  return false;
                 })()}
                 className="mt-1 w-full h-7 text-xs"
                 variant="default"
                 style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
               >
                 <ShoppingCart className="mr-1 h-3 w-3" />
-                Add to Cart
+                {(() => {
+                  const existingPhysicalItem = cartItems.find(item => 
+                    item.product.id === product.id && item.variant_type === 'physical'
+                  );
+                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                  const physicalStock = product.stock || 0;
+                  
+                  if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) {
+                    return "Max Stock Reached";
+                  }
+                  return "Add to Cart";
+                })()}
               </Button>
             </div>
           </div>

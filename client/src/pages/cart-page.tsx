@@ -240,7 +240,7 @@ export default function CartPage() {
                             variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
-                            {item.variant_type === 'digital' ? 'Digital' : 'Physical'}
+                            {item.variant_type === 'digital' ? 'Digital' : 'Physical + Digital'}
                           </Badge>
                           <Badge 
                             variant={
@@ -267,61 +267,65 @@ export default function CartPage() {
                     
                     {/* Quantity */}
                     <TableCell className="align-middle">
-                      <div className="flex items-center justify-center">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="h-7 w-7 p-0"
-                                onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.variant_type)}
-                                disabled={item.quantity <= 1}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Decrease quantity</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        
-                        <Input
-                          type="number"
-                          min="1"
-                          max={item.variant_type === 'digital' ? 999999 : item.product.stock}
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            const maxStock = item.variant_type === 'digital' ? 999999 : item.product.stock;
-                            if (!isNaN(val) && val > 0 && val <= maxStock) {
-                              updateQuantity(item.product.id, val, item.variant_type);
-                            }
-                          }}
-                          className="h-7 w-12 mx-2 text-center px-1"
-                        />
-                        
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="h-7 w-7 p-0"
-                                onClick={() => {
-                                  const maxStock = item.variant_type === 'digital' ? 999999 : item.product.stock;
-                                  updateQuantity(item.product.id, Math.min(maxStock, item.quantity + 1), item.variant_type);
-                                }}
-                                disabled={item.variant_type === 'physical' && item.quantity >= item.product.stock}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Increase quantity</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+                      {item.variant_type === 'physical' ? (
+                        <div className="flex items-center justify-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.variant_type)}
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Decrease quantity</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <Input
+                            type="number"
+                            min="1"
+                            max={item.product.stock}
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value);
+                              if (!isNaN(val) && val > 0 && val <= item.product.stock) {
+                                updateQuantity(item.product.id, val, item.variant_type);
+                              }
+                            }}
+                            className="h-7 w-12 mx-2 text-center px-1"
+                          />
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    updateQuantity(item.product.id, Math.min(item.product.stock, item.quantity + 1), item.variant_type);
+                                  }}
+                                  disabled={item.quantity >= item.product.stock}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Increase quantity</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center">
+                          <span className="text-sm text-muted-foreground">Digital License</span>
+                        </div>
+                      )}
                       {item.variant_type === 'physical' && item.quantity >= item.product.stock && (
                         <p className="text-xs text-center text-amber-600 mt-1">
                           Max stock reached
