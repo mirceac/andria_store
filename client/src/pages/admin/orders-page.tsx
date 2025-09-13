@@ -66,6 +66,9 @@ export default function AdminOrdersPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<OrderItem['product'] | null>(null);
+  
+  // State for tracking which orders are being updated
+  const [updatingOrders, setUpdatingOrders] = useState<Record<number, boolean>>({});
 
   if (!user?.is_admin) {
     return (
@@ -102,11 +105,29 @@ export default function AdminOrdersPage() {
   }
 
   const updateOrderStatus = async (orderId: number, status: string) => {
+    console.log(`Updating order ${orderId} status to ${status}`);
+    setUpdatingOrders(prev => ({ ...prev, [orderId]: true }));
+    
     try {
-      await apiRequest("PATCH", `/api/admin/orders/${orderId}`, { status });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      const response = await apiRequest("PATCH", `/api/admin/orders/${orderId}`, { status });
+      console.log('Update response:', response);
+      
+      // Invalidate and refetch the orders
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      console.log('Successfully updated order status');
+      
+      // Optional: Add success feedback here if needed
+      // toast.success(`Order status updated to ${status}`);
     } catch (error) {
       console.error("Failed to update order status:", error);
+      // Revert the UI back by refetching data
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      
+      // Optional: Add error feedback here if needed
+      // toast.error("Failed to update order status. Please try again.");
+      alert("Failed to update order status. Please try again.");
+    } finally {
+      setUpdatingOrders(prev => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -278,20 +299,27 @@ export default function AdminOrdersPage() {
                   <p className="font-semibold mb-2">
                     Total: ${order.total.toFixed(2)}
                   </p>
-                  <Select
-                    value={order.status}
-                    onValueChange={(value) => updateOrderStatus(order.id, value)}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={order.status}
+                      onValueChange={(value) => updateOrderStatus(order.id, value)}
+                      disabled={updatingOrders[order.id]}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {updatingOrders[order.id] && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
               </div>
 
