@@ -77,6 +77,7 @@ export default function HomePage() {
             width={180}
             height={180}
             className="max-w-full max-h-full object-contain pointer-events-none select-none"
+            showTryDirect={false}
           />
         </div>
       );
@@ -92,6 +93,7 @@ export default function HomePage() {
             width={180}
             height={180}
             className="max-w-full max-h-full object-contain pointer-events-none select-none"
+            showTryDirect={false}
           />
         </div>
       );
@@ -104,6 +106,7 @@ export default function HomePage() {
             width={180}
             height={180}
             className="max-w-full max-h-full pointer-events-none select-none"
+            showTryDirect={false}
           />
         </div>
       );
@@ -116,6 +119,7 @@ export default function HomePage() {
             width={180}
             height={180}
             className="max-w-full max-h-full pointer-events-none select-none"
+            showTryDirect={false}
           />
         </div>
       );
@@ -139,6 +143,7 @@ export default function HomePage() {
               width={180}
               height={180}
               className="max-w-full max-h-full pointer-events-none select-none"
+              showTryDirect={false}
             />
           </div>
         );
@@ -151,6 +156,7 @@ export default function HomePage() {
               width={180}
               height={180}
               className="max-w-full max-h-full pointer-events-none select-none"
+              showTryDirect={false}
             />
           </div>
         );

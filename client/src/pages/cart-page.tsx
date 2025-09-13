@@ -73,6 +73,7 @@ export default function CartPage() {
             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
             imageData={null}
             alt={product.name}
+            showTryDirect={false}
           />
         </div>
       );
@@ -86,6 +87,7 @@ export default function CartPage() {
             imageUrl={null}
             imageData={product.image_data}
             alt={product.name}
+            showTryDirect={false}
           />
         </div>
       );
@@ -96,6 +98,7 @@ export default function CartPage() {
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+            showTryDirect={false}
           />
         </div>
       );
@@ -106,6 +109,7 @@ export default function CartPage() {
           <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+            showTryDirect={false}
           />
         </div>
       );
@@ -123,6 +127,7 @@ export default function CartPage() {
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <ExternalUrlThumbnail
               url={product.storage_url}
+              showTryDirect={false}
             />
           </div>
         );
@@ -133,6 +138,7 @@ export default function CartPage() {
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <PDFThumbnail
               pdfUrl={`${product.storage_url}?v=${refreshTimestamp}`}
+              showTryDirect={false}
             />
           </div>
         );

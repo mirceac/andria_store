@@ -10,6 +10,7 @@ interface ExternalUrlThumbnailProps {
   width?: number;
   height?: number;
   size?: 'sm' | 'md' | 'lg';
+  showTryDirect?: boolean; // New prop to control Try Direct buttons
 }
 
 export function ExternalUrlThumbnail({
@@ -18,7 +19,8 @@ export function ExternalUrlThumbnail({
   className,
   width = 130,
   height = 182,
-  size
+  size,
+  showTryDirect = true, // Default to true for backward compatibility
 }: ExternalUrlThumbnailProps) {
   // Check if it's a PDF
   const isPdf = url ? url.match(/\.(pdf)$/i) !== null : false;
@@ -70,7 +72,7 @@ export function ExternalUrlThumbnail({
           <span className="mt-1">PDF</span>
         </div>
         {/* Show "Try Direct" button on hover for PDFs */}
-        {url && (
+        {showTryDirect && url && (
           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button
               className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
@@ -129,7 +131,7 @@ export function ExternalUrlThumbnail({
       )}
 
       {/* Show "Try Direct" button on hover when content is successfully loaded */}
-      {!error && !loading && url && (
+      {showTryDirect && !error && !loading && url && (
         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
             className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"

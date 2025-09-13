@@ -11,6 +11,7 @@ interface PDFThumbnailProps {
   width?: number;
   height?: number;
   className?: string;
+  showTryDirect?: boolean; // New prop to control Try Direct buttons
 }
 
 export function PDFThumbnail({ 
@@ -18,7 +19,8 @@ export function PDFThumbnail({
   onClick, 
   width = 130,   // default width
   height = 182, // default height (maintaining 1.4 aspect ratio)
-  className 
+  className,
+  showTryDirect = true, // Default to true for backward compatibility
 }: PDFThumbnailProps) {
   // Simplified state management
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +101,7 @@ export function PDFThumbnail({
              error === "Invalid PDF file" ? "Invalid PDF file" : 
              "PDF unavailable"}
           </span>
-          {error === "Invalid PDF file" && (
+          {showTryDirect && error === "Invalid PDF file" && (
             <button
               className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
               onClick={(e) => {
@@ -229,7 +231,7 @@ export function PDFThumbnail({
       )}
 
       {/* Show "Try Direct" button on hover when PDF is successfully loaded */}
-      {!error && !isLoading && currentUrl && (
+      {showTryDirect && !error && !isLoading && currentUrl && (
         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
             className="p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 flex items-center justify-center shadow-lg"
