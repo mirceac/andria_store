@@ -786,16 +786,16 @@ export default function AdminProductsPage() {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedProduct ? "Edit Product" : "Add New Product"}
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Basic Product Information Row */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="name"
@@ -810,47 +810,46 @@ export default function AdminProductsPage() {
                     )}
                   />
                   
-                  <div className="grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseFloat(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="stock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Stock</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Digital Price</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseFloat(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="stock"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stock</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <FormField
@@ -860,215 +859,217 @@ export default function AdminProductsPage() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea {...field} rows={3} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                {/* File Settings Row */}
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="storage_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>File Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select file type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="pdf">PDF Document</SelectItem>
-                            <SelectItem value="image">Image</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="storage_location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Storage Location</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select storage location" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="database">Database</SelectItem>
-                            <SelectItem value="file">File System</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* External URL Row */}
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="col-span-2">
+                {/* File Settings and Upload Row */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Left Column - File Settings and Upload */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="storage_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>File Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select file type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="pdf">PDF Document</SelectItem>
+                                <SelectItem value="image">Image</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="storage_location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Storage Location</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select storage location" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="database">Database</SelectItem>
+                                <SelectItem value="file">File System</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* External URL */}
+                    <div>
                       <Label>External URL</Label>
                       <Input
                         {...form.register("storage_url")}
                         placeholder="Enter public image/PDF URL (e.g., https://example.com/image.jpg)"
                       />
                     </div>
-                </div>
 
-                {/* File Upload Area */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="file"
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {form.watch("storage_type") === "pdf"
-                            ? "PDF Document"
-                            : "Product Image"}
-                        </FormLabel>
-                        <FormControl>
-                          <div className="space-y-2 border rounded-lg p-3">
-                            {value && form.watch("storage_type") === "image" ? (
-                              <div className="w-24 h-24 relative mb-2 mx-auto">
-                                <img
-                                  src={
-                                    typeof value === "string"
-                                      ? value
-                                      : URL.createObjectURL(value as File)
-                                  }
-                                  alt="Preview"
-                                  className="object-contain rounded-md w-full h-full"
-                                />
-                              </div>
-                            ) : (
-                              value && (
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FileText className="h-5 w-5" />
-                                  <span className="text-sm">
-                                    {(value as File)?.name || "Current PDF"}
-                                  </span>
-                                </div>
-                              )
-                            )}
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="file"
-                                accept={
-                                  form.watch("storage_type") === "pdf"
-                                    ? ".pdf"
-                                    : ".jpg,.jpeg,.png"
-                                }
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) onChange(file);
-                                }}
-                                {...field}
-                              />
-                              {value instanceof File && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  onClick={() => onChange(null)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Help Text */}
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div className="mb-2">
-                      <span className="font-medium">Storage Options:</span>
-                      <ul className="list-disc pl-4 mt-1">
-                        <li><span className="font-medium">File Type:</span> Choose between PDF or Image</li>
-                        <li><span className="font-medium">Storage Location:</span> Save in database or file system</li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium text-amber-600">For External URLs:</span>
-                      <ul className="list-disc pl-4 mt-1">
-                        <li>Use JPEG/PNG formats (HEIC may not display correctly)</li>
-                        <li>URL must be publicly accessible</li>
-                        <li>Include proper file extension (.jpg, .png, .pdf)</li>
-                        <li>For Google Photos: Use "Share" → "Create link", ensure "Anyone with the link" is selected</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Physical Variant Section */}
-                <div className="space-y-4 border rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
+                    {/* File Upload */}
                     <FormField
                       control={form.control}
-                      name="has_physical_variant"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <input
-                              type="checkbox"
-                              checked={field.value}
-                              onChange={field.onChange}
-                              className="h-4 w-4"
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">
-                            Also sell as physical product
+                      name="file"
+                      render={({ field: { value, onChange, ...field } }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {form.watch("storage_type") === "pdf"
+                              ? "PDF Document"
+                              : "Product Image"}
                           </FormLabel>
+                          <FormControl>
+                            <div className="space-y-2 border rounded-lg p-3">
+                              {value && form.watch("storage_type") === "image" ? (
+                                <div className="w-24 h-24 relative mb-2 mx-auto">
+                                  <img
+                                    src={
+                                      typeof value === "string"
+                                        ? value
+                                        : URL.createObjectURL(value as File)
+                                    }
+                                    alt="Preview"
+                                    className="object-contain rounded-md w-full h-full"
+                                  />
+                                </div>
+                              ) : (
+                                value && (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <FileText className="h-5 w-5" />
+                                    <span className="text-sm">
+                                      {(value as File)?.name || "Current PDF"}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="file"
+                                  accept={
+                                    form.watch("storage_type") === "pdf"
+                                      ? ".pdf"
+                                      : ".jpg,.jpeg,.png"
+                                  }
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) onChange(file);
+                                  }}
+                                  {...field}
+                                />
+                                {value instanceof File && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => onChange(null)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
                   
-                  {form.watch("has_physical_variant") && (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <FormField
-                        control={form.control}
-                        name="physical_price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Physical Price</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value) || 0)
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  {/* Right Column - Help Text and Physical Variant */}
+                  <div className="space-y-4">
+                    {/* Help Text */}
+                    <div className="text-xs text-muted-foreground space-y-2 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="font-medium">Storage Options:</span>
+                        <ul className="list-disc pl-4 mt-1">
+                          <li><span className="font-medium">File Type:</span> Choose between PDF or Image</li>
+                          <li><span className="font-medium">Storage Location:</span> Save in database or file system</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <span className="font-medium text-amber-600">For External URLs:</span>
+                        <ul className="list-disc pl-4 mt-1">
+                          <li>Use JPEG/PNG formats (HEIC may not display correctly)</li>
+                          <li>URL must be publicly accessible</li>
+                          <li>Include proper file extension (.jpg, .png, .pdf)</li>
+                          <li>For Google Photos: Use "Share" → "Create link", ensure "Anyone with the link" is selected</li>
+                        </ul>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Physical Variant Section */}
+                    <div className="space-y-3 border rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <FormField
+                          control={form.control}
+                          name="has_physical_variant"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4"
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                Also sell as physical product
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {form.watch("has_physical_variant") && (
+                        <FormField
+                          control={form.control}
+                          name="physical_price"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Physical Price</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) =>
+                                    field.onChange(parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">
