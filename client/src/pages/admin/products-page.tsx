@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -48,6 +49,7 @@ import {
   Trash2,
   Loader2,
   FileText,
+  FileImage,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -134,37 +136,97 @@ export default function AdminProductsPage() {
     type: "image_file" | "image_data" | "pdf_file" | "pdf_data";
   } | null>(null);
 
+  // Download dialog state
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [selectedProductForDownload, setSelectedProductForDownload] = useState<SelectProduct | null>(null);
+
   // Download function for digital products (admin)
-  const downloadDigitalProduct = async (product: SelectProduct) => {
+  const openDownloadDialog = (product: SelectProduct) => {
+    setSelectedProductForDownload(product);
+    setDownloadDialogOpen(true);
+  };
+
+  const downloadFromStorageType = async (product: SelectProduct, storageType: string) => {
     try {
       let downloadUrl = '';
       let filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
       
-      if (product.image_file) {
-        downloadUrl = product.image_file;
-        filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
-      } else if (product.image_data) {
-        downloadUrl = `/api/products/${product.id}/img`;
-        filename += '.jpg';
-      } else if (product.pdf_file) {
-        downloadUrl = product.pdf_file;
-        filename += '.pdf';
-      } else if (product.pdf_data) {
-        downloadUrl = `/api/products/${product.id}/pdf`;
-        filename += '.pdf';
-      } else if (product.storage_url) {
-        downloadUrl = product.storage_url;
-        const extension = product.storage_url.split('.').pop();
-        if (extension && extension.length <= 5) {
-          filename += `.${extension}`;
-        }
-      } else {
-        toast({
-          title: "No Content",
-          description: "No downloadable content available for this product.",
-          variant: "destructive",
-        });
-        return;
+      switch (storageType) {
+        case 'image_file':
+          if (!product.image_file) {
+            toast({
+              title: "No Content",
+              description: "No image file available for this product.",
+              variant: "destructive",
+            });
+            return;
+          }
+          downloadUrl = product.image_file;
+          filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
+          break;
+          
+        case 'image_data':
+          if (!product.image_data) {
+            toast({
+              title: "No Content",
+              description: "No image data available for this product.",
+              variant: "destructive",
+            });
+            return;
+          }
+          downloadUrl = `/api/products/${product.id}/img`;
+          filename += '.jpg';
+          break;
+          
+        case 'pdf_file':
+          if (!product.pdf_file) {
+            toast({
+              title: "No Content",
+              description: "No PDF file available for this product.",
+              variant: "destructive",
+            });
+            return;
+          }
+          downloadUrl = product.pdf_file;
+          filename += '.pdf';
+          break;
+          
+        case 'pdf_data':
+          if (!product.pdf_data) {
+            toast({
+              title: "No Content",
+              description: "No PDF data available for this product.",
+              variant: "destructive",
+            });
+            return;
+          }
+          downloadUrl = `/api/products/${product.id}/pdf`;
+          filename += '.pdf';
+          break;
+          
+        case 'storage_url':
+          if (!product.storage_url) {
+            toast({
+              title: "No Content",
+              description: "No storage URL available for this product.",
+              variant: "destructive",
+            });
+            return;
+          }
+          downloadUrl = product.storage_url;
+          const extension = product.storage_url.split('.').pop();
+          if (extension && extension.length <= 5) {
+            filename += `.${extension}`;
+          }
+          break;
+          
+        default:
+          toast({
+            title: "Invalid Selection",
+            description: "Please select a valid storage type.",
+            variant: "destructive",
+          });
+          return;
       }
 
       // Handle internal API endpoints with fetch (for auth and proper headers)
@@ -206,8 +268,10 @@ export default function AdminProductsPage() {
 
       toast({
         title: "Download Started",
-        description: `Download of ${product.name} has been initiated.`,
+        description: `Download of ${product.name} from ${storageType} has been initiated.`,
       });
+      
+      setDownloadDialogOpen(false);
     } catch (error) {
       console.error('Download failed:', error);
       toast({
@@ -1128,8 +1192,8 @@ export default function AdminProductsPage() {
                         <div className="relative">
                           <ImageThumbnail
                             productId={product.id}
-                            imageUrl={null}
-                            imageData={product.image_data}
+                            imageUrl={`/api/products/${product.id}/img?v=${refreshTimestamp}`}
+                            imageData={null}
                             alt={product.name}
                             onClick={() => {
                               setSelectedImage(`/api/products/${product.id}/img?v=${refreshTimestamp}`);
@@ -1246,11 +1310,11 @@ export default function AdminProductsPage() {
                                   style={{ width: '130px', height: '182px' }}
                                   onClick={() => {
                                     // Try to determine if it's an image or a PDF
-                                    // First, check if the URL has a common image extension
-                                    const hasImageExtension = product.storage_url && product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i);
+                                    // First, check if the URL has a common image extension (handle query parameters)
+                                    const hasImageExtension = product.storage_url && product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i);
                                     
                                     // Second, if it doesn't have a known image extension but has .pdf, it's a PDF
-                                    const hasPdfExtension = product.storage_url && product.storage_url.match(/\.(pdf)$/i);
+                                    const hasPdfExtension = product.storage_url && product.storage_url.match(/\.(pdf)(\?|$)/i);
                                     
                                     // Third, try to guess by checking if the URL contains image-related keywords
                                     const looksLikeImage = product.storage_url && 
@@ -1284,8 +1348,8 @@ export default function AdminProductsPage() {
                                   }}
                                 >
                                   {product.storage_url && (
-                                    product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                                    (!product.storage_url.match(/\.(pdf)$/i) && 
+                                    product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                                    (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
                                      (product.storage_url.includes('image') || 
                                       product.storage_url.includes('img') || 
                                       product.storage_url.includes('photo') ||
@@ -1319,8 +1383,8 @@ export default function AdminProductsPage() {
                                 <div className="text-xs text-left">
                                   <p className="font-semibold">External URL:</p>
                                   <p className="break-all">{product.storage_url}</p>
-                                  {product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                                   (!product.storage_url.match(/\.(pdf)$/i) && 
+                                  {product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                                   (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
                                     (product.storage_url.includes('image') || 
                                      product.storage_url.includes('img') || 
                                      product.storage_url.includes('photo') ||
@@ -1448,7 +1512,7 @@ export default function AdminProductsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"
-                          onClick={() => downloadDigitalProduct(product)}
+                          onClick={() => openDownloadDialog(product)}
                           className="h-8 w-8 p-0"
                         >
                           <Download className="h-4 w-4" />
@@ -1573,10 +1637,81 @@ export default function AdminProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Download Storage Selection Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Download Source</DialogTitle>
+            <DialogDescription>
+              Select which storage type to download from for &quot;{selectedProductForDownload?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {selectedProductForDownload?.image_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_file')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.image_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_data')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_file')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_data')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.storage_url && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'storage_url')}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                External Storage URL
+              </Button>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
-
-function register(arg0: string): import("react").JSX.IntrinsicAttributes & import("@/components/ui/input").InputProps & import("react").RefAttributes<HTMLInputElement> {
-  throw new Error("Function not implemented.");
 }

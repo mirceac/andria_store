@@ -33,7 +33,13 @@ export function ImageThumbnail({
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(imageUrl);
 
   useEffect(() => {
-    console.log('ImageThumbnail useEffect:', { productId, imageUrl, imageData: !!imageData });
+    console.log('ImageThumbnail useEffect:', { 
+      productId, 
+      imageUrl, 
+      imageData: !!imageData,
+      imageDataType: typeof imageData,
+      imageDataLength: imageData?.length 
+    });
     setLoading(true);
     setError(false);
     setErrorMessage(null);
@@ -46,19 +52,21 @@ export function ImageThumbnail({
       // For database-stored images, always use the API endpoint to avoid issues
       // This is safer and more reliable than trying to parse the data client-side
       if (productId) {
-        const apiUrl = `/api/products/${productId}/img`;
-        console.log('Using API endpoint for imageData:', apiUrl);
+        const apiUrl = `/api/products/${productId}/img?v=${Date.now()}`;
+        console.log('Using API endpoint for imageData:', apiUrl, 'productId:', productId);
         setImageSrc(apiUrl);
       } else {
+        console.error('No productId provided for imageData');
         setError(true);
         setLoading(false);
       }
     } else if (productId) {
       // If we have neither URL nor data, use the API endpoint
-      const apiUrl = `/api/products/${productId}/img`;
+      const apiUrl = `/api/products/${productId}/img?v=${Date.now()}`;
       console.log('Using API endpoint (no data):', apiUrl);
       setImageSrc(apiUrl);
     } else {
+      console.error('No productId, imageUrl, or imageData provided');
       setError(true);
       setLoading(false);
     }
@@ -72,14 +80,26 @@ export function ImageThumbnail({
   };
 
   const handleError = () => {
-    console.error('Failed to load image:', { imageUrl, imageData, imageSrc });
+    console.error('Failed to load image:', { 
+      imageUrl, 
+      imageData: !!imageData, 
+      imageSrc,
+      productId 
+    });
     setLoading(false);
     
     // Check if this is a file not found error
     if (imageSrc) {
+      console.log('Testing image URL with HEAD request:', imageSrc);
       fetch(imageSrc, { method: 'HEAD' })
         .then(response => {
-          console.log('Image fetch response:', response.status, response.headers.get('content-type'), imageSrc);
+          console.log('Image fetch response:', {
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type'),
+            url: imageSrc,
+            productId
+          });
           
           // Check if it's a 404 OR if we got HTML/JSON instead of an image (fallback responses)
           const contentType = response.headers.get('content-type') || '';
