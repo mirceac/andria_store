@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Package, XCircle, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -71,6 +72,77 @@ export default function AdminOrdersPage() {
   
   // State for tracking which orders are being updated
   const [updatingOrders, setUpdatingOrders] = useState<Record<number, boolean>>({});
+
+  // Download function for digital products (admin)
+  const downloadDigitalProduct = async (product: OrderItem['product']) => {
+    try {
+      let downloadUrl = '';
+      let filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      
+      if (product.image_file) {
+        downloadUrl = product.image_file;
+        filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
+      } else if (product.image_data) {
+        downloadUrl = `/api/products/${product.id}/img`;
+        filename += '.jpg';
+      } else if (product.pdf_file) {
+        downloadUrl = product.pdf_file;
+        filename += '.pdf';
+      } else if (product.pdf_data) {
+        downloadUrl = `/api/products/${product.id}/pdf`;
+        filename += '.pdf';
+      } else if (product.storage_url) {
+        downloadUrl = product.storage_url;
+        const extension = product.storage_url.split('.').pop();
+        if (extension && extension.length <= 5) {
+          filename += `.${extension}`;
+        }
+      } else {
+        alert('No downloadable content available for this product.');
+        return;
+      }
+
+      // Handle internal API endpoints with fetch (for auth and proper headers)
+      if (downloadUrl.startsWith('/api/')) {
+        try {
+          const response = await fetch(downloadUrl);
+          if (!response.ok) {
+            throw new Error(`Download failed: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up the object URL
+          window.URL.revokeObjectURL(url);
+        } catch (fetchError) {
+          console.error('API fetch failed:', fetchError);
+          throw fetchError;
+        }
+      } else {
+        // For external URLs and direct file URLs, use direct navigation
+        // This avoids CORS issues with external storage providers
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again or contact support if the issue persists.');
+    }
+  };
 
   if (!user?.is_admin) {
     return (
@@ -333,6 +405,7 @@ export default function AdminOrdersPage() {
                     <TableHead>Quantity</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead>Download</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -363,6 +436,16 @@ export default function AdminOrdersPage() {
                       <TableCell>${(item.price / item.quantity).toFixed(2)}</TableCell>
                       <TableCell>
                         ${item.price.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          onClick={() => downloadDigitalProduct(item.product)}
+                          className="h-8 px-3 text-sm"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
