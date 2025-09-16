@@ -287,8 +287,11 @@ export default function HomePage() {
               <Button
                 variant={selectedCategoryId === null ? "default" : "ghost"}
                 className="w-8 h-8 p-0"
-                onClick={() => setSelectedCategoryId(null)}
-                title="All Products"
+                onClick={() => {
+                  setSelectedCategoryId(null);
+                  setSidebarOpen(true);
+                }}
+                title="All Products - Click to expand menu"
               >
                 *
               </Button>
@@ -297,8 +300,11 @@ export default function HomePage() {
                   key={category.id}
                   variant={selectedCategoryId === category.id ? "default" : "ghost"}
                   className="w-8 h-8 p-0"
-                  onClick={() => setSelectedCategoryId(category.id)}
-                  title={category.name}
+                  onClick={() => {
+                    setSelectedCategoryId(category.id);
+                    setSidebarOpen(true);
+                  }}
+                  title={`${category.name} - Click to expand menu`}
                 >
                   {index + 1}
                 </Button>
