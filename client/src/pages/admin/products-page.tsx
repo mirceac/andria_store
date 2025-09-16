@@ -90,6 +90,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   price: z.coerce.number().min(0, "Price must be positive"),
   stock: z.coerce.number().min(0, "Stock must be non-negative").int(),
+  category_id: z.coerce.number().optional(),
   file: z.custom<File | string | null>(),
   storage_type: z.enum(["pdf", "image"]),
   storage_location: z.enum(["database", "file"]).optional(),
@@ -292,6 +293,10 @@ export default function AdminProductsPage() {
     queryKey: ["/api/products"],
   });
 
+  const { data: categories } = useQuery<{id: number, name: string, description: string | null}[]>({
+    queryKey: ["/api/categories"],
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -299,6 +304,7 @@ export default function AdminProductsPage() {
       description: "",
       price: 0,
       stock: 0,
+      category_id: undefined,
       file: null,
       storage_type: "pdf", // Set a default value
       storage_location: "database", // Set a default value
@@ -317,6 +323,7 @@ export default function AdminProductsPage() {
         description: "",
         price: 0,
         stock: 0,
+        category_id: undefined,
         file: null,
         storage_type: "pdf",
         storage_location: "database",
@@ -357,6 +364,7 @@ export default function AdminProductsPage() {
       description: product.description || "",
       price: Number(product.price),
       stock: product.stock,
+      category_id: product.category_id || undefined,
       file: "",
       storage_type: storageType as "image" | "pdf",
       storage_location: storageLocation as "database" | "file",
@@ -555,6 +563,10 @@ export default function AdminProductsPage() {
         if (Number(data.stock) !== selectedProduct.stock) {
           formData.append("stock", Number(data.stock).toString());
         }
+
+        if (data.category_id !== selectedProduct.category_id) {
+          formData.append("category_id", data.category_id?.toString() || "");
+        }
         
         // Always include storage_url to ensure it's updated correctly
         formData.append("storage_url", data.storage_url || "");
@@ -631,6 +643,7 @@ export default function AdminProductsPage() {
         formData.append("description", data.description || "");
         formData.append("price", Number(data.price).toFixed(2));
         formData.append("stock", Number(data.stock).toString());
+        formData.append("category_id", data.category_id?.toString() || "");
         formData.append("storage_type", data.storage_type);
         formData.append("storage_url", data.storage_url || "");
         
@@ -860,6 +873,37 @@ export default function AdminProductsPage() {
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea {...field} rows={3} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value?.toString() || "none"}
+                          onValueChange={(value) =>
+                            field.onChange(value === "none" ? undefined : parseInt(value))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No category</SelectItem>
+                            {categories?.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1128,6 +1172,7 @@ export default function AdminProductsPage() {
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
                 <TableHead className="text-center w-[120px]">Name</TableHead>
+                <TableHead className="text-center w-[100px]">Category</TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
                 <TableHead className="text-center w-[60px]">Physical Stock</TableHead>
@@ -1466,6 +1511,9 @@ export default function AdminProductsPage() {
 
                     <TableCell className="text-center w-[120px]">
                       <p className="text-sm text-gray-700">{product.name}</p>
+                    </TableCell>
+                    <TableCell className="text-center w-[100px]">
+                      <p className="text-sm text-gray-700">{(product as any).category_name || 'No category'}</p>
                     </TableCell>
                     <TableCell className="text-center w-[180px] max-w-[180px] overflow-hidden">
                       <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{product.description}</p>

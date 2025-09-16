@@ -94,6 +94,12 @@ export default function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/admin/categories" className="flex items-center text-slate-600 hover:text-slate-700">
+                    <Box className="mr-2 h-4 w-4" />
+                    <span>Categories</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/admin/orders" className="flex items-center text-slate-600 hover:text-slate-700">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     <span>Orders</span>

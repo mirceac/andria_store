@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, hashPassword } from "./auth";
 import { db } from "@db";
-import { products, orders, orderItems, users } from "@db/schema";
+import { products, orders, orderItems, users, categories } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { createCheckoutSession, stripe } from "./stripe";
 import { sendOrderConfirmationEmail } from "./email.js";
@@ -404,10 +404,134 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Categories routes
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const allCategories = await db.select().from(categories);
+      res.json(allCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.get("/api/categories/:id", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const category = await db.select().from(categories).where(eq(categories.id, categoryId));
+      
+      if (category.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(category[0]);
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ message: "Failed to fetch category" });
+    }
+  });
+
+  app.post("/api/categories", async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+
+      const newCategory = await db.insert(categories).values({
+        name,
+        description: description || null,
+      }).returning();
+
+      res.status(201).json(newCategory[0]);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.put("/api/categories/:id", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const { name, description } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+
+      const updatedCategory = await db.update(categories)
+        .set({
+          name,
+          description: description || null,
+        })
+        .where(eq(categories.id, categoryId))
+        .returning();
+
+      if (updatedCategory.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      res.json(updatedCategory[0]);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      
+      // Check if any products are using this category
+      const productsWithCategory = await db.select().from(products).where(eq(products.category_id, categoryId));
+      
+      if (productsWithCategory.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete category that is being used by products. Please reassign products first." 
+        });
+      }
+
+      const deletedCategory = await db.delete(categories)
+        .where(eq(categories.id, categoryId))
+        .returning();
+
+      if (deletedCategory.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      res.json({ message: "Category deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
   // Products routes
   app.get("/api/products", async (req, res) => {
     try {
-      const allProducts = await db.select().from(products);
+      const allProducts = await db
+        .select({
+          id: products.id,
+          name: products.name,
+          description: products.description,
+          price: products.price,
+          stock: products.stock,
+          category_id: products.category_id,
+          image_file: products.image_file,
+          image_data: products.image_data,
+          pdf_file: products.pdf_file,
+          pdf_data: products.pdf_data,
+          storage_url: products.storage_url,
+          has_physical_variant: products.has_physical_variant,
+          physical_price: products.physical_price,
+          created_at: products.created_at,
+          updated_at: products.updated_at,
+          category_name: categories.name,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.category_id, categories.id));
+        
       const productsWithNumberPrice = allProducts.map(product => ({
         ...product,
         price: Number(product.price),
@@ -425,8 +549,26 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/products/:id", async (req, res) => {
     try {
       const [product] = await db
-        .select()
+        .select({
+          id: products.id,
+          name: products.name,
+          description: products.description,
+          price: products.price,
+          stock: products.stock,
+          category_id: products.category_id,
+          image_file: products.image_file,
+          image_data: products.image_data,
+          pdf_file: products.pdf_file,
+          pdf_data: products.pdf_data,
+          storage_url: products.storage_url,
+          has_physical_variant: products.has_physical_variant,
+          physical_price: products.physical_price,
+          created_at: products.created_at,
+          updated_at: products.updated_at,
+          category_name: categories.name,
+        })
         .from(products)
+        .leftJoin(categories, eq(products.category_id, categories.id))
         .where(eq(products.id, parseInt(req.params.id)))
         .limit(1);
 
@@ -610,6 +752,7 @@ export function registerRoutes(app: Express): Server {
         description: req.body.description || null,
         price: price.toString(),
         stock: stock, // Physical stock only
+        category_id: req.body.category_id ? parseInt(req.body.category_id) : null,
         pdf_data: null as string | null,
         pdf_file: null as string | null,
         image_data: null as string | null,
@@ -727,6 +870,11 @@ export function registerRoutes(app: Express): Server {
       // Handle storage_url field
       if (req.body.storage_url !== undefined) {
         updateData.storage_url = req.body.storage_url || null;
+      }
+      
+      // Handle category_id field
+      if (req.body.category_id !== undefined) {
+        updateData.category_id = req.body.category_id ? parseInt(req.body.category_id) : null;
       }
       
       // Handle variant fields

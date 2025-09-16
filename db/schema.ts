@@ -22,13 +22,20 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 export const products = pgTable('products', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(), // Digital price
   stock: integer('stock').default(0), // Physical stock only
-  category: text('category'),
+  category_id: integer('category_id').references(() => categories.id),
   // Existing media fields - keep these!
   image_file: text('image_file'),
   image_data: text('image_data'),
@@ -63,6 +70,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
 }));
 
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  products: many(products),
+}));
+
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, { fields: [orders.user_id], references: [users.id] }),
   items: many(orderItems),
@@ -73,8 +84,12 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   product: one(products, { fields: [orderItems.product_id], references: [products.id] }),
 }));
 
-export const productsRelations = relations(products, ({ many }) => ({
+export const productsRelations = relations(products, ({ one, many }) => ({
   orderItems: many(orderItems),
+  category: one(categories, {
+    fields: [products.category_id],
+    references: [categories.id],
+  }),
 }));
 
 // Schemas for validation
@@ -83,12 +98,17 @@ export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 
+export const insertCategorySchema = createInsertSchema(categories);
+export const selectCategorySchema = createSelectSchema(categories);
+export type InsertCategory = typeof categories.$inferInsert;
+export type SelectCategory = typeof categories.$inferSelect;
+
 export const insertProductSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable(),
   price: z.number().min(0), // Digital price
   stock: z.number().min(0), // Physical stock only
-  category: z.string().nullable(),
+  category_id: z.number().nullable(),
   image_file: z.string().nullable(),
   image_data: z.string().nullable(),
   pdf_file: z.string().nullable(),
@@ -104,7 +124,7 @@ export type SelectProduct = {
   description: string | null;
   price: string; // Digital price - Decimal comes as string from DB
   stock: number; // Physical stock only
-  category: string | null;
+  category_id: number | null;
   image_file: string | null;
   image_data: string | null;
   pdf_file: string | null;

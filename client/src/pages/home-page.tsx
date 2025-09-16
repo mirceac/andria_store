@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { FileText, FileImage, Loader2, XCircle, ShoppingCart } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -14,6 +14,12 @@ import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import { VariantSelectionDialog } from "@/components/variant-selection-dialog";
 import { useCart } from "@/hooks/use-cart";
 
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
 export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
@@ -21,6 +27,8 @@ export default function HomePage() {
   const [timestamp, setTimestamp] = useState(Date.now());
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -31,6 +39,10 @@ export default function HomePage() {
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
+  });
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
   });
 
   const handleAddToCartClick = (product: SelectProduct) => {
@@ -84,7 +96,11 @@ export default function HomePage() {
         product.description?.toLowerCase().includes(search.toLowerCase())
       : true;
     
-    return matchesSearch;
+    const matchesCategory = selectedCategoryId 
+      ? product.category_id === selectedCategoryId 
+      : true;
+    
+    return matchesSearch && matchesCategory;
   }).sort((a, b) => {
     switch (sort) {
       case "price_asc":
@@ -219,12 +235,86 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container mx-auto px-0.5 py-1">
-  <div 
-    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10 gap-1" 
-    style={{maxWidth: '100vw', overflow: 'hidden'}}
-    onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
-  >
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className={cn(
+        "transition-all duration-300 bg-white border-r border-gray-200",
+        sidebarOpen ? "w-64" : "w-16"
+      )}>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className={cn(
+              "font-semibold text-gray-900 transition-opacity",
+              sidebarOpen ? "opacity-100" : "opacity-0"
+            )}>
+              Categories
+            </h2>
+            <Button
+              variant="ghost"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {sidebarOpen && (
+            <div className="space-y-2">
+              <Button
+                variant={selectedCategoryId === null ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setSelectedCategoryId(null)}
+              >
+                All Products
+              </Button>
+              {categories?.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategoryId === category.id ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setSelectedCategoryId(category.id)}
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+          )}
+          
+          {/* Show compact category buttons when collapsed */}
+          {!sidebarOpen && (
+            <div className="space-y-2">
+              <Button
+                variant={selectedCategoryId === null ? "default" : "ghost"}
+                className="w-8 h-8 p-0"
+                onClick={() => setSelectedCategoryId(null)}
+                title="All Products"
+              >
+                *
+              </Button>
+              {categories?.slice(0, 5).map((category, index) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategoryId === category.id ? "default" : "ghost"}
+                  className="w-8 h-8 p-0"
+                  onClick={() => setSelectedCategoryId(category.id)}
+                  title={category.name}
+                >
+                  {index + 1}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-4">
+        <div 
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2" 
+          style={{maxWidth: '100%', overflow: 'hidden'}}
+          onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
+        >
         {filteredProducts?.map((product) => (
           <div 
             key={`${product.id}-${timestamp}`}
@@ -357,6 +447,7 @@ export default function HomePage() {
             </div>
           </div>
         ))}
+        </div>
       </div>
       
       {/* Variant Selection Dialog */}
