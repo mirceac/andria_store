@@ -8,9 +8,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, XCircle, Download } from "lucide-react";
+import { Loader2, Package, XCircle, Download, FileText, FileImage } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
@@ -20,6 +27,7 @@ import { useState } from "react";
 import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderItem {
   id: number;
@@ -43,6 +51,7 @@ interface OrderWithItems extends SelectOrder {
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: orders, isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ["/api/orders", user?.id],
     enabled: !!user,
@@ -58,33 +67,67 @@ export default function OrdersPage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<OrderItem['product'] | null>(null);
 
-    // Download function for digital products
-  const downloadDigitalProduct = async (product: OrderItem['product']) => {
+  // State for download dialog
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [selectedProductForDownload, setSelectedProductForDownload] = useState<OrderItem['product'] | null>(null);
+
+  // Download function for digital products
+  const openDownloadDialog = (product: OrderItem['product']) => {
+    setSelectedProductForDownload(product);
+    setDownloadDialogOpen(true);
+  };
+
+  const downloadFromStorageType = async (product: OrderItem['product'], storageType: string) => {
     try {
       let downloadUrl = '';
       let filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
       
-      if (product.image_file) {
-        downloadUrl = product.image_file;
-        filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
-      } else if (product.image_data) {
-        downloadUrl = `/api/products/${product.id}/img`;
-        filename += '.jpg';
-      } else if (product.pdf_file) {
-        downloadUrl = product.pdf_file;
-        filename += '.pdf';
-      } else if (product.pdf_data) {
-        downloadUrl = `/api/products/${product.id}/pdf`;
-        filename += '.pdf';
-      } else if (product.storage_url) {
-        downloadUrl = product.storage_url;
-        const extension = product.storage_url.split('.').pop();
-        if (extension && extension.length <= 5) {
-          filename += `.${extension}`;
-        }
-      } else {
-        alert('No downloadable content available for this product.');
-        return;
+      switch (storageType) {
+        case 'image_file':
+          if (!product.image_file) {
+            throw new Error('Image file not available');
+          }
+          downloadUrl = product.image_file;
+          filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
+          break;
+          
+        case 'image_data':
+          if (!product.image_data) {
+            throw new Error('Image data not available');
+          }
+          downloadUrl = `/api/products/${product.id}/img`;
+          filename += '.jpg';
+          break;
+          
+        case 'pdf_file':
+          if (!product.pdf_file) {
+            throw new Error('PDF file not available');
+          }
+          downloadUrl = product.pdf_file;
+          filename += '.pdf';
+          break;
+          
+        case 'pdf_data':
+          if (!product.pdf_data) {
+            throw new Error('PDF data not available');
+          }
+          downloadUrl = `/api/products/${product.id}/pdf`;
+          filename += '.pdf';
+          break;
+          
+        case 'storage_url':
+          if (!product.storage_url) {
+            throw new Error('Storage URL not available');
+          }
+          downloadUrl = product.storage_url;
+          const extension = product.storage_url.split('.').pop();
+          if (extension && extension.length <= 5) {
+            filename += `.${extension}`;
+          }
+          break;
+          
+        default:
+          throw new Error('Invalid storage type');
       }
 
       // Handle internal API endpoints with fetch (for auth and proper headers)
@@ -123,9 +166,21 @@ export default function OrdersPage() {
         link.click();
         document.body.removeChild(link);
       }
+
+      toast({
+        title: "Download started",
+        description: `Downloading ${product.name}...`,
+      });
+      
+      setDownloadDialogOpen(false);
+      
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Download failed. Please try again or contact support if the issue persists.');
+      toast({
+        title: "Download failed",
+        description: error instanceof Error ? error.message : "An error occurred during download",
+        variant: "destructive",
+      });
     }
   };
 
@@ -381,7 +436,7 @@ export default function OrdersPage() {
                       <TableCell>
                         <Button
                           variant="outline"
-                          onClick={() => downloadDigitalProduct(item.product)}
+                          onClick={() => openDownloadDialog(item.product)}
                           className="h-8 px-3 text-sm"
                         >
                           <Download className="h-4 w-4 mr-1" />
@@ -411,6 +466,81 @@ export default function OrdersPage() {
         onOpenChange={setIsImageViewerOpen}
         url={selectedImage}
       />
+
+      {/* Download Storage Selection Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Download Source</DialogTitle>
+            <DialogDescription>
+              Select which storage type to download from for &quot;{selectedProductForDownload?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {selectedProductForDownload?.image_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_file')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.image_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_data')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_file')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_data')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.storage_url && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'storage_url')}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                External Storage URL
+              </Button>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
