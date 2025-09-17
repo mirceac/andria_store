@@ -1491,18 +1491,38 @@ export function registerRoutes(app: Express): Server {
 
             // Get variant type from product metadata if available
             const variantType = product.metadata?.variant_type || 'digital';
+            const quantity = item.quantity || 1;
 
-            console.log("Creating order item for product:", dbProduct.name, "variant:", variantType);
+            console.log("Creating order item for product:", dbProduct.name, "variant:", variantType, "quantity:", quantity);
             await db
               .insert(orderItems)
               .values({
                 order_id: order.id,
                 product_id: dbProduct.id,
-                quantity: item.quantity || 1,
+                quantity: quantity,
                 price: (item.amount_total || 0) / 100,
                 variant_type: variantType as 'digital' | 'physical',
               });
             console.log("Created order item for product:", dbProduct.name);
+
+            // Decrease stock for physical items
+            if (variantType === 'physical') {
+              console.log("Decreasing stock for physical product:", dbProduct.name, "by quantity:", quantity);
+              try {
+                const [updatedProduct] = await db
+                  .update(products)
+                  .set({
+                    stock: Math.max(0, (dbProduct.stock || 0) - quantity) // Ensure stock doesn't go below 0
+                  })
+                  .where(eq(products.id, dbProduct.id))
+                  .returning();
+                
+                console.log("Stock updated for product:", dbProduct.name, "from", dbProduct.stock, "to", updatedProduct.stock);
+              } catch (stockError) {
+                console.error("Failed to update stock for product:", dbProduct.name, stockError);
+                // Don't fail the entire webhook for stock update issues
+              }
+            }
           }
 
           console.log("Order processing completed successfully");
