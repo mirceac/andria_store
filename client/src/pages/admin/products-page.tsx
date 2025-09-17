@@ -175,8 +175,8 @@ export default function AdminProductsPage() {
             });
             return;
           }
-          downloadUrl = `/api/products/${product.id}/img`;
-          filename += '.jpg';
+          downloadUrl = `/api/products/${product.id}/download/image`;
+          filename += '.jpg'; // Server will determine correct extension
           break;
           
         case 'pdf_file':

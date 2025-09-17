@@ -724,6 +724,83 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Image download endpoint (separate from image serving)
+  app.get("/api/products/:id/download/image", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, productId)
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      // Handle database-stored image download
+      if (product.image_data) {
+        try {
+          const imageInfo = JSON.parse(product.image_data);
+          const imageBuffer = Buffer.from(imageInfo.data, 'base64');
+          
+          // Determine file extension from content type
+          let extension = 'jpg';
+          if (imageInfo.contentType === 'image/png') {
+            extension = 'png';
+          } else if (imageInfo.contentType === 'image/gif') {
+            extension = 'gif';
+          } else if (imageInfo.contentType === 'image/webp') {
+            extension = 'webp';
+          }
+          
+          const filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`;
+
+          // Set download headers
+          res.set({
+            'Content-Type': imageInfo.contentType,
+            'Content-Length': imageBuffer.length,
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            'Cache-Control': 'no-cache'
+          });
+
+          return res.send(imageBuffer);
+        } catch (error) {
+          console.error('Error processing image download:', error);
+          return res.status(500).json({ 
+            message: "Error processing image download",
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      // Handle file system image download
+      if (product.image_file) {
+        try {
+          const filePath = path.join(process.cwd(), 'public', product.image_file);
+          if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "Image file not found" });
+          }
+          
+          const filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.${path.extname(product.image_file)}`;
+          
+          res.set({
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            'Cache-Control': 'no-cache'
+          });
+          
+          return res.sendFile(filePath);
+        } catch (error) {
+          console.error('Error serving image file download:', error);
+          return res.status(500).json({ message: "Error serving image file download" });
+        }
+      }
+
+      return res.status(404).json({ message: "No image found for this product" });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Protected admin routes
   app.post("/api/products", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {

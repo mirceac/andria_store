@@ -95,8 +95,8 @@ export default function OrdersPage() {
           if (!product.image_data) {
             throw new Error('Image data not available');
           }
-          downloadUrl = `/api/products/${product.id}/img`;
-          filename += '.jpg';
+          downloadUrl = `/api/products/${product.id}/download/image`;
+          filename += '.jpg'; // Server will determine correct extension
           break;
           
         case 'pdf_file':
