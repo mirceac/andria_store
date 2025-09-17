@@ -1494,13 +1494,17 @@ export function registerRoutes(app: Express): Server {
             const quantity = item.quantity || 1;
 
             console.log("Creating order item for product:", dbProduct.name, "variant:", variantType, "quantity:", quantity);
+            
+            // Calculate unit price from total amount and quantity
+            const unitPrice = ((item.amount_total || 0) / 100) / quantity;
+            
             await db
               .insert(orderItems)
               .values({
                 order_id: order.id,
                 product_id: dbProduct.id,
                 quantity: quantity,
-                price: (item.amount_total || 0) / 100,
+                price: unitPrice, // Store unit price, not total price
                 variant_type: variantType as 'digital' | 'physical',
               });
             console.log("Created order item for product:", dbProduct.name);

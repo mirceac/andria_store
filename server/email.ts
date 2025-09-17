@@ -199,7 +199,7 @@ Total Amount: $${order.total.toFixed(2)}
 Items Ordered:
 ${order.items.map(item => {
   const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-  return `- ${item.product.name} (Qty: ${item.quantity}) - $${(itemPrice * item.quantity).toFixed(2)}`;
+  return `- ${item.product.name} (Qty: ${item.quantity}) - Unit: $${itemPrice.toFixed(2)}, Total: $${(itemPrice * item.quantity).toFixed(2)}`;
 }).join('\n')}
 
 Your digital products are now available for download in your account.
