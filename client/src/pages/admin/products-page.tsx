@@ -140,6 +140,7 @@ export default function AdminProductsPage() {
   // Download dialog state
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [selectedProductForDownload, setSelectedProductForDownload] = useState<SelectProduct | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
   // Download function for digital products (admin)
   const openDownloadDialog = (product: SelectProduct) => {
@@ -702,6 +703,22 @@ export default function AdminProductsPage() {
     return products.slice(startIndex, startIndex + itemsPerPage);
   };
 
+  // Add category filtering logic
+  const filterProductsByCategory = (products: SelectProduct[]) => {
+    if (selectedCategoryFilter === "all") {
+      return products;
+    }
+    return products.filter(product => product.category_id?.toString() === selectedCategoryFilter);
+  };
+
+  // Get filtered products for pagination calculations
+  const filteredProducts = products ? filterProductsByCategory(products) : [];
+
+  // Reset to page 1 when category filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategoryFilter]);
+
   // Add sort handler
   const handleSort = (key: string) => {
     setSortConfig((current) => ({
@@ -1156,8 +1173,22 @@ export default function AdminProductsPage() {
             <p className="text-sm text-muted-foreground">
               Manage your product catalog
             </p>
+            <div className="mt-2">
+              <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          {/* Add your create product button here */}
         </div>
 
         {/* Improved table container with proper overflow handling */}
@@ -1179,7 +1210,7 @@ export default function AdminProductsPage() {
             </TableHeader>
             <TableBody>
               {products &&
-                paginateProducts(sortProducts(products)).map((product, index) => (
+                paginateProducts(sortProducts(filterProductsByCategory(products))).map((product, index) => (
                   <TableRow key={product.id}>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle w-[60px]">
@@ -1610,8 +1641,8 @@ export default function AdminProductsPage() {
             <div className="text-sm text-slate-500">
               Showing{" "}
               {((currentPage - 1) * itemsPerPage) + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, products?.length || 0)} of{" "}
-              {products?.length || 0} products
+              {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of{" "}
+              {filteredProducts.length} products
             </div>
             <div className="flex gap-2">
               <Button
@@ -1628,12 +1659,12 @@ export default function AdminProductsPage() {
                 onClick={() =>
                   setCurrentPage((p) =>
                     Math.min(
-                      Math.ceil((products?.length || 0) / itemsPerPage),
+                      Math.ceil(filteredProducts.length / itemsPerPage),
                       p + 1
                     )
                   )}
                 disabled={
-                  currentPage === Math.ceil((products?.length || 0) / itemsPerPage)
+                  currentPage === Math.ceil(filteredProducts.length / itemsPerPage)
                 }
               >
                 <ChevronRight className="h-4 w-4" />
