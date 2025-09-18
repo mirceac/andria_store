@@ -1160,23 +1160,20 @@ export default function AdminProductsPage() {
           {/* Add your create product button here */}
         </div>
 
-        {/* Add margin to the table container */}
-  <div className="border rounded-md mx-3 overflow-x-hidden" style={{maxWidth: '100vw'}}>
+        {/* Improved table container with proper overflow handling */}
+        <div className="border rounded-md mx-3 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center w-[30px]">Item</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Image File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Image DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
-                <TableHead className="text-center w-[120px]">Name</TableHead>
-                <TableHead className="text-center w-[100px]">Category</TableHead>
+                <TableHead className="text-center w-[200px]">Name & Category</TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
-                <TableHead className="text-center w-[60px]">Physical Stock</TableHead>
-                <TableHead className="text-center w-[100px]">Variants</TableHead>
+                <TableHead className="text-center w-[140px]">Variants</TableHead>
                 <TableHead className="text-right px-4 w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -1184,9 +1181,6 @@ export default function AdminProductsPage() {
               {products &&
                 paginateProducts(sortProducts(products)).map((product, index) => (
                   <TableRow key={product.id}>
-                    <TableCell className="text-center align-middle font-medium w-[30px]">
-                      {index + 1}
-                    </TableCell>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.image_file ? (
@@ -1509,46 +1503,46 @@ export default function AdminProductsPage() {
                       )}
                     </TableCell>
 
-                    <TableCell className="text-center w-[120px]">
-                      <p className="text-sm text-gray-700">{product.name}</p>
-                    </TableCell>
-                    <TableCell className="text-center w-[100px]">
-                      <p className="text-sm text-gray-700">{(product as any).category_name || 'No category'}</p>
+                    <TableCell className="text-center w-[200px]">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center justify-center gap-1 w-full">
+                          <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
+                            #{((currentPage - 1) * itemsPerPage) + index + 1}
+                          </span>
+                          <p className="text-sm text-gray-700 truncate flex-1 font-medium">{product.name}</p>
+                        </div>
+                        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                          {(product as any).category_name || 'No category'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-center w-[180px] max-w-[180px] overflow-hidden">
                       <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{product.description}</p>
                     </TableCell>
                     <TableCell className="text-center w-[80px]">
-                      <p className="table-cell-subtext">
+                      <p className="text-sm font-medium">
                         ${Number(product.price).toFixed(2)}
                       </p>
                     </TableCell>
-                    <TableCell className="text-center w-[60px]">
-                      {product.has_physical_variant ? (
-                        <p
-                          className={cn(
-                            "table-cell-subtext",
-                            (product.stock || 0) === 0
-                              ? "text-red-500"
-                              : "text-green-600"
-                          )}
-                        >
-                          {product.stock || 0}
-                        </p>
-                      ) : (
-                        <p className="table-cell-subtext text-gray-400">
-                          N/A
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center w-[100px]">
+                    <TableCell className="text-center w-[140px]">
                       {product.has_physical_variant ? (
                         <div className="space-y-1">
                           <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 text-green-700 border-green-200">
                             Physical
                           </div>
-                          <div className="text-xs text-gray-600">
-                            ${Number(product.physical_price || 0).toFixed(2)} / {product.stock || 0} stock
+                          <div className="text-xs">
+                            <span className="text-sm font-medium">${Number(product.physical_price || 0).toFixed(2)}</span>
+                            <br />
+                            <span 
+                              className={cn(
+                                "font-bold text-sm",
+                                (product.stock || 0) === 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              )}
+                            >
+                              {product.stock || 0} in stock
+                            </span>
                           </div>
                         </div>
                       ) : (

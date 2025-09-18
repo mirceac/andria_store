@@ -243,12 +243,11 @@ export default function HomePage() {
       )}>
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className={cn(
-              "font-semibold text-gray-900 transition-opacity",
-              sidebarOpen ? "opacity-100" : "opacity-0"
-            )}>
-              Categories
-            </h2>
+            {sidebarOpen && (
+              <h2 className="font-semibold text-gray-900">
+                Categories
+              </h2>
+            )}
             <Button
               variant="ghost"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -287,24 +286,18 @@ export default function HomePage() {
               <Button
                 variant={selectedCategoryId === null ? "default" : "ghost"}
                 className="w-8 h-8 p-0"
-                onClick={() => {
-                  setSelectedCategoryId(null);
-                  setSidebarOpen(true);
-                }}
-                title="All Products - Click to expand menu"
+                onClick={() => setSelectedCategoryId(null)}
+                title="All Products"
               >
-                *
+                A
               </Button>
-              {categories?.slice(0, 5).map((category, index) => (
+              {categories?.slice(0, 6).map((category, index) => (
                 <Button
                   key={category.id}
                   variant={selectedCategoryId === category.id ? "default" : "ghost"}
                   className="w-8 h-8 p-0"
-                  onClick={() => {
-                    setSelectedCategoryId(category.id);
-                    setSidebarOpen(true);
-                  }}
-                  title={`${category.name} - Click to expand menu`}
+                  onClick={() => setSelectedCategoryId(category.id)}
+                  title={category.name}
                 >
                   {index + 1}
                 </Button>
