@@ -66,7 +66,8 @@ export default function AdminOrdersPage() {
   const { toast } = useToast();
   const { data: orders, isLoading } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/admin/orders"],
-    refetchInterval: 5000, // Refresh every 5 seconds
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
   });
 
   // Add timestamp for cache busting

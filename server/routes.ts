@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { setupAuth, hashPassword } from "./auth";
 import { db } from "@db";
 import { products, orders, orderItems, users, categories } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { createCheckoutSession, stripe } from "./stripe";
 import { sendOrderConfirmationEmail } from "./email.js";
 import { testEmailConfiguration } from "./email.js";
@@ -1140,7 +1140,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // First, get basic order info
+      // Get basic order info with proper ordering and limits
       const userOrders = await db
         .select({
           id: orders.id,
@@ -1149,37 +1149,53 @@ export function registerRoutes(app: Express): Server {
           created_at: orders.created_at,
         })
         .from(orders)
-        .where(eq(orders.user_id, req.user.id));
+        .where(eq(orders.user_id, req.user.id))
+        .orderBy(desc(orders.created_at))
+        .limit(50); // Limit to last 50 orders for the user
 
-      // Then, for each order, get its items with product details
-      const ordersWithItems = await Promise.all(
-        userOrders.map(async (order) => {
-          const items = await db
-            .select({
-              id: orderItems.id,
-              quantity: orderItems.quantity,
-              price: orderItems.price,
-              variant_type: orderItems.variant_type,
-              product: {
-                id: products.id,
-                name: products.name,
-                image_file: products.image_file,
-                image_data: products.image_data,
-                pdf_file: products.pdf_file,
-                pdf_data: products.pdf_data,
-                storage_url: products.storage_url,
-              },
-            })
-            .from(orderItems)
-            .leftJoin(products, eq(orderItems.product_id, products.id))
-            .where(eq(orderItems.order_id, order.id));
+      // Batch query for all order items to reduce database calls
+      const allOrderIds = userOrders.map(order => order.id);
+      
+      if (allOrderIds.length === 0) {
+        return res.json([]);
+      }
 
-          return {
-            ...order,
-            items,
-          };
+      // Get all order items in one query
+      const allOrderItems = await db
+        .select({
+          id: orderItems.id,
+          order_id: orderItems.order_id,
+          quantity: orderItems.quantity,
+          price: orderItems.price,
+          variant_type: orderItems.variant_type,
+          product: {
+            id: products.id,
+            name: products.name,
+            image_file: products.image_file,
+            // Don't load image_data to reduce payload size and query time
+            pdf_file: products.pdf_file,
+            // Don't load pdf_data to reduce payload size and query time  
+            storage_url: products.storage_url,
+          },
         })
-      );
+        .from(orderItems)
+        .leftJoin(products, eq(orderItems.product_id, products.id))
+        .where(inArray(orderItems.order_id, allOrderIds));
+
+      // Group items by order_id
+      const itemsByOrderId = allOrderItems.reduce((acc, item) => {
+        if (!acc[item.order_id]) {
+          acc[item.order_id] = [];
+        }
+        acc[item.order_id].push(item);
+        return acc;
+      }, {} as Record<number, typeof allOrderItems>);
+
+      // Combine orders with their items
+      const ordersWithItems = userOrders.map(order => ({
+        ...order,
+        items: itemsByOrderId[order.id] || [],
+      }));
 
       res.json(ordersWithItems);
     } catch (error) {
@@ -1207,7 +1223,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // First, get basic order info with user details
+      // Use a more efficient query by limiting data and adding proper ordering
       const ordersWithUsers = await db
         .select({
           id: orders.id,
@@ -1220,37 +1236,53 @@ export function registerRoutes(app: Express): Server {
           },
         })
         .from(orders)
-        .leftJoin(users, eq(orders.user_id, users.id));
+        .leftJoin(users, eq(orders.user_id, users.id))
+        .orderBy(desc(orders.created_at))
+        .limit(100); // Limit to last 100 orders to prevent timeouts
 
-      // Then, for each order, get its items with product details
-      const ordersWithItems = await Promise.all(
-        ordersWithUsers.map(async (order) => {
-          const items = await db
-            .select({
-              id: orderItems.id,
-              quantity: orderItems.quantity,
-              price: orderItems.price,
-              variant_type: orderItems.variant_type,
-              product: {
-                id: products.id,
-                name: products.name,
-                image_file: products.image_file,
-                image_data: products.image_data,
-                pdf_file: products.pdf_file,
-                pdf_data: products.pdf_data,
-                storage_url: products.storage_url,
-              },
-            })
-            .from(orderItems)
-            .leftJoin(products, eq(orderItems.product_id, products.id))
-            .where(eq(orderItems.order_id, order.id));
+      // Batch query for all order items to reduce database calls
+      const allOrderIds = ordersWithUsers.map(order => order.id);
+      
+      if (allOrderIds.length === 0) {
+        return res.json([]);
+      }
 
-          return {
-            ...order,
-            items,
-          };
+      // Get all order items in one query
+      const allOrderItems = await db
+        .select({
+          id: orderItems.id,
+          order_id: orderItems.order_id,
+          quantity: orderItems.quantity,
+          price: orderItems.price,
+          variant_type: orderItems.variant_type,
+          product: {
+            id: products.id,
+            name: products.name,
+            image_file: products.image_file,
+            // Don't load image_data to reduce payload size and query time
+            pdf_file: products.pdf_file,
+            // Don't load pdf_data to reduce payload size and query time
+            storage_url: products.storage_url,
+          },
         })
-      );
+        .from(orderItems)
+        .leftJoin(products, eq(orderItems.product_id, products.id))
+        .where(inArray(orderItems.order_id, allOrderIds));
+
+      // Group items by order_id
+      const itemsByOrderId = allOrderItems.reduce((acc, item) => {
+        if (!acc[item.order_id]) {
+          acc[item.order_id] = [];
+        }
+        acc[item.order_id].push(item);
+        return acc;
+      }, {} as Record<number, typeof allOrderItems>);
+
+      // Combine orders with their items
+      const ordersWithItems = ordersWithUsers.map(order => ({
+        ...order,
+        items: itemsByOrderId[order.id] || [],
+      }));
 
       console.log("Successfully fetched orders:", ordersWithItems.length);
       res.json(ordersWithItems);
