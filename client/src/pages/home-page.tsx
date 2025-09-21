@@ -12,6 +12,8 @@ import { useSort } from "@/contexts/sort-context";
 import { cn } from "@/lib/utils";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import { VariantSelectionDialog } from "@/components/variant-selection-dialog";
+import { ImageViewerDialogProtected } from "@/components/image-viewer-dialog-protected";
+import { PDFViewerDialogProtected } from "@/components/pdf-viewer-dialog-protected";
 import { useCart } from "@/hooks/use-cart";
 
 type Category = {
@@ -29,6 +31,10 @@ export default function HomePage() {
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -82,6 +88,16 @@ export default function HomePage() {
     setIsVariantDialogOpen(true);
   };
 
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+    setIsImageViewerOpen(true);
+  };
+
+  const handlePdfClick = (pdfUrl: string) => {
+    setSelectedPdfUrl(pdfUrl);
+    setIsPdfViewerOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -131,7 +147,11 @@ export default function HomePage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div 
+          className="w-full h-full flex items-center justify-center cursor-pointer"
+          onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`)}
+          title="Click to view full size image"
+        >
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${timestamp}`}
@@ -139,15 +159,20 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            className="max-w-full max-h-full object-contain pointer-events-none select-none"
+            className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
+            onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`)}
           />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div 
+          className="w-full h-full flex items-center justify-center cursor-pointer"
+          onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`)}
+          title="Click to view full size image"
+        >
           <ImageThumbnail
             productId={product.id}
             imageUrl={`/api/products/${product.id}/img?v=${timestamp}`}
@@ -155,20 +180,25 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            className="max-w-full max-h-full object-contain pointer-events-none select-none"
+            className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
+            onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`)}
           />
         </div>
       );
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div 
+          className="w-full h-full flex items-center justify-center cursor-pointer"
+          onClick={() => handlePdfClick(`${product.pdf_file}?v=${timestamp}`)}
+          title="Click to view full size PDF"
+        >
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
             width={180}
             height={180}
-            className="max-w-full max-h-full pointer-events-none select-none"
+            className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
           />
         </div>
@@ -176,12 +206,16 @@ export default function HomePage() {
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div 
+          className="w-full h-full flex items-center justify-center cursor-pointer"
+          onClick={() => handlePdfClick(`${getPdfUrl(product.id)}?v=${timestamp}`)}
+          title="Click to view full size PDF"
+        >
           <PDFThumbnail
             pdfUrl={`${getPdfUrl(product.id)}?v=${timestamp}`}
             width={180}
             height={180}
-            className="max-w-full max-h-full pointer-events-none select-none"
+            className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
           />
         </div>
@@ -200,12 +234,16 @@ export default function HomePage() {
       if (isImageUrl) {
         // External Image URL
         return (
-          <div className="w-full h-full flex items-center justify-center">
+          <div 
+            className="w-full h-full flex items-center justify-center cursor-pointer"
+            onClick={() => handleImageClick(product.storage_url!)}
+            title="Click to view full size image"
+          >
             <ExternalUrlThumbnail
               url={product.storage_url}
               width={180}
               height={180}
-              className="max-w-full max-h-full pointer-events-none select-none"
+              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
               showTryDirect={false}
             />
           </div>
@@ -213,12 +251,16 @@ export default function HomePage() {
       } else if (isPdfUrl) {
         // External PDF URL
         return (
-          <div className="w-full h-full flex items-center justify-center">
+          <div 
+            className="w-full h-full flex items-center justify-center cursor-pointer"
+            onClick={() => handlePdfClick(product.storage_url!)}
+            title="Click to view full size PDF"
+          >
             <PDFThumbnail
               pdfUrl={product.storage_url}
               width={180}
               height={180}
-              className="max-w-full max-h-full pointer-events-none select-none"
+              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
               showTryDirect={false}
             />
           </div>
@@ -457,6 +499,20 @@ export default function HomePage() {
           product={selectedProduct}
         />
       )}
+
+      {/* Image Viewer Dialog */}
+      <ImageViewerDialogProtected
+        open={isImageViewerOpen}
+        onOpenChange={setIsImageViewerOpen}
+        url={selectedImageUrl}
+      />
+
+      {/* PDF Viewer Dialog */}
+      <PDFViewerDialogProtected
+        open={isPdfViewerOpen}
+        onOpenChange={setIsPdfViewerOpen}
+        pdfUrl={selectedPdfUrl}
+      />
     </div>
   );
 }
