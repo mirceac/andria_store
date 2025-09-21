@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RefreshCw } from "lucide-react";
+import { ZoomIn, ZoomOut, RefreshCw, RotateCw } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode } from "react";
 
 interface ImageViewerDialogProps {
@@ -14,6 +14,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
   const [imageError, setImageError] = useState<ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +23,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
   useEffect(() => {
     setPosition({ x: 0, y: 0 });
     setScale(1);
+    setRotation(0);
     setImageError(null);
     setIsLoading(true);
     
@@ -90,7 +92,10 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
   const resetView = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
+    setRotation(0);
   };
+
+  const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
   // Copyright watermark overlay - static regardless of zoom level
   const getCopyrightOverlay = () => {
@@ -193,6 +198,14 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={handleRotate}
+              title="Rotate 90°"
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
           </div>
           <div className="w-24 flex justify-end">
             <Button
@@ -255,7 +268,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
               alt="Full size"
               className="max-h-full max-w-full object-contain transition-transform duration-75 select-none"
               style={{ 
-                transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+                transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px) rotate(${rotation}deg)`,
                 cursor: isDragging ? 'grabbing' : 'grab',
                 display: imageError ? 'none' : 'block',
                 height: 'auto',

@@ -74,6 +74,11 @@ export function PDFViewerDialog({
   const handleZoomIn = () => setScale(prev => prev + 0.1);
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
+  const resetView = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+  };
 
   // Update URL with retry count
   useEffect(() => {
@@ -218,6 +223,14 @@ export function PDFViewerDialog({
           
           {/* Center: Controls */}
           <div className="flex items-center gap-4">
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={resetView}
+              title="Reset view"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
             <Button
               variant="secondary"
               className="p-2"
