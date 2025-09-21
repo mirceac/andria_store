@@ -488,7 +488,7 @@ export function registerRoutes(app: Express): Server {
       
       if (productsWithCategory.length > 0) {
         return res.status(400).json({ 
-          message: "Cannot delete category that is being used by products. Please reassign products first." 
+          message: "Cannot remove category, unlink products first" 
         });
       }
 

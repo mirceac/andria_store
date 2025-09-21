@@ -98,7 +98,7 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (categoryId: number) => {
-    if (!confirm('Are you sure you want to delete this category? Products using this category will need to be reassigned.')) {
+    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
       return;
     }
 
@@ -107,7 +107,10 @@ export default function CategoriesPage() {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete category');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete category');
+      }
 
       toast({
         title: 'Success',
@@ -118,7 +121,7 @@ export default function CategoriesPage() {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to delete category',
+        description: error instanceof Error ? error.message : 'Failed to delete category',
         variant: 'destructive',
       });
     }
