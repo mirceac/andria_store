@@ -133,14 +133,19 @@ export default function Navbar() {
           <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block" />
 
           {user ? (
-            <Button
-              variant="ghost"
-              className={buttonClasses}
-              onClick={() => logoutMutation.mutate()}
-            >
-              <User className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700 hidden sm:inline">
+                {user.username}
+              </span>
+              <Button
+                variant="ghost"
+                className={buttonClasses}
+                onClick={() => logoutMutation.mutate()}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
           ) : (
             <Link href="/auth">
               <Button variant="ghost" className={buttonClasses}>
