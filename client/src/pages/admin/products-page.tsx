@@ -771,12 +771,68 @@ export default function AdminProductsPage() {
     return products.slice(startIndex, startIndex + itemsPerPage);
   };
 
+  // Helper function to get all descendant category IDs
+  const getDescendantCategoryIds = (categoryId: number, categoryMap: Map<number, CategoryWithChildren>): number[] => {
+    const result = [categoryId];
+    const category = categoryMap.get(categoryId);
+    if (category && category.children) {
+      category.children.forEach(child => {
+        result.push(...getDescendantCategoryIds(child.id, categoryMap));
+      });
+    }
+    return result;
+  };
+
+  // Helper function to get category chain
+  const getCategoryChain = (categoryId: number | null, categoryMap: Map<number, CategoryWithChildren>): string => {
+    if (!categoryId) return 'No category';
+    
+    const chain: string[] = [];
+    let currentId: number | null = categoryId;
+    
+    while (currentId) {
+      const category = categoryMap.get(currentId);
+      if (category) {
+        chain.unshift(category.name);
+        currentId = category.parent_id;
+      } else {
+        break;
+      }
+    }
+    
+    return chain.join(' > ');
+  };
+
   // Add category filtering logic
   const filterProductsByCategory = (products: SelectProduct[]) => {
     if (selectedCategoryFilter === "all") {
       return products;
     }
-    return products.filter(product => product.category_id?.toString() === selectedCategoryFilter);
+    
+    // Build category map for filtering
+    if (!categories) return products;
+    
+    const categoryMap = new Map<number, CategoryWithChildren>();
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+    
+    categories.forEach(category => {
+      if (category.parent_id) {
+        const parent = categoryMap.get(category.parent_id);
+        if (parent) {
+          parent.children.push(categoryMap.get(category.id)!);
+        }
+      }
+    });
+    
+    // Get all descendant category IDs for the selected category
+    const selectedCategoryId = parseInt(selectedCategoryFilter);
+    const allowedCategoryIds = getDescendantCategoryIds(selectedCategoryId, categoryMap);
+    
+    return products.filter(product => 
+      product.category_id && allowedCategoryIds.includes(product.category_id)
+    );
   };
 
   // Get filtered products for pagination calculations
@@ -1269,7 +1325,7 @@ export default function AdminProductsPage() {
                 <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
-                <TableHead className="text-center w-[200px]">Name & Category</TableHead>
+                <TableHead className="text-center w-[250px]">Name & Category</TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
                 <TableHead className="text-center w-[140px]">Variants</TableHead>
@@ -1602,7 +1658,7 @@ export default function AdminProductsPage() {
                       )}
                     </TableCell>
 
-                    <TableCell className="text-center w-[200px]">
+                    <TableCell className="text-center w-[250px]">
                       <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center justify-center gap-1 w-full">
                           <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
@@ -1610,8 +1666,15 @@ export default function AdminProductsPage() {
                           </span>
                           <p className="text-sm text-gray-700 truncate flex-1 font-medium">{product.name}</p>
                         </div>
-                        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                          {(product as any).category_name || 'No category'}
+                        <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full max-w-full truncate">
+                          {(() => {
+                            if (!categories) return 'No category';
+                            const categoryMap = new Map<number, CategoryWithChildren>();
+                            categories.forEach(category => {
+                              categoryMap.set(category.id, { ...category, children: [] });
+                            });
+                            return getCategoryChain(product.category_id, categoryMap);
+                          })()}
                         </span>
                       </div>
                     </TableCell>

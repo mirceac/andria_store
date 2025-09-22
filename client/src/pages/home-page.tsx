@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -33,6 +33,7 @@ export default function HomePage() {
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
@@ -52,6 +53,14 @@ export default function HomePage() {
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  // Auto-expand root categories when categories load
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      const rootCategories = categories.filter(cat => !cat.parent_id);
+      setExpandedCategories(new Set(rootCategories.map(cat => cat.id)));
+    }
+  }, [categories]);
 
   // Helper functions for hierarchical categories
   type CategoryWithChildren = Category & { children: CategoryWithChildren[] };
@@ -96,6 +105,102 @@ export default function HomePage() {
   };
 
   const hierarchicalCategories = categories ? flattenCategories(buildCategoryTree(categories)) : [];
+
+  // Function to toggle category expansion
+  const toggleCategoryExpansion = (categoryId: number) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  // Function to check if category has children
+  const hasChildren = (categoryId: number): boolean => {
+    return categories ? categories.some(cat => cat.parent_id === categoryId) : false;
+  };
+
+  // Recursive tree component
+  const CategoryTreeNode = ({ category, level = 0 }: { category: CategoryWithChildren; level?: number }) => {
+    const isExpanded = expandedCategories.has(category.id);
+    const categoryHasChildren = category.children.length > 0;
+    const isSelected = selectedCategoryId === category.id;
+    
+    return (
+      <div key={category.id} className="select-none">
+        <div className="flex items-center group">
+          <div
+            className={cn(
+              "flex-1 flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+              "hover:bg-gray-50 active:bg-gray-100",
+              isSelected && "bg-indigo-50 border border-indigo-200 shadow-sm",
+              !isSelected && "border border-transparent"
+            )}
+            style={{ 
+              paddingLeft: `${0.5 + level * 1.5}rem`,
+              marginLeft: level > 0 ? '0.25rem' : '0'
+            }}
+            onClick={() => setSelectedCategoryId(category.id)}
+          >
+            <div className="flex items-center w-full">
+              {categoryHasChildren && (
+                <button
+                  className={cn(
+                    "p-1 mr-2 rounded-sm flex items-center justify-center w-5 h-5 transition-all duration-200",
+                    "hover:bg-gray-200 active:bg-gray-300",
+                    isSelected && "hover:bg-indigo-200 active:bg-indigo-300"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCategoryExpansion(category.id);
+                  }}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className={cn(
+                      "h-3.5 w-3.5 transition-colors duration-200",
+                      isSelected ? "text-indigo-700" : "text-gray-600"
+                    )} />
+                  ) : (
+                    <ChevronRight className={cn(
+                      "h-3.5 w-3.5 transition-colors duration-200",
+                      isSelected ? "text-indigo-700" : "text-gray-600"
+                    )} />
+                  )}
+                </button>
+              )}
+              {!categoryHasChildren && level > 0 && (
+                <div className="w-5 mr-2 flex justify-center">
+                  <div className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-colors duration-200",
+                    isSelected ? "bg-indigo-500" : "bg-gray-400"
+                  )}></div>
+                </div>
+              )}
+              <span className={cn(
+                "truncate text-sm font-medium transition-colors duration-200",
+                isSelected ? "text-indigo-900" : "text-gray-700",
+                "group-hover:text-gray-900"
+              )}>
+                {category.name}
+              </span>
+            </div>
+          </div>
+        </div>
+        {categoryHasChildren && isExpanded && (
+          <div className="ml-1 relative">
+            <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200"></div>
+            <div className="ml-1">
+              {category.children.map((child) => (
+                <CategoryTreeNode key={child.id} category={child} level={level + 1} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Function to get all descendant category IDs for filtering
   const getDescendantCategoryIds = (categoryId: number, categories: Category[]): number[] => {
@@ -338,13 +443,13 @@ export default function HomePage() {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className={cn(
-        "transition-all duration-300 bg-white border-r border-gray-200",
+        "transition-all duration-300 bg-gray-50/50 border-r border-gray-200 shadow-sm",
         sidebarOpen ? "w-64" : "w-16"
       )}>
-        <div className="p-4">
+        <div className="p-3">
           <div className="flex items-center justify-between mb-4">
             {sidebarOpen && (
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
                 Categories
               </h2>
             )}
@@ -359,54 +464,62 @@ export default function HomePage() {
           </div>
           
           {sidebarOpen && (
-            <div className="space-y-2">
-              <Button
-                variant={selectedCategoryId === null ? "default" : "ghost"}
-                className="w-full justify-start"
+            <div className="space-y-1">
+              <div
+                className={cn(
+                  "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                  "hover:bg-gray-50 active:bg-gray-100",
+                  selectedCategoryId === null && "bg-indigo-50 border border-indigo-200 shadow-sm",
+                  selectedCategoryId !== null && "border border-transparent"
+                )}
                 onClick={() => setSelectedCategoryId(null)}
               >
-                All Products
-              </Button>
-              {hierarchicalCategories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategoryId === category.id ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedCategoryId(category.id)}
-                  style={{ paddingLeft: `${0.75 + category.level * 1}rem` }}
-                >
-                  {category.level > 0 && (
-                    <span className="text-gray-400 mr-2">
-                      {'└─'.repeat(1)}
-                    </span>
-                  )}
-                  {category.name}
-                </Button>
-              ))}
+                <span className={cn(
+                  "text-sm font-medium transition-colors duration-200",
+                  selectedCategoryId === null ? "text-indigo-900" : "text-gray-700",
+                  "hover:text-gray-900"
+                )}>
+                  All Products
+                </span>
+              </div>
+              <div className="h-px bg-gray-200 my-3"></div>
+              <div className="space-y-0.5">
+                {buildCategoryTree(categories || []).map((category) => (
+                  <CategoryTreeNode key={category.id} category={category} />
+                ))}
+              </div>
             </div>
           )}
           
           {/* Show compact category buttons when collapsed */}
           {!sidebarOpen && (
             <div className="space-y-2">
-              <Button
-                variant={selectedCategoryId === null ? "default" : "ghost"}
-                className="w-8 h-8 p-0"
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-md cursor-pointer flex items-center justify-center transition-all duration-200",
+                  "hover:bg-gray-100 active:bg-gray-200",
+                  selectedCategoryId === null && "bg-indigo-100 text-indigo-700 shadow-sm",
+                  selectedCategoryId !== null && "bg-gray-50 text-gray-600"
+                )}
                 onClick={() => setSelectedCategoryId(null)}
                 title="All Products"
               >
-                A
-              </Button>
-              {hierarchicalCategories.slice(0, 6).map((category, index) => (
-                <Button
+                <span className="text-xs font-bold">A</span>
+              </div>
+              {flattenCategories(buildCategoryTree(categories || [])).slice(0, 6).map((category, index) => (
+                <div
                   key={category.id}
-                  variant={selectedCategoryId === category.id ? "default" : "ghost"}
-                  className="w-8 h-8 p-0"
+                  className={cn(
+                    "w-8 h-8 rounded-md cursor-pointer flex items-center justify-center transition-all duration-200",
+                    "hover:bg-gray-100 active:bg-gray-200",
+                    selectedCategoryId === category.id && "bg-indigo-100 text-indigo-700 shadow-sm",
+                    selectedCategoryId !== category.id && "bg-gray-50 text-gray-600"
+                  )}
                   onClick={() => setSelectedCategoryId(category.id)}
                   title={category.name}
                 >
-                  {index + 1}
-                </Button>
+                  <span className="text-xs font-bold">{index + 1}</span>
+                </div>
               ))}
             </div>
           )}
@@ -417,15 +530,14 @@ export default function HomePage() {
       <div className="flex-1 p-4">
         {/* Breadcrumb Navigation */}
         {selectedCategoryId && categories && (
-          <div className="mb-4 text-sm text-gray-600">
-            <nav className="flex items-center space-x-2">
-              <Button
-                variant="link"
-                className="p-0 h-auto text-sm"
+          <div className="mb-6 border-b border-gray-200 pb-3">
+            <nav className="flex items-center space-x-1 text-sm">
+              <button
+                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                 onClick={() => setSelectedCategoryId(null)}
               >
                 All Products
-              </Button>
+              </button>
               {(() => {
                 const selectedCategory = categories.find(c => c.id === selectedCategoryId);
                 if (!selectedCategory) return null;
@@ -439,18 +551,17 @@ export default function HomePage() {
                 }
                 
                 return breadcrumbs.map((category, index) => (
-                  <div key={category.id} className="flex items-center space-x-2">
-                    <span className="text-gray-400">/</span>
+                  <div key={category.id} className="flex items-center">
+                    <span className="text-gray-400 mx-2">/</span>
                     {index === breadcrumbs.length - 1 ? (
                       <span className="font-medium text-gray-900">{category.name}</span>
                     ) : (
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto text-sm"
+                      <button
+                        className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         onClick={() => setSelectedCategoryId(category.id)}
                       >
                         {category.name}
-                      </Button>
+                      </button>
                     )}
                   </div>
                 ));
