@@ -385,14 +385,19 @@ export default function HomePage() {
       );
     } else if (product.storage_url) {
       // 5. External Storage URL
-      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                        (!product.storage_url.match(/\.(pdf)$/i) && 
+      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
                          (product.storage_url.includes('image') || 
                           product.storage_url.includes('img') || 
                           product.storage_url.includes('photo') ||
-                          product.storage_url.includes('picture')));
+                          product.storage_url.includes('picture') ||
+                          product.storage_url.includes('imgur') ||
+                          product.storage_url.includes('cloudinary') ||
+                          product.storage_url.includes('unsplash')));
       
-      const isPdfUrl = product.storage_url.match(/\.(pdf)$/i);
+      const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                      product.storage_url.includes('pdf') ||
+                      product.storage_url.includes('document');
       
       if (isImageUrl) {
         // External Image URL
@@ -421,6 +426,32 @@ export default function HomePage() {
           >
             <PDFThumbnail
               pdfUrl={product.storage_url}
+              width={180}
+              height={180}
+              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+              showTryDirect={false}
+            />
+          </div>
+        );
+      } else {
+        // External URL that doesn't match image or PDF patterns - treat as generic external content
+        return (
+          <div 
+            className="w-full h-full flex items-center justify-center cursor-pointer"
+            onClick={() => {
+              // Try to determine if it should be treated as image or PDF based on content
+              if (product.storage_url) {
+                if (product.storage_url.includes('pdf') || product.storage_url.toLowerCase().includes('document')) {
+                  handlePdfClick(product.storage_url);
+                } else {
+                  handleImageClick(product.storage_url);
+                }
+              }
+            }}
+            title="Click to view external content"
+          >
+            <ExternalUrlThumbnail
+              url={product.storage_url}
               width={180}
               height={180}
               className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
