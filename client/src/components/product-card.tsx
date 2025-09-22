@@ -14,19 +14,59 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const [selectedVariant, setSelectedVariant] = useState<'digital' | 'physical'>('digital');
 
-  // Get product image from storage_url or image_data
-  const getProductImageUrl = (product: SelectProduct): string | null => {
-    if (product.storage_url) {
-      return product.storage_url;
+  // Get product media based on priority (same as home page and cart)
+  const getProductMediaUrl = (product: SelectProduct): { url: string | null; type: 'image' | 'pdf' } => {
+    // 1. Image File (highest priority)
+    if (product.image_file) {
+      return { url: product.image_file, type: 'image' };
     }
+    
+    // 2. Image DB
     if (product.image_data) {
-      return product.image_data;
+      return { url: `/api/products/${product.id}/img`, type: 'image' };
     }
-    return null;
+    
+    // 3. PDF File
+    if (product.pdf_file) {
+      return { url: product.pdf_file, type: 'pdf' };
+    }
+    
+    // 4. PDF DB
+    if (product.pdf_data) {
+      return { url: `/api/products/${product.id}/pdf`, type: 'pdf' };
+    }
+    
+    // 5. External Storage URL
+    if (product.storage_url) {
+      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
+                         (product.storage_url.includes('image') || 
+                          product.storage_url.includes('img') || 
+                          product.storage_url.includes('photo') ||
+                          product.storage_url.includes('picture') ||
+                          product.storage_url.includes('imgur') ||
+                          product.storage_url.includes('cloudinary') ||
+                          product.storage_url.includes('unsplash')));
+      
+      const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                      product.storage_url.includes('pdf') ||
+                      product.storage_url.includes('document');
+      
+      if (isImageUrl) {
+        return { url: product.storage_url, type: 'image' };
+      } else if (isPdfUrl) {
+        return { url: product.storage_url, type: 'pdf' };
+      } else {
+        // Default to image for unknown external URLs
+        return { url: product.storage_url, type: 'image' };
+      }
+    }
+    
+    return { url: null, type: 'image' };
   };
 
-  const imageUrl = getProductImageUrl(product);
-  const hasPdf = product.pdf_file || product.pdf_data;
+  const mediaInfo = getProductMediaUrl(product);
+  const hasMedia = mediaInfo.url !== null;
 
   // Get pricing based on variant
   const getPrice = () => {
@@ -65,24 +105,26 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Card className="overflow-hidden">
       <Link href={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden bg-gray-50 flex items-center justify-center">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="w-full h-full object-cover transition-transform hover:scale-105"
-            />
-          ) : hasPdf ? (
-            <div className="flex flex-col items-center justify-center w-full h-full">
-              <div className="text-blue-500 mb-1">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 15H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 18H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+          {hasMedia ? (
+            mediaInfo.type === 'image' ? (
+              <img
+                src={mediaInfo.url!}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform hover:scale-105"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full h-full">
+                <div className="text-blue-500 mb-1">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 15H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 18H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span className="text-sm text-blue-600">PDF Document</span>
               </div>
-              <span className="text-sm text-blue-600">PDF Document</span>
-            </div>
+            )
           ) : (
             <XCircle className="h-10 w-10 text-gray-300 m-8" />
           )}

@@ -114,14 +114,22 @@ export default function CartPage() {
         </div>
       );
     } else if (product.storage_url) {
-      // 5. Storage URL (lowest priority)
-      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                     (product.storage_url.includes('image') || 
-                      product.storage_url.includes('img') || 
-                      product.storage_url.includes('photo') ||
-                      product.storage_url.includes('picture'));
+      // 5. Storage URL (external URL)
+      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
+                         (product.storage_url.includes('image') || 
+                          product.storage_url.includes('img') || 
+                          product.storage_url.includes('photo') ||
+                          product.storage_url.includes('picture') ||
+                          product.storage_url.includes('imgur') ||
+                          product.storage_url.includes('cloudinary') ||
+                          product.storage_url.includes('unsplash')));
       
-      if (isImage) {
+      const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                      product.storage_url.includes('pdf') ||
+                      product.storage_url.includes('document');
+      
+      if (isImageUrl) {
         return (
           <div className="relative pointer-events-none select-none">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
@@ -131,13 +139,23 @@ export default function CartPage() {
             />
           </div>
         );
-      } else {
-        // Assume it's a PDF or other document
+      } else if (isPdfUrl) {
         return (
           <div className="relative pointer-events-none select-none">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <PDFThumbnail
-              pdfUrl={`${product.storage_url}?v=${refreshTimestamp}`}
+              pdfUrl={product.storage_url}
+              showTryDirect={false}
+            />
+          </div>
+        );
+      } else {
+        // External URL that doesn't match specific patterns - show as external content
+        return (
+          <div className="relative pointer-events-none select-none">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <ExternalUrlThumbnail
+              url={product.storage_url}
               showTryDirect={false}
             />
           </div>

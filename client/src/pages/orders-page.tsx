@@ -308,14 +308,22 @@ export default function OrdersPage() {
         </div>
       );
     } else if (product.storage_url) {
-      // 5. Storage URL (lowest priority) - matching cart grid exactly
-      const isImage = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i) || 
-                     (product.storage_url.includes('image') || 
-                      product.storage_url.includes('img') || 
-                      product.storage_url.includes('photo') ||
-                      product.storage_url.includes('picture'));
+      // 5. Storage URL - improved pattern matching
+      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
+                         (product.storage_url.includes('image') || 
+                          product.storage_url.includes('img') || 
+                          product.storage_url.includes('photo') ||
+                          product.storage_url.includes('picture') ||
+                          product.storage_url.includes('imgur') ||
+                          product.storage_url.includes('cloudinary') ||
+                          product.storage_url.includes('unsplash')));
       
-      if (isImage) {
+      const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                      product.storage_url.includes('pdf') ||
+                      product.storage_url.includes('document');
+      
+      if (isImageUrl) {
         // External Image URL
         return (
           <div className="relative shrink-0">
@@ -330,17 +338,32 @@ export default function OrdersPage() {
             />
           </div>
         );
-      } else {
-        // Assume it's a PDF or other document
+      } else if (isPdfUrl) {
+        // External PDF URL
         return (
           <div className="relative shrink-0">
             <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
             <PDFThumbnail
-              pdfUrl={`${product.storage_url}?v=${timestamp}`}
+              pdfUrl={product.storage_url}
               onClick={() => {
-                setSelectedPdf(`${product.storage_url}?v=${timestamp}`);
+                setSelectedPdf(product.storage_url!);
                 setSelectedProduct(product);
                 setIsPdfViewerOpen(true);
+              }}
+            />
+          </div>
+        );
+      } else {
+        // External URL that doesn't match specific patterns - default to image treatment
+        return (
+          <div className="relative shrink-0">
+            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+            <ExternalUrlThumbnail
+              url={product.storage_url}
+              onClick={() => {
+                setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                setSelectedProduct(product);
+                setIsImageViewerOpen(true);
               }}
             />
           </div>
