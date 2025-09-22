@@ -14,12 +14,20 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Trash2, Edit, Plus } from 'lucide-react';
 
 type Category = {
   id: number;
   name: string;
   description: string | null;
+  parent_id: number | null;
   created_at: string;
 };
 
@@ -31,8 +39,55 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    parent_id: '',
   });
   const { toast } = useToast();
+
+  // Helper types for hierarchy
+  type CategoryWithChildren = Category & { children: CategoryWithChildren[] };
+  type CategoryWithLevel = Category & { level: number };
+
+  // Helper function to build hierarchical structure
+  const buildCategoryTree = (categories: Category[]): CategoryWithChildren[] => {
+    const categoryMap = new Map<number, CategoryWithChildren>();
+    const rootCategories: CategoryWithChildren[] = [];
+    
+    // First pass: create map of all categories with children array
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+    
+    // Second pass: build hierarchy
+    categories.forEach(category => {
+      const categoryWithChildren = categoryMap.get(category.id)!;
+      if (category.parent_id) {
+        const parent = categoryMap.get(category.parent_id);
+        if (parent) {
+          parent.children.push(categoryWithChildren);
+        }
+      } else {
+        rootCategories.push(categoryWithChildren);
+      }
+    });
+    
+    return rootCategories;
+  };
+
+  // Helper function to flatten hierarchy for display
+  const flattenCategories = (categories: CategoryWithChildren[], level = 0): CategoryWithLevel[] => {
+    const result: CategoryWithLevel[] = [];
+    
+    categories.forEach(category => {
+      result.push({ ...category, level });
+      if (category.children.length > 0) {
+        result.push(...flattenCategories(category.children, level + 1));
+      }
+    });
+    
+    return result;
+  };
+
+  const hierarchicalCategories = flattenCategories(buildCategoryTree(categories));
 
   useEffect(() => {
     fetchCategories();
@@ -61,13 +116,23 @@ export default function CategoriesPage() {
       const url = editingCategory ? `/api/categories/${editingCategory.id}` : '/api/categories';
       const method = editingCategory ? 'PUT' : 'POST';
 
+      // Prepare the data with proper parent_id handling
+      const submitData = {
+        name: formData.name,
+        description: formData.description,
+        parent_id: formData.parent_id && formData.parent_id !== "none" ? parseInt(formData.parent_id) : null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
-      if (!response.ok) throw new Error('Failed to save category');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save category');
+      }
 
       toast({
         title: 'Success',
@@ -93,6 +158,7 @@ export default function CategoriesPage() {
     setFormData({
       name: category.name,
       description: category.description || '',
+      parent_id: category.parent_id ? category.parent_id.toString() : 'none',
     });
     setIsDialogOpen(true);
   };
@@ -129,7 +195,7 @@ export default function CategoriesPage() {
 
   const resetForm = () => {
     setEditingCategory(null);
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', parent_id: 'none' });
   };
 
   const openCreateDialog = () => {
@@ -186,6 +252,29 @@ export default function CategoriesPage() {
                     rows={3}
                   />
                 </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="parent_id">Parent Category</Label>
+                  <Select
+                    value={formData.parent_id}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, parent_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parent category (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Parent (Root Category)</SelectItem>
+                      {categories
+                        .filter(cat => editingCategory ? cat.id !== editingCategory.id : true)
+                        .map((category) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button
@@ -205,11 +294,21 @@ export default function CategoriesPage() {
       </div>
 
       <div className="grid gap-4">
-        {categories.map((category) => (
-          <Card key={category.id}>
+        {hierarchicalCategories.map((category) => (
+          <Card key={category.id} className={`${category.level > 0 ? 'ml-8' : ''}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg font-semibold">
+              <CardTitle className="text-lg font-semibold flex items-center">
+                {category.level > 0 && (
+                  <span className="text-gray-400 mr-2">
+                    {'├─'.repeat(category.level)}
+                  </span>
+                )}
                 {category.name}
+                {category.level > 0 && (
+                  <span className="text-sm text-gray-500 ml-2">
+                    (Child of: {categories.find(c => c.id === category.parent_id)?.name})
+                  </span>
+                )}
               </CardTitle>
               <div className="flex gap-2">
                 <Button

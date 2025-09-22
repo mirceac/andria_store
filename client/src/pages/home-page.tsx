@@ -20,6 +20,8 @@ type Category = {
   id: number;
   name: string;
   description: string | null;
+  parent_id: number | null;
+  created_at: string;
 };
 
 export default function HomePage() {
@@ -50,6 +52,62 @@ export default function HomePage() {
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  // Helper functions for hierarchical categories
+  type CategoryWithChildren = Category & { children: CategoryWithChildren[] };
+  type CategoryWithLevel = Category & { level: number };
+
+  const buildCategoryTree = (categories: Category[]): CategoryWithChildren[] => {
+    const categoryMap = new Map<number, CategoryWithChildren>();
+    const rootCategories: CategoryWithChildren[] = [];
+    
+    // First pass: create map of all categories with children array
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+    
+    // Second pass: build hierarchy
+    categories.forEach(category => {
+      const categoryWithChildren = categoryMap.get(category.id)!;
+      if (category.parent_id) {
+        const parent = categoryMap.get(category.parent_id);
+        if (parent) {
+          parent.children.push(categoryWithChildren);
+        }
+      } else {
+        rootCategories.push(categoryWithChildren);
+      }
+    });
+    
+    return rootCategories;
+  };
+
+  const flattenCategories = (categories: CategoryWithChildren[], level = 0): CategoryWithLevel[] => {
+    const result: CategoryWithLevel[] = [];
+    
+    categories.forEach(category => {
+      result.push({ ...category, level });
+      if (category.children.length > 0) {
+        result.push(...flattenCategories(category.children, level + 1));
+      }
+    });
+    
+    return result;
+  };
+
+  const hierarchicalCategories = categories ? flattenCategories(buildCategoryTree(categories)) : [];
+
+  // Function to get all descendant category IDs for filtering
+  const getDescendantCategoryIds = (categoryId: number, categories: Category[]): number[] => {
+    const descendants: number[] = [categoryId];
+    const children = categories.filter(cat => cat.parent_id === categoryId);
+    
+    children.forEach(child => {
+      descendants.push(...getDescendantCategoryIds(child.id, categories));
+    });
+    
+    return descendants;
+  };
 
   const handleAddToCartClick = (product: SelectProduct) => {
     const hasDigital = Number(product.price || 0) > 0; // price field is digital price
@@ -113,7 +171,7 @@ export default function HomePage() {
       : true;
     
     const matchesCategory = selectedCategoryId 
-      ? product.category_id === selectedCategoryId 
+      ? getDescendantCategoryIds(selectedCategoryId, categories || []).includes(product.category_id!)
       : true;
     
     return matchesSearch && matchesCategory;
@@ -309,13 +367,19 @@ export default function HomePage() {
               >
                 All Products
               </Button>
-              {categories?.map((category) => (
+              {hierarchicalCategories.map((category) => (
                 <Button
                   key={category.id}
                   variant={selectedCategoryId === category.id ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => setSelectedCategoryId(category.id)}
+                  style={{ paddingLeft: `${0.75 + category.level * 1}rem` }}
                 >
+                  {category.level > 0 && (
+                    <span className="text-gray-400 mr-2">
+                      {'└─'.repeat(1)}
+                    </span>
+                  )}
                   {category.name}
                 </Button>
               ))}
@@ -333,7 +397,7 @@ export default function HomePage() {
               >
                 A
               </Button>
-              {categories?.slice(0, 6).map((category, index) => (
+              {hierarchicalCategories.slice(0, 6).map((category, index) => (
                 <Button
                   key={category.id}
                   variant={selectedCategoryId === category.id ? "default" : "ghost"}
@@ -351,6 +415,50 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="flex-1 p-4">
+        {/* Breadcrumb Navigation */}
+        {selectedCategoryId && categories && (
+          <div className="mb-4 text-sm text-gray-600">
+            <nav className="flex items-center space-x-2">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-sm"
+                onClick={() => setSelectedCategoryId(null)}
+              >
+                All Products
+              </Button>
+              {(() => {
+                const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+                if (!selectedCategory) return null;
+                
+                const breadcrumbs: Category[] = [];
+                let current: Category | null = selectedCategory;
+                
+                while (current) {
+                  breadcrumbs.unshift(current);
+                  current = categories.find(c => c.id === current?.parent_id) || null;
+                }
+                
+                return breadcrumbs.map((category, index) => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <span className="text-gray-400">/</span>
+                    {index === breadcrumbs.length - 1 ? (
+                      <span className="font-medium text-gray-900">{category.name}</span>
+                    ) : (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto text-sm"
+                        onClick={() => setSelectedCategoryId(category.id)}
+                      >
+                        {category.name}
+                      </Button>
+                    )}
+                  </div>
+                ));
+              })()}
+            </nav>
+          </div>
+        )}
+        
         <div 
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2" 
           style={{maxWidth: '100%', overflow: 'hidden'}}

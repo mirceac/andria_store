@@ -415,6 +415,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // New endpoint for hierarchical category tree
+  app.get("/api/categories/tree", async (req, res) => {
+    try {
+      const allCategories = await db.select().from(categories);
+      
+      // Build hierarchical structure
+      const categoryMap = new Map();
+      const rootCategories: any[] = [];
+      
+      // First pass: create map of all categories
+      allCategories.forEach(category => {
+        categoryMap.set(category.id, { ...category, children: [] });
+      });
+      
+      // Second pass: build hierarchy
+      allCategories.forEach(category => {
+        if (category.parent_id) {
+          const parent = categoryMap.get(category.parent_id);
+          if (parent) {
+            parent.children.push(categoryMap.get(category.id));
+          }
+        } else {
+          rootCategories.push(categoryMap.get(category.id));
+        }
+      });
+      
+      res.json(rootCategories);
+    } catch (error) {
+      console.error("Error fetching category tree:", error);
+      res.status(500).json({ message: "Failed to fetch category tree" });
+    }
+  });
+
   app.get("/api/categories/:id", async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
@@ -433,18 +466,27 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/categories", async (req, res) => {
     try {
-      const { name, description } = req.body;
+      const { name, description, parent_id } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: "Category name is required" });
       }
 
+      // Validate parent_id if provided
+      if (parent_id) {
+        const parentCategory = await db.select().from(categories).where(eq(categories.id, parent_id));
+        if (parentCategory.length === 0) {
+          return res.status(400).json({ message: "Parent category not found" });
+        }
+      }
+
       const newCategory = await db.insert(categories).values({
         name,
         description: description || null,
+        parent_id: parent_id || null,
       }).returning();
 
-      res.status(201).json(newCategory[0]);
+      res.status(201).json(newCategory[0] as any);
     } catch (error) {
       console.error("Error creating category:", error);
       res.status(500).json({ message: "Failed to create category" });
@@ -454,16 +496,41 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/categories/:id", async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
-      const { name, description } = req.body;
+      const { name, description, parent_id } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: "Category name is required" });
+      }
+
+      // Validate parent_id if provided
+      if (parent_id) {
+        // Check if parent exists
+        const parentCategory = await db.select().from(categories).where(eq(categories.id, parent_id));
+        if (parentCategory.length === 0) {
+          return res.status(400).json({ message: "Parent category not found" });
+        }
+
+        // Prevent circular reference (category cannot be its own parent or descendant)
+        if (parent_id === categoryId) {
+          return res.status(400).json({ message: "Category cannot be its own parent" });
+        }
+
+        // Check for circular reference by traversing up the parent chain
+        let currentParentId = parent_id;
+        while (currentParentId) {
+          if (currentParentId === categoryId) {
+            return res.status(400).json({ message: "Circular reference detected. Category cannot be a descendant of itself" });
+          }
+          const parentCheck = await db.select().from(categories).where(eq(categories.id, currentParentId));
+          currentParentId = parentCheck[0]?.parent_id;
+        }
       }
 
       const updatedCategory = await db.update(categories)
         .set({
           name,
           description: description || null,
+          parent_id: parent_id || null,
         })
         .where(eq(categories.id, categoryId))
         .returning();
@@ -492,11 +559,20 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
+      // Check if any child categories exist
+      const childCategories = await db.select().from(categories).where(eq(categories.parent_id, categoryId));
+      
+      if (childCategories.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot remove category with child categories. Remove or reassign child categories first" 
+        });
+      }
+
       const deletedCategory = await db.delete(categories)
         .where(eq(categories.id, categoryId))
         .returning();
 
-      if (deletedCategory.length === 0) {
+      if ((deletedCategory as any[]).length === 0) {
         return res.status(404).json({ message: "Category not found" });
       }
 

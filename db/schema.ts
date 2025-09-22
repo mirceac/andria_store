@@ -8,7 +8,8 @@ import {
   doublePrecision, 
   varchar, 
   numeric,
-  decimal
+  decimal,
+  foreignKey
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
@@ -26,8 +27,14 @@ export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  parent_id: integer("parent_id"),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => ({
+  parentReference: foreignKey({
+    columns: [table.parent_id],
+    foreignColumns: [table.id],
+  }),
+}));
 
 export const products = pgTable('products', {
   id: serial('id').primaryKey(),

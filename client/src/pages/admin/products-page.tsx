@@ -61,7 +61,7 @@ import {
   Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -141,6 +141,63 @@ export default function AdminProductsPage() {
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [selectedProductForDownload, setSelectedProductForDownload] = useState<SelectProduct | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+
+  // Helper functions for hierarchical categories
+  type CategoryWithChildren = {
+    id: number;
+    name: string;
+    description: string | null;
+    parent_id: number | null;
+    created_at: string;
+    children: CategoryWithChildren[];
+  };
+
+  type CategoryWithLevel = {
+    id: number;
+    name: string;
+    description: string | null;
+    parent_id: number | null;
+    created_at: string;
+    level: number;
+  };
+
+  const buildCategoryTree = (categories: any[]): CategoryWithChildren[] => {
+    const categoryMap = new Map<number, CategoryWithChildren>();
+    const rootCategories: CategoryWithChildren[] = [];
+    
+    // First pass: create map of all categories with children array
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+    
+    // Second pass: build hierarchy
+    categories.forEach(category => {
+      const categoryWithChildren = categoryMap.get(category.id)!;
+      if (category.parent_id) {
+        const parent = categoryMap.get(category.parent_id);
+        if (parent) {
+          parent.children.push(categoryWithChildren);
+        }
+      } else {
+        rootCategories.push(categoryWithChildren);
+      }
+    });
+    
+    return rootCategories;
+  };
+
+  const flattenCategories = (categories: CategoryWithChildren[], level = 0): CategoryWithLevel[] => {
+    const result: CategoryWithLevel[] = [];
+    
+    categories.forEach(category => {
+      result.push({ ...category, level });
+      if (category.children.length > 0) {
+        result.push(...flattenCategories(category.children, level + 1));
+      }
+    });
+    
+    return result;
+  };
 
   // Download function for digital products (admin)
   const openDownloadDialog = (product: SelectProduct) => {
@@ -294,9 +351,20 @@ export default function AdminProductsPage() {
     queryKey: ["/api/products"],
   });
 
-  const { data: categories } = useQuery<{id: number, name: string, description: string | null}[]>({
+  const { data: categories } = useQuery<{id: number, name: string, description: string | null, parent_id: number | null, created_at: string}[]>({
     queryKey: ["/api/categories"],
   });
+
+  // Calculate hierarchical categories after categories are loaded (with fallback)
+  const hierarchicalCategories = useMemo(() => {
+    if (!categories) return [];
+    try {
+      return flattenCategories(buildCategoryTree(categories));
+    } catch (error) {
+      console.error('Error building category tree:', error);
+      return categories.map(cat => ({ ...cat, level: 0 }));
+    }
+  }, [categories]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -914,9 +982,9 @@ export default function AdminProductsPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">No category</SelectItem>
-                            {categories?.map((category) => (
+                            {hierarchicalCategories.map((category) => (
                               <SelectItem key={category.id} value={category.id.toString()}>
-                                {category.name}
+                                {category.level > 0 ? '─'.repeat(category.level * 2) + ' ' : ''}{category.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1180,9 +1248,9 @@ export default function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-white">
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories?.map((category) => (
+                  {hierarchicalCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
+                      {category.level > 0 ? '─'.repeat(category.level * 2) + ' ' : ''}{category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
