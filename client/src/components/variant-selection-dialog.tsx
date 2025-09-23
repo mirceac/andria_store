@@ -50,9 +50,6 @@ export function VariantSelectionDialog({
               This product is currently out of stock and not available for purchase.
             </DialogDescription>
           </DialogHeader>
-          <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full">
-            Close
-          </Button>
         </DialogContent>
       </Dialog>
     );
@@ -108,9 +105,6 @@ export function VariantSelectionDialog({
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 Add to Cart
-              </Button>
-              <Button onClick={() => onOpenChange(false)} variant="outline">
-                Cancel
               </Button>
             </div>
           </div>
@@ -224,9 +218,6 @@ export function VariantSelectionDialog({
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Add to Cart
-          </Button>
-          <Button onClick={() => onOpenChange(false)} variant="outline">
-            Cancel
           </Button>
         </div>
       </DialogContent>

@@ -156,9 +156,11 @@ export function MultiPagePDFViewerDialog({
     }
   }, [open]);
 
-  // Adjusted dimensions to better fit the dialog
-  const baseWidth = 400;
-  const baseHeight = 550;
+  // Responsive dimensions that fit the dialog better
+  const containerWidth = 600; // Max width available in dialog
+  const containerHeight = 400; // Reasonable height for initial fit
+  const baseWidth = scale === 1 ? Math.min(containerWidth, 500) : 500;
+  const baseHeight = scale === 1 ? Math.min(containerHeight, 600) : 600;
 
   // Calculate the dimensions based on rotation
   const isLandscape = rotation === 90 || rotation === 270;
@@ -173,11 +175,7 @@ export function MultiPagePDFViewerDialog({
       <DialogContent className="max-w-screen-lg h-[80vh] flex flex-col">
         {/* Title and controls row */}
         <div className="flex items-center justify-between py-2 border-b">
-          <div className="w-24">
-            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
-          </div>
-          
-          {/* Center: Controls */}
+          {/* Left: Controls */}
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
@@ -209,14 +207,10 @@ export function MultiPagePDFViewerDialog({
               <RotateCw className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Right: Close button */}
-          <div className="w-24 flex justify-end">
-            <Button
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
+          
+          {/* Right: Title */}
+          <div className="w-24">
+            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
           </div>
         </div>
 

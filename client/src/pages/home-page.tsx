@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown, Menu, X } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown, Menu, X, User, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -16,6 +16,8 @@ import { ImageViewerDialogProtected } from "@/components/image-viewer-dialog-pro
 import { PDFViewerDialogProtected } from "@/components/pdf-viewer-dialog-protected";
 import { useCart } from "@/hooks/use-cart";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 type Category = {
   id: number;
@@ -29,7 +31,9 @@ export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
   const { addToCart, items: cartItems } = useCart();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
   const [timestamp, setTimestamp] = useState(Date.now());
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
@@ -488,20 +492,55 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen relative">
+    <div className="flex min-h-screen relative w-full overflow-x-hidden max-w-full">
       {/* Mobile Header */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
             <Button
               variant="ghost"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-10 w-10 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(!sidebarOpen);
+              }}
+              className="h-10 w-10 p-0 flex-shrink-0"
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <h1 className="text-lg font-semibold text-gray-900">Store</h1>
-            <div className="w-10"></div> {/* Spacer for centering */}
+            <h1 className="text-lg font-semibold text-gray-900 mx-2">Store</h1>
+            
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/cart")}
+                className="h-10 w-10 p-0 relative flex-shrink-0"
+                title="Cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/orders")}
+                className="h-10 w-10 p-0 flex-shrink-0"
+                title="Orders"
+              >
+                <Package className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/auth")}
+                className="h-10 w-10 p-0 flex-shrink-0"
+                title="Account"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -526,13 +565,28 @@ export default function HomePage() {
           // Desktop: Normal sidebar behavior
           sidebarOpen ? "w-64" : "w-16"
       )}>
-        <div className={cn("p-3", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+        <div className={cn("p-3", isMobile && "pt-24")}> {/* Add top padding on mobile for header */}
           <div className="flex items-center justify-between mb-4">
             {sidebarOpen && (
               <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
                 Categories
               </h2>
             )}
+            {/* Close button for mobile inside sidebar */}
+            {isMobile && sidebarOpen && (
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(false);
+                }}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+            {/* Toggle button for desktop */}
             {!isMobile && (
               <Button
                 variant="ghost"
@@ -610,10 +664,10 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className={cn(
-        "flex-1 transition-all duration-300",
-        isMobile ? "pt-16" : "p-4" // Add top padding on mobile for fixed header
+        "flex-1 transition-all duration-300 w-full overflow-x-hidden",
+        isMobile ? "pt-20" : "p-4" // Add top padding on mobile for fixed header
       )}>
-        <div className={cn(isMobile && "p-4")}>
+        <div className={cn(isMobile && "px-2 py-4")}>
           {/* Breadcrumb Navigation */}
           {selectedCategoryId && categories && (
             <div className="mb-6 border-b border-gray-200 pb-3">
@@ -658,7 +712,7 @@ export default function HomePage() {
         
         <div 
           className={cn(
-            "grid gap-2", 
+            "grid gap-2 w-full", 
             // Mobile-first responsive grid
             "grid-cols-2", // 2 columns on mobile
             "sm:grid-cols-3", // 3 columns on small screens
@@ -674,7 +728,7 @@ export default function HomePage() {
           <div 
             key={`${product.id}-${timestamp}`}
             className={cn(
-              "flex flex-col rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden",
+              "flex flex-col rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden w-full",
               // Mobile-optimized heights
               isMobile ? "h-[260px]" : "h-[290px]",
               product.stock > 0 
@@ -698,11 +752,11 @@ export default function HomePage() {
             
             {/* Product info section with Add to Cart */}
             <div className={cn(
-              "px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0",
+              "px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0 w-full overflow-hidden",
               isMobile && "px-2 py-1" // Slightly more padding on mobile
             )}>
               <h3 className={cn(
-                "font-medium text-slate-900 line-clamp-1 truncate",
+                "font-medium text-slate-900 line-clamp-1 truncate w-full",
                 isMobile ? "text-xs" : "text-sm" // Smaller text on mobile
               )} style={{maxWidth: '100%'}}>{product.name}</h3>
               

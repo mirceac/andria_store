@@ -12,48 +12,30 @@ interface ImageViewerDialogProps {
 export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialogProps) {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [rotation, setRotation] = useState(0);
   const [imageError, setImageError] = useState<ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Reset state when image changes or dialog opens/closes
   useEffect(() => {
-    setPosition({ x: 0, y: 0 });
-    setScale(1);
-    setRotation(0);
-    setImageError(null);
-    setIsLoading(true);
-    
-    // For external URLs through our proxy, verify the URL works
-    if (url?.includes('/api/proxy/image')) {
-      console.log('Validating external URL through proxy:', url);
+    if (open && url) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setRotation(0);
+      setImageError(null);
+      setIsLoading(true);
     }
-  }, [url, open]);
+  }, [open, url]);
 
-  // Remove the upper limit on zoom in
-  const handleZoomIn = () => setScale(prev => prev + 0.1);
-  // Keep the lower limit for zoom out
-  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
-
-  // Handle dragging functionality
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.25, 5));
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const newX = e.clientX - dragStart.x;
-    const newY = e.clientY - dragStart.y;
-    setPosition({ x: newX, y: newY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.25, 0.25));
   };
 
   const resetView = () => {
@@ -62,7 +44,33 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
     setRotation(0);
   };
 
-  const handleRotate = () => setRotation(prev => (prev + 90) % 360);
+  const handleRotate = () => {
+    setRotation(prev => (prev + 90) % 360);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && scale > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   if (!url) return null;
 
@@ -70,7 +78,6 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-screen-lg h-[80vh] flex flex-col">
         <div className="flex items-center justify-between py-2 border-b">
-          <div className="w-24" /> {/* Spacer to help center controls */}
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
@@ -84,7 +91,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               variant="secondary"
               className="p-2"
               onClick={handleZoomOut}
-              disabled={scale <= 0.5}
+              disabled={scale <= 0.25}
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -107,13 +114,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               <RotateCw className="h-4 w-4" />
             </Button>
           </div>
-          <div className="w-24 flex justify-end">
-            <Button
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
+          <div className="w-24"></div>
         </div>
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden"
@@ -135,27 +136,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
                 <div className="text-center max-w-md p-4">
                   {typeof imageError === 'string' ? (
-                    <>
-                      <div className="w-16 h-16 mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-                          <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                          <circle cx="9" cy="9" r="2"></circle>
-                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                          <line x1="3" y1="21" x2="21" y2="3" className="text-red-500" strokeWidth="1.5"></line>
-                        </svg>
-                      </div>
-                      <p className="font-semibold text-lg text-amber-700 mb-2">Failed to load image</p>
-                      <p className="text-sm text-amber-600 mb-4">{imageError}</p>
-                      <div className="text-xs text-gray-500 text-left bg-white p-3 rounded-md shadow-sm">
-                        <p className="mb-2">Possible solutions:</p>
-                        <ul className="list-disc pl-4 space-y-1">
-                          <li>Check if the URL is publicly accessible</li>
-                          <li>Convert HEIC/HEIF images to JPEG format</li>
-                          <li>Try a different image hosting service</li>
-                        </ul>
-                        <p className="mt-3 text-xs text-gray-400 break-all">{url}</p>
-                      </div>
-                    </>
+                    <p className="text-amber-800">{imageError}</p>
                   ) : (
                     imageError
                   )}
@@ -165,63 +146,36 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
             
             <img
               src={url}
-              alt="Full size"
-              className="max-h-full max-w-full object-contain transition-transform duration-75 select-none"
-              style={{ 
-                transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px) rotate(${rotation}deg)`,
-                cursor: isDragging ? 'grabbing' : 'grab',
-                display: imageError ? 'none' : 'block',
-                height: 'auto',
-                width: 'auto'
+              alt="Viewer"
+              className={scale > 1 ? "cursor-grab active:cursor-grabbing select-none" : "select-none"}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                transformOrigin: 'center center',
+                transition: isDragging ? 'none' : 'transform 0.2s ease-out'
               }}
               onMouseDown={handleMouseDown}
-              draggable="false"
               onLoad={() => {
                 setIsLoading(false);
                 setImageError(null);
               }}
-              onError={(e) => {
-                console.error("Failed to load image in viewer:", url);
+              onError={() => {
                 setIsLoading(false);
-                
-                // Check if we're using the proxy
-                if (url && url.includes('/api/proxy/image')) {
-                  // Try to retry with a cache-busting parameter
-                  const retryUrl = `${url}&retry=${Date.now()}`;
-                  console.log("Retrying with cache-busting URL:", retryUrl);
-                  
-                  // Create a new image element to test if the URL works
-                  const testImg = new Image();
-                  testImg.onload = () => {
-                    console.log("Retry successful, updating source");
-                    e.currentTarget.src = retryUrl;
-                  };
-                  testImg.onerror = () => {
-                    console.error("Retry also failed");
-                    setImageError(
-                      <div className="space-y-4">
-                        <p>The external image could not be loaded. This could be due to:</p>
-                        <ul className="list-disc pl-8 space-y-2">
-                          <li>The URL might not be publicly accessible (e.g., requires login)</li>
-                          <li>The image might be in an unsupported format (e.g., HEIC/HEIF)</li>
-                          <li>Google Photos links require special sharing permissions</li>
-                          <li>The source website may be blocking access to the image</li>
-                        </ul>
-                        <p className="mt-4 text-sm">Try downloading the image and uploading it directly instead.</p>
-                        <p className="text-xs text-gray-500 mt-2">URL: {url.split('?url=')[1]?.split('&')[0] || url}</p>
-                      </div>
-                    );
-                  };
-                  testImg.src = retryUrl;
-                } else {
-                  setImageError(
-                    <div>
-                      <p>The image could not be loaded. The URL might be invalid or inaccessible.</p>
-                      <p className="text-xs text-gray-500 mt-2">URL: {url}</p>
-                    </div>
-                  );
-                }
+                setImageError(
+                  <div>
+                    <p className="text-red-600 font-medium mb-2">Failed to load image</p>
+                    <p className="text-sm text-gray-600 mb-3">The image could not be displayed. This might be due to:</p>
+                    <ul className="text-xs text-gray-500 text-left space-y-1">
+                      <li>• Network connectivity issues</li>
+                      <li>• File access restrictions</li>
+                      <li>• Unsupported file format</li>
+                    </ul>
+                  </div>
+                );
               }}
+              draggable={false}
             />
           </div>
         </div>

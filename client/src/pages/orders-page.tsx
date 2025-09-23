@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Package, XCircle, Download, FileText, FileImage } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { getPdfUrl } from "@/lib/pdf-worker";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -51,6 +52,7 @@ interface OrderWithItems extends SelectOrder {
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const { data: orders, isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ["/api/orders", user?.id],
@@ -244,8 +246,7 @@ export default function OrdersPage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="relative shrink-0">
-          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${timestamp}`}
@@ -256,14 +257,15 @@ export default function OrdersPage() {
               setSelectedProduct(product);
               setIsImageViewerOpen(true);
             }}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="relative shrink-0">
-          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
@@ -274,14 +276,15 @@ export default function OrdersPage() {
               setSelectedProduct(product);
               setIsImageViewerOpen(true);
             }}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="relative shrink-0">
-          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
             onClick={() => {
@@ -289,14 +292,15 @@ export default function OrdersPage() {
               setSelectedProduct(product);
               setIsPdfViewerOpen(true);
             }}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="relative shrink-0">
-          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf?v=${timestamp}`}
             onClick={() => {
@@ -304,6 +308,8 @@ export default function OrdersPage() {
               setSelectedProduct(product);
               setIsPdfViewerOpen(true);
             }}
+            width={130}
+            height={182}
           />
         </div>
       );
@@ -341,8 +347,7 @@ export default function OrdersPage() {
       } else if (isPdfUrl) {
         // External PDF URL
         return (
-          <div className="relative shrink-0">
-            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
             <PDFThumbnail
               pdfUrl={product.storage_url}
               onClick={() => {
@@ -350,14 +355,15 @@ export default function OrdersPage() {
                 setSelectedProduct(product);
                 setIsPdfViewerOpen(true);
               }}
+              width={130}
+              height={182}
             />
           </div>
         );
       } else {
         // External URL that doesn't match specific patterns - default to image treatment
         return (
-          <div className="relative shrink-0">
-            <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
             <ExternalUrlThumbnail
               url={product.storage_url}
               onClick={() => {
@@ -365,6 +371,8 @@ export default function OrdersPage() {
                 setSelectedProduct(product);
                 setIsImageViewerOpen(true);
               }}
+              width={130}
+              height={182}
             />
           </div>
         );
@@ -372,7 +380,7 @@ export default function OrdersPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="w-[130px] h-[182px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 flex items-center justify-center">
           <XCircle className="h-6 w-6 text-gray-300" />
         </div>
       );
@@ -381,12 +389,12 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
-        <div className="space-y-6">
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4 max-w-full' : 'px-4 py-8'} overflow-x-hidden w-full`}>
+        <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-6`}>My Orders</h1>
+        <div className="space-y-6 w-full overflow-x-hidden">
           {processedOrders.map((order) => (
-            <div key={order.id} className="border rounded-lg p-6">
-              <div className="flex justify-between items-start mb-4">
+            <div key={order.id} className={`border rounded-lg ${isMobile ? 'p-4' : 'p-6'} w-full overflow-hidden`}>
+              <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start'} mb-4`}>
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Order #{order.id}
@@ -400,7 +408,7 @@ export default function OrdersPage() {
                       : "Unknown date"}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className={isMobile ? '' : 'text-right'}>
                   <p className="font-semibold">
                     Total: ${order.total.toFixed(2)}
                   </p>
@@ -416,60 +424,115 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Variant</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Download</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {/* Mobile Card Layout */}
+              {isMobile ? (
+                <div className="space-y-3 w-full overflow-x-hidden">
                   {order.items && order.items.map((item) => (
-                    <TableRow key={`${order.id}-${item.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-4">
-                          {renderProductMedia(item.product)}
-                          <div className="flex flex-col">
-                            <span className="font-medium">{item.product.name}</span>
-                            <span className="text-sm text-gray-500">
-                              ${(item.price / item.quantity).toFixed(2)} per unit
-                            </span>
+                    <div key={`${order.id}-${item.id}`} className="border rounded-lg p-3 bg-gray-50 w-full overflow-hidden">
+                      <div className="space-y-3 w-full">
+                        {/* Top Row: Media and Product Name */}
+                        <div className="flex gap-3 w-full">
+                          {/* Product Media */}
+                          <div className="relative">
+                            {renderProductMedia(item.product)}
+                          </div>
+                          
+                          {/* Product Name */}
+                          <div className="flex-1 min-w-0 overflow-hidden pr-2">
+                            <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {item.variant_type === 'digital' ? 'Digital' : 'Physical + Digital'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {item.variant_type === 'physical' ? item.quantity : 'Digital License'}
-                      </TableCell>
-                      <TableCell>${(item.price / item.quantity).toFixed(2)}</TableCell>
-                      <TableCell>
-                        ${item.price.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          onClick={() => openDownloadDialog(item.product)}
-                          className="h-8 px-3 text-sm"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                        
+                        {/* Badges Row */}
+                        <div className="flex flex-wrap gap-1">
+                          <Badge 
+                            variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            {item.variant_type === 'digital' ? 'Digital' : 'Physical'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            Qty: {item.quantity}
+                          </Badge>
+                        </div>
+                        
+                        {/* Bottom Row: Price and Download */}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="text-sm font-semibold flex-shrink-0">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </div>
+                          
+                          {/* Download Button */}
+                          <Button
+                            variant="outline"
+                            onClick={() => openDownloadDialog(item.product)}
+                            className="h-7 px-2 text-xs flex-shrink-0"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                /* Desktop Table Layout */
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Variant</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Download</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {order.items && order.items.map((item) => (
+                      <TableRow key={`${order.id}-${item.id}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            {renderProductMedia(item.product)}
+                            <div className="flex flex-col">
+                              <span className="font-medium">{item.product.name}</span>
+                              <span className="text-sm text-gray-500">
+                                ${(item.price / item.quantity).toFixed(2)} per unit
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={item.variant_type === 'digital' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {item.variant_type === 'digital' ? 'Digital' : 'Physical + Digital'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {item.variant_type === 'physical' ? item.quantity : 'Digital License'}
+                        </TableCell>
+                        <TableCell>${(item.price / item.quantity).toFixed(2)}</TableCell>
+                        <TableCell>
+                          ${item.price.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            onClick={() => openDownloadDialog(item.product)}
+                            className="h-8 px-3 text-sm"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           ))}
         </div>
@@ -555,12 +618,6 @@ export default function OrdersPage() {
                 External Storage URL
               </Button>
             )}
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>
-              Cancel
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

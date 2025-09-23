@@ -200,9 +200,11 @@ export function PDFViewerDialog({
     }
   }, [open]);
 
-  // Adjusted dimensions to better fit the dialog
-  const baseWidth = 350;
-  const baseHeight = 500;
+  // Responsive dimensions that fit the dialog better
+  const containerWidth = 600; // Max width available in dialog
+  const containerHeight = 400; // Reasonable height for initial fit
+  const baseWidth = scale === 1 ? Math.min(containerWidth, 500) : 500;
+  const baseHeight = scale === 1 ? Math.min(containerHeight, 600) : 600;
 
   // Calculate the dimensions based on rotation
   const isLandscape = rotation === 90 || rotation === 270;
@@ -217,11 +219,7 @@ export function PDFViewerDialog({
       <DialogContent className="max-w-screen-lg h-[80vh] flex flex-col">
         {/* Title and controls row */}
         <div className="flex items-center justify-between py-2 border-b">
-          <div className="w-24">
-            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
-          </div>
-          
-          {/* Center: Controls */}
+          {/* Left: Controls */}
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
@@ -252,7 +250,7 @@ export function PDFViewerDialog({
               <ZoomIn className="h-4 w-4" />
             </Button>
             <Button
-              variant="secondary" 
+              variant="secondary"
               className="p-2"
               onClick={handleRotate}
               title="Rotate 90°"
@@ -260,18 +258,12 @@ export function PDFViewerDialog({
               <RotateCw className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Right: Close button */}
-          <div className="w-24 flex justify-end">
-            <Button
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
+          
+          {/* Right: Title */}
+          <div className="w-24">
+            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
           </div>
-        </div>
-
-        {/* PDF Container - flex-grow to take up available space */}
+        </div>        {/* PDF Container - flex-grow to take up available space */}
         <div 
           ref={containerRef}
           className="flex-1 w-full h-full min-h-0 overflow-hidden"

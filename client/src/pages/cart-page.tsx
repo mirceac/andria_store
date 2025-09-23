@@ -68,50 +68,54 @@ export default function CartPage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="relative pointer-events-none select-none">
-          <div className="w-1 h-full bg-blue-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
             imageData={null}
             alt={product.name}
             showTryDirect={false}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="relative pointer-events-none select-none">
-          <div className="w-1 h-full bg-green-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
             imageData={product.image_data}
             alt={product.name}
             showTryDirect={false}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="relative pointer-events-none select-none">
-          <div className="w-1 h-full bg-red-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
             showTryDirect={false}
+            width={130}
+            height={182}
           />
         </div>
       );
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="relative pointer-events-none select-none">
-          <div className="w-1 h-full bg-yellow-500 absolute left-0 top-0 rounded-l"></div>
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
           <PDFThumbnail
             pdfUrl={`data:application/pdf;base64,${product.pdf_data}`}
             showTryDirect={false}
+            width={130}
+            height={182}
           />
         </div>
       );
@@ -138,11 +142,12 @@ export default function CartPage() {
 
       if (isExternalUrl(product.storage_url)) {
         return (
-          <div className="relative pointer-events-none select-none">
-            <div className="w-1 h-full bg-purple-500 absolute left-0 top-0 rounded-l"></div>
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
             <ExternalUrlThumbnail
               url={product.storage_url}
               showTryDirect={false}
+              width={130}
+              height={182}
             />
           </div>
         );
@@ -150,7 +155,7 @@ export default function CartPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="w-[130px] h-[182px] flex items-center justify-center rounded border bg-gray-50">
           <XCircle className="h-6 w-6 text-gray-300" />
         </div>
       );
@@ -216,7 +221,7 @@ export default function CartPage() {
                 <div key={`${item.product.id}-${item.variant_type}`} className="border rounded-lg p-4 bg-white">
                   <div className="flex gap-3">
                     {/* Product Media */}
-                    <div className="flex-shrink-0 w-16 h-16">
+                    <div className="flex-shrink-0 w-[130px] h-[182px]">
                       {renderProductMedia(item.product)}
                     </div>
                     
@@ -310,7 +315,7 @@ export default function CartPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-center w-[35px]">Item</TableHead>
-                    <TableHead className="px-0 text-center w-[120px]">Product Image</TableHead>
+                    <TableHead className="px-0 text-center w-[150px]">Product Image</TableHead>
                     <TableHead className="px-3">Details</TableHead>
                     <TableHead className="w-[150px] text-center">Quantity</TableHead>
                     <TableHead className="w-[120px] text-center">Price</TableHead>
@@ -326,10 +331,14 @@ export default function CartPage() {
                       
                       {/* Product Media (using priority logic) */}
                       <TableCell 
-                        className="px-0 text-center align-middle"
+                        className="px-2 text-center align-middle"
                         onContextMenu={(e) => e.preventDefault()} // Prevent right-click
                       >
-                        {renderProductMedia(item.product)}
+                        <div className="flex justify-center items-center w-full h-[182px]">
+                          <div className="w-[130px] h-[182px] flex-shrink-0">
+                            {renderProductMedia(item.product)}
+                          </div>
+                        </div>
                       </TableCell>
                       
                       {/* Product Details */}
