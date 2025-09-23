@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -15,6 +15,7 @@ import { VariantSelectionDialog } from "@/components/variant-selection-dialog";
 import { ImageViewerDialogProtected } from "@/components/image-viewer-dialog-protected";
 import { PDFViewerDialogProtected } from "@/components/pdf-viewer-dialog-protected";
 import { useCart } from "@/hooks/use-cart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Category = {
   id: number;
@@ -28,16 +29,25 @@ export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
   const { addToCart, items: cartItems } = useCart();
+  const isMobile = useIsMobile();
   const [timestamp, setTimestamp] = useState(Date.now());
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Default closed on mobile
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+
+  // Close sidebar when category is selected on mobile
+  const handleCategorySelect = (categoryId: number | null) => {
+    setSelectedCategoryId(categoryId);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   // Initialize timestamp once, but don't refresh it periodically
   useEffect(() => {
@@ -45,6 +55,13 @@ export default function HomePage() {
     setTimestamp(Date.now());
     // No interval to prevent reloading icons
   }, []);
+
+  // Close sidebar on mobile when screen size changes
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: ["/api/products"],
@@ -142,7 +159,7 @@ export default function HomePage() {
               paddingLeft: `${0.5 + level * 1.5}rem`,
               marginLeft: level > 0 ? '0.25rem' : '0'
             }}
-            onClick={() => setSelectedCategoryId(category.id)}
+            onClick={() => handleCategorySelect(category.id)}
           >
             <div className="flex items-center w-full">
               {categoryHasChildren && (
@@ -471,27 +488,61 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between p-4">
+            <Button
+              variant="ghost"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="h-10 w-10 p-0"
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <h1 className="text-lg font-semibold text-gray-900">Store</h1>
+            <div className="w-10"></div> {/* Spacer for centering */}
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar Overlay for Mobile */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div className={cn(
         "transition-all duration-300 bg-gray-50/50 border-r border-gray-200 shadow-sm",
-        sidebarOpen ? "w-64" : "w-16"
+        isMobile ? 
+          // Mobile: Fixed sidebar that slides in from left
+          cn(
+            "fixed left-0 top-0 bottom-0 z-50 w-64 transform",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          ) :
+          // Desktop: Normal sidebar behavior
+          sidebarOpen ? "w-64" : "w-16"
       )}>
-        <div className="p-3">
+        <div className={cn("p-3", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
           <div className="flex items-center justify-between mb-4">
             {sidebarOpen && (
               <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
                 Categories
               </h2>
             )}
-            <Button
-              variant="ghost"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-8 w-8 p-0 flex-shrink-0"
-              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
           {sidebarOpen && (
@@ -503,7 +554,7 @@ export default function HomePage() {
                   selectedCategoryId === null && "bg-indigo-50 border border-indigo-200 shadow-sm",
                   selectedCategoryId !== null && "border border-transparent"
                 )}
-                onClick={() => setSelectedCategoryId(null)}
+                onClick={() => handleCategorySelect(null)}
               >
                 <span className={cn(
                   "text-sm font-medium transition-colors duration-200",
@@ -532,7 +583,7 @@ export default function HomePage() {
                   selectedCategoryId === null && "bg-indigo-100 text-indigo-700 shadow-sm",
                   selectedCategoryId !== null && "bg-gray-50 text-gray-600"
                 )}
-                onClick={() => setSelectedCategoryId(null)}
+                onClick={() => handleCategorySelect(null)}
                 title="All Products"
               >
                 <span className="text-xs font-bold">A</span>
@@ -546,7 +597,7 @@ export default function HomePage() {
                     selectedCategoryId === category.id && "bg-indigo-100 text-indigo-700 shadow-sm",
                     selectedCategoryId !== category.id && "bg-gray-50 text-gray-600"
                   )}
-                  onClick={() => setSelectedCategoryId(category.id)}
+                  onClick={() => handleCategorySelect(category.id)}
                   title={category.name}
                 >
                   <span className="text-xs font-bold">{index + 1}</span>
@@ -558,51 +609,64 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4">
-        {/* Breadcrumb Navigation */}
-        {selectedCategoryId && categories && (
-          <div className="mb-6 border-b border-gray-200 pb-3">
-            <nav className="flex items-center space-x-1 text-sm">
-              <button
-                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                onClick={() => setSelectedCategoryId(null)}
-              >
-                All Products
-              </button>
-              {(() => {
-                const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-                if (!selectedCategory) return null;
-                
-                const breadcrumbs: Category[] = [];
-                let current: Category | null = selectedCategory;
-                
-                while (current) {
-                  breadcrumbs.unshift(current);
-                  current = categories.find(c => c.id === current?.parent_id) || null;
-                }
-                
-                return breadcrumbs.map((category, index) => (
-                  <div key={category.id} className="flex items-center">
-                    <span className="text-gray-400 mx-2">/</span>
-                    {index === breadcrumbs.length - 1 ? (
-                      <span className="font-medium text-gray-900">{category.name}</span>
-                    ) : (
-                      <button
-                        className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                        onClick={() => setSelectedCategoryId(category.id)}
-                      >
-                        {category.name}
-                      </button>
-                    )}
-                  </div>
-                ));
-              })()}
-            </nav>
-          </div>
-        )}
+      <div className={cn(
+        "flex-1 transition-all duration-300",
+        isMobile ? "pt-16" : "p-4" // Add top padding on mobile for fixed header
+      )}>
+        <div className={cn(isMobile && "p-4")}>
+          {/* Breadcrumb Navigation */}
+          {selectedCategoryId && categories && (
+            <div className="mb-6 border-b border-gray-200 pb-3">
+              <nav className="flex items-center space-x-1 text-sm">
+                <button
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  onClick={() => handleCategorySelect(null)}
+                >
+                  All Products
+                </button>
+                {(() => {
+                  const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+                  if (!selectedCategory) return null;
+                  
+                  const breadcrumbs: Category[] = [];
+                  let current: Category | null = selectedCategory;
+                  
+                  while (current) {
+                    breadcrumbs.unshift(current);
+                    current = categories.find(c => c.id === current?.parent_id) || null;
+                  }
+                  
+                  return breadcrumbs.map((category, index) => (
+                    <div key={category.id} className="flex items-center">
+                      <span className="text-gray-400 mx-2">/</span>
+                      {index === breadcrumbs.length - 1 ? (
+                        <span className="font-medium text-gray-900">{category.name}</span>
+                      ) : (
+                        <button
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                          onClick={() => handleCategorySelect(category.id)}
+                        >
+                          {category.name}
+                        </button>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </nav>
+            </div>
+          )}
         
         <div 
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2" 
+          className={cn(
+            "grid gap-2", 
+            // Mobile-first responsive grid
+            "grid-cols-2", // 2 columns on mobile
+            "sm:grid-cols-3", // 3 columns on small screens
+            "md:grid-cols-4", // 4 columns on medium screens
+            "lg:grid-cols-5", // 5 columns on large screens
+            "xl:grid-cols-6", // 6 columns on extra large screens
+            "2xl:grid-cols-8" // 8 columns on 2xl screens
+          )}
           style={{maxWidth: '100%', overflow: 'hidden'}}
           onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
         >
@@ -610,7 +674,9 @@ export default function HomePage() {
           <div 
             key={`${product.id}-${timestamp}`}
             className={cn(
-              "flex flex-col h-[290px] rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden",
+              "flex flex-col rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden",
+              // Mobile-optimized heights
+              isMobile ? "h-[260px]" : "h-[290px]",
               product.stock > 0 
                 ? "border-slate-200 hover:border-blue-200" 
                 : "border-red-200 hover:border-red-300"
@@ -620,15 +686,25 @@ export default function HomePage() {
           >
             {/* Content based on priority */}
             <div 
-              className="relative w-full h-[200px] flex items-center justify-center p-1 border-b overflow-hidden"
+              className={cn(
+                "relative w-full flex items-center justify-center p-1 border-b overflow-hidden",
+                // Mobile-optimized image heights
+                isMobile ? "h-[180px]" : "h-[200px]"
+              )}
               onContextMenu={(e) => e.preventDefault()} // Prevent right-click on thumbnails
             >
               {getContentByPriority(product)}
             </div>
             
             {/* Product info section with Add to Cart */}
-            <div className="px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0">
-              <h3 className="font-medium text-sm text-slate-900 line-clamp-1 truncate" style={{maxWidth: '100%'}}>{product.name}</h3>
+            <div className={cn(
+              "px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0",
+              isMobile && "px-2 py-1" // Slightly more padding on mobile
+            )}>
+              <h3 className={cn(
+                "font-medium text-slate-900 line-clamp-1 truncate",
+                isMobile ? "text-xs" : "text-sm" // Smaller text on mobile
+              )} style={{maxWidth: '100%'}}>{product.name}</h3>
               
               {/* Price display - show range if multiple variants */}
               <div className="mt-0.5">
@@ -640,15 +716,15 @@ export default function HomePage() {
                     const minPrice = Math.min(digitalPrice, physicalPrice);
                     const maxPrice = Math.max(digitalPrice, physicalPrice);
                     if (minPrice === maxPrice) {
-                      return <span className="text-sm font-semibold text-slate-900">${minPrice.toFixed(2)}</span>;
+                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)}</span>;
                     }
-                    return <span className="text-sm font-semibold text-slate-900">${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>;
+                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>;
                   } else if (digitalPrice > 0) {
-                    return <span className="text-sm font-semibold text-slate-900">${digitalPrice.toFixed(2)}</span>;
+                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${digitalPrice.toFixed(2)}</span>;
                   } else if (physicalPrice && physicalPrice > 0) {
-                    return <span className="text-sm font-semibold text-slate-900">${physicalPrice.toFixed(2)}</span>;
+                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${physicalPrice.toFixed(2)}</span>;
                   } else {
-                    return <span className="text-sm font-semibold text-slate-900">$0.00</span>;
+                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>$0.00</span>;
                   }
                 })()}
               </div>
@@ -717,11 +793,11 @@ export default function HomePage() {
                   
                   return false;
                 })()}
-                className="mt-1 w-full h-7 text-xs"
+                className={`mt-1 w-full ${isMobile ? 'h-6 text-xs' : 'h-7 text-xs'}`}
                 variant="default"
                 style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
               >
-                <ShoppingCart className="mr-1 h-3 w-3" />
+                <ShoppingCart className={`${isMobile ? 'mr-0.5 h-2.5 w-2.5' : 'mr-1 h-3 w-3'}`} />
                 {(() => {
                   const existingPhysicalItem = cartItems.find(item => 
                     item.product.id === product.id && item.variant_type === 'physical'
@@ -730,16 +806,17 @@ export default function HomePage() {
                   const physicalStock = product.stock || 0;
                   
                   if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) {
-                    return "Max Stock Reached";
+                    return isMobile ? "Max Stock" : "Max Stock Reached";
                   }
-                  return "Add to Cart";
+                  return isMobile ? "Add" : "Add to Cart";
                 })()}
               </Button>
             </div>
           </div>
         ))}
         </div>
-      </div>
+        </div> {/* Close main content inner div */}
+      </div> {/* Close main content div */}
       
       {/* Variant Selection Dialog */}
       {selectedProduct && (

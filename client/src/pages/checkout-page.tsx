@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2, ShoppingCart, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 export default function CheckoutPage() {
   const { items, getTotal } = useCart();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
@@ -62,16 +64,23 @@ export default function CheckoutPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-16 px-4">
+      <div className={`container mx-auto ${isMobile ? 'py-8 px-4' : 'py-16 px-4'}`}>
         <div className="max-w-md mx-auto text-center space-y-6">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
-          <h1 className="text-2xl font-bold">Checkout Error</h1>
-          <p className="text-muted-foreground">{error}</p>
+          <AlertCircle className={`mx-auto ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} text-red-500`} />
+          <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Checkout Error</h1>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>{error}</p>
           <div className="flex flex-col gap-4 mt-8">
-            <Button onClick={() => setLocation("/cart")}>
+            <Button 
+              onClick={() => setLocation("/cart")}
+              className={isMobile ? 'w-full py-3' : ''}
+            >
               Return to Cart
             </Button>
-            <Button variant="outline" onClick={() => window.location.reload()}>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+              className={isMobile ? 'w-full py-3' : ''}
+            >
               Try Again
             </Button>
           </div>
@@ -81,14 +90,14 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto py-16 px-4">
+    <div className={`container mx-auto ${isMobile ? 'py-8 px-4' : 'py-16 px-4'}`}>
       <div className="max-w-md mx-auto text-center space-y-6">
-        <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-2xl font-bold">Preparing Checkout</h1>
-        <p className="text-muted-foreground">
+        <Loader2 className={`mx-auto ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} animate-spin text-primary`} />
+        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Preparing Checkout</h1>
+        <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
           Please wait while we redirect you to our secure payment processor...
         </p>
-        <div className="border rounded-md p-4 bg-muted/20 mt-8">
+        <div className={`border rounded-md p-4 bg-muted/20 mt-8 ${isMobile ? 'text-sm' : ''}`}>
           <div className="flex justify-between mb-2">
             <span className="text-sm">Items in cart:</span>
             <span className="text-sm font-medium">{items.length}</span>
