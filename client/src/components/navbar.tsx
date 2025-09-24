@@ -113,7 +113,7 @@ export default function Navbar() {
             <Link href="/orders">
               <Button variant="ghost" className={buttonClasses}>
                 <Package className="h-4 w-4" />
-                <span className="ml-2 hidden sm:inline">Orders</span>
+                <span className="ml-2">Orders</span>
               </Button>
             </Link>
           )}
@@ -121,7 +121,7 @@ export default function Navbar() {
           <Link href="/cart">
             <Button variant="ghost" className={`relative ${buttonClasses}`}>
               <ShoppingCart className="h-4 w-4" />
-              <span className="ml-2 hidden sm:inline">Cart</span>
+              <span className="ml-2">Cart</span>
               {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-100 text-slate-600 text-xs font-medium px-2 min-w-[20px] h-5 rounded-full flex items-center justify-center">
                   {itemCount}
@@ -134,23 +134,21 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-slate-700 hidden sm:inline">
-                {user.username}
-              </span>
+              <span className="text-sm font-medium text-slate-700">{user.username}</span>
               <Button
                 variant="ghost"
                 className={buttonClasses}
                 onClick={() => logoutMutation.mutate()}
               >
                 <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span>Sign Out</span>
               </Button>
             </div>
           ) : (
             <Link href="/auth">
               <Button variant="ghost" className={buttonClasses}>
                 <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Sign In</span>
+                <span>Sign In</span>
               </Button>
             </Link>
           )}

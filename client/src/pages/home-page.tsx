@@ -31,7 +31,7 @@ export default function HomePage() {
   const { search } = useSearch();
   const { sort } = useSort();
   const { addToCart, items: cartItems } = useCart();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
   const [timestamp, setTimestamp] = useState(Date.now());
@@ -534,11 +534,24 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => setLocation("/auth")}
-                className="h-10 w-10 p-0 flex-shrink-0"
-                title="Account"
+                className="flex items-center gap-2 px-3 h-10 min-w-[90px]"
+                onClick={() => {
+                  if (user) {
+                    logoutMutation.mutate(undefined, {
+                      onSuccess: () => setLocation("/auth"),
+                    });
+                  } else {
+                    setLocation("/auth");
+                  }
+                }}
+                title={user ? "Sign Out" : "Sign In"}
               >
                 <User className="h-5 w-5" />
+                {user ? (
+                  <span className="font-medium text-slate-700">{user.username} (Sign Out)</span>
+                ) : (
+                  <span className="font-medium text-slate-700">Sign In</span>
+                )}
               </Button>
             </div>
           </div>
