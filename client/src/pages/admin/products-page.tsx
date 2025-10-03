@@ -1549,10 +1549,6 @@ export default function AdminProductsPage() {
                                      product.storage_url.includes('document')) ? (
                                       <PDFThumbnail
                                         pdfUrl={product.storage_url}
-                                        onClick={() => {
-                                          setSelectedPdf(product.storage_url);
-                                          setIsPdfViewerOpen(true);
-                                        }}
                                         width={130}
                                         height={182}
                                       />
@@ -1563,10 +1559,6 @@ export default function AdminProductsPage() {
                                           product.storage_url.includes('picture'))) ? (
                                       <ExternalUrlThumbnail
                                         url={product.storage_url}
-                                        onClick={() => {
-                                          setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
-                                          setIsImageViewerOpen(true);
-                                        }}
                                         width={130}
                                         height={182}
                                         className=""
@@ -1574,16 +1566,6 @@ export default function AdminProductsPage() {
                                     ) : (
                                       <ExternalUrlThumbnail
                                         url={product.storage_url}
-                                        onClick={() => {
-                                          // For generic external URLs, try to determine content type
-                                          if (product.storage_url.includes('pdf') || product.storage_url.toLowerCase().includes('document')) {
-                                            setSelectedPdf(product.storage_url);
-                                            setIsPdfViewerOpen(true);
-                                          } else {
-                                            setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
-                                            setIsImageViewerOpen(true);
-                                          }
-                                        }}
                                         width={130}
                                         height={182}
                                         className=""
