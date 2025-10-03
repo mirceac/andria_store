@@ -380,9 +380,8 @@ export default function HomePage() {
         >
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
-            width={180}
-            height={180}
-            className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+            width={130}
+            height={182}
             showTryDirect={false}
           />
         </div>
@@ -397,9 +396,8 @@ export default function HomePage() {
         >
           <PDFThumbnail
             pdfUrl={`${getPdfUrl(product.id)}?v=${timestamp}`}
-            width={180}
-            height={180}
-            className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+            width={130}
+            height={182}
             showTryDirect={false}
           />
         </div>
@@ -432,9 +430,8 @@ export default function HomePage() {
           >
             <ExternalUrlThumbnail
               url={product.storage_url}
-              width={180}
-              height={180}
-              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+              width={130}
+              height={182}
               showTryDirect={false}
             />
           </div>
@@ -449,9 +446,8 @@ export default function HomePage() {
           >
             <PDFThumbnail
               pdfUrl={product.storage_url}
-              width={180}
-              height={180}
-              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+              width={130}
+              height={182}
               showTryDirect={false}
             />
           </div>
@@ -475,9 +471,8 @@ export default function HomePage() {
           >
             <ExternalUrlThumbnail
               url={product.storage_url}
-              width={180}
-              height={180}
-              className="max-w-full max-h-full select-none hover:opacity-80 transition-opacity"
+              width={130}
+              height={182}
               showTryDirect={false}
             />
           </div>

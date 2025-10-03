@@ -160,26 +160,63 @@ export function PDFThumbnail({
         </div>
       )}
       {currentUrl && (
-        <div key={`pdf-${retryCount}`}>
-          <Document
-            file={currentUrl}
-          onLoadSuccess={() => {
-            console.log('PDF thumbnail: onLoadSuccess called for', currentUrl);
-            setIsLoading(false);
-            setError(null);
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-          }}
-          onLoadError={(err) => {
-            console.log('PDF thumbnail: onLoadError called for', currentUrl, 'Error:', err);
-            setIsLoading(false);
-            
-            // Check if this is an "Invalid PDF structure" error
-            if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
-              console.log('PDF thumbnail: Invalid PDF structure detected for', currentUrl);
+        <div key={`pdf-${retryCount}`} className="w-full h-full flex items-center justify-center overflow-hidden">
+          <div className="transform scale-100 origin-center max-w-full max-h-full">
+            <Document
+              file={currentUrl}
+            onLoadSuccess={() => {
+              console.log('PDF thumbnail: onLoadSuccess called for', currentUrl);
+              setIsLoading(false);
+              setError(null);
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
+            }}
+            onLoadError={(err) => {
+              console.log('PDF thumbnail: onLoadError called for', currentUrl, 'Error:', err);
+              setIsLoading(false);
               
-              // First check if the server actually returned HTML (file not found case)
+              // Check if this is an "Invalid PDF structure" error
+              if (err && (err.name === 'InvalidPDFException' || err.message?.includes('Invalid PDF structure'))) {
+                console.log('PDF thumbnail: Invalid PDF structure detected for', currentUrl);
+                
+                // First check if the server actually returned HTML (file not found case)
+                if (!currentUrl) {
+                  setError("File not found");
+                  return;
+                }
+                
+                fetch(currentUrl, { method: 'HEAD' })
+                  .then(response => {
+                    const contentType = response.headers.get('content-type') || '';
+                    const isHtml = contentType.includes('text/html');
+                    
+                    if (isHtml || response.status === 404) {
+                      console.log('PDF thumbnail: Server returned HTML/404, this is a missing file');
+                      setIsLoading(false);
+                      setError("File not found");
+                    } else {
+                      console.log('PDF thumbnail: Server returned PDF content-type, this is a corrupted file');
+                      setIsLoading(false);
+                      setError("Invalid PDF file");
+                    }
+                  })
+                  .catch(() => {
+                    // If fetch fails, assume it's a missing file
+                    console.log('PDF thumbnail: Fetch failed, assuming missing file');
+                    setIsLoading(false);
+                    setError("File not found");
+                  });
+                
+                if (timeoutRef.current) {
+                  clearTimeout(timeoutRef.current);
+                }
+                return;
+              }
+              
+              // For other errors, do a quick HEAD request to determine the issue
+              console.log('PDF thumbnail: Other error, testing URL:', currentUrl, 'Error type:', err?.name, 'Message:', err?.message);
+              
               if (!currentUrl) {
                 setError("File not found");
                 return;
@@ -187,81 +224,45 @@ export function PDFThumbnail({
               
               fetch(currentUrl, { method: 'HEAD' })
                 .then(response => {
+                  console.log('PDF thumbnail fetch response:', response.status, response.headers.get('content-type'), currentUrl);
+                  
+                  // Check if it's a 404 OR if we got HTML/JSON instead of a PDF (fallback responses)
                   const contentType = response.headers.get('content-type') || '';
                   const isHtml = contentType.includes('text/html');
+                  const isJson = contentType.includes('application/json');
                   
-                  if (isHtml || response.status === 404) {
-                    console.log('PDF thumbnail: Server returned HTML/404, this is a missing file');
+                  if (response.status === 404 || isHtml || isJson) {
+                    console.log('PDF thumbnail: Setting "File not found" error for', currentUrl, 'Status:', response.status, 'Content-Type:', contentType);
                     setIsLoading(false);
                     setError("File not found");
                   } else {
-                    console.log('PDF thumbnail: Server returned PDF content-type, this is a corrupted file');
+                    console.log('PDF thumbnail: Setting generic error for', currentUrl);
                     setIsLoading(false);
-                    setError("Invalid PDF file");
+                    setError(err?.message || "Failed to load PDF");
                   }
                 })
-                .catch(() => {
-                  // If fetch fails, assume it's a missing file
-                  console.log('PDF thumbnail: Fetch failed, assuming missing file');
+                .catch((fetchErr) => {
+                  console.log('PDF thumbnail fetch error:', fetchErr, currentUrl);
+                  console.log('PDF thumbnail: Setting "File not found" due to fetch error');
                   setIsLoading(false);
-                  setError("File not found");
+                  setError("File not found"); // Assume network errors mean file not found
                 });
               
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
               }
-              return;
-            }
-            
-            // For other errors, do a quick HEAD request to determine the issue
-            console.log('PDF thumbnail: Other error, testing URL:', currentUrl, 'Error type:', err?.name, 'Message:', err?.message);
-            
-            if (!currentUrl) {
-              setError("File not found");
-              return;
-            }
-            
-            fetch(currentUrl, { method: 'HEAD' })
-              .then(response => {
-                console.log('PDF thumbnail fetch response:', response.status, response.headers.get('content-type'), currentUrl);
-                
-                // Check if it's a 404 OR if we got HTML/JSON instead of a PDF (fallback responses)
-                const contentType = response.headers.get('content-type') || '';
-                const isHtml = contentType.includes('text/html');
-                const isJson = contentType.includes('application/json');
-                
-                if (response.status === 404 || isHtml || isJson) {
-                  console.log('PDF thumbnail: Setting "File not found" error for', currentUrl, 'Status:', response.status, 'Content-Type:', contentType);
-                  setIsLoading(false);
-                  setError("File not found");
-                } else {
-                  console.log('PDF thumbnail: Setting generic error for', currentUrl);
-                  setIsLoading(false);
-                  setError(err?.message || "Failed to load PDF");
-                }
-              })
-              .catch((fetchErr) => {
-                console.log('PDF thumbnail fetch error:', fetchErr, currentUrl);
-                console.log('PDF thumbnail: Setting "File not found" due to fetch error');
-                setIsLoading(false);
-                setError("File not found"); // Assume network errors mean file not found
-              });
-            
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-          }}
-          loading={null}
-          className="flex items-center justify-center"
-        >
-          <Page
-            pageNumber={1}
-            width={width}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
+            }}
+            loading={null}
             className="flex items-center justify-center"
-          />
-        </Document>
+          >
+            <Page
+              pageNumber={1}
+              width={width}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+            />
+          </Document>
+          </div>
         </div>
       )}
 
