@@ -22,20 +22,41 @@ export function PDFThumbnail({
   className,
   showTryDirect = true, // Default to true for backward compatibility
 }: PDFThumbnailProps) {
-  // Simplified state management
+  // Check if this is an external URL (not from our domain)
+  const isExternalUrl = useMemo(() => {
+    if (!pdfUrl) return false;
+    try {
+      const url = new URL(pdfUrl);
+      return url.hostname !== window.location.hostname;
+    } catch {
+      // If URL parsing fails, assume it's a relative URL (internal)
+      return false;
+    }
+  }, [pdfUrl]);
+
+  // State management for both internal and external PDFs
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Generate URL using useMemo to prevent unnecessary re-renders
+    // Generate URL using useMemo to prevent unnecessary re-renders
   const currentUrl = useMemo(() => {
     if (!pdfUrl) return null;
+    
+    // For external URLs, use the PDF proxy (similar to how images work)
+    if (isExternalUrl) {
+      return retryCount > 0 
+        ? `/api/proxy/pdf?url=${encodeURIComponent(pdfUrl)}&retry=${retryCount}&t=${Date.now()}`
+        : `/api/proxy/pdf?url=${encodeURIComponent(pdfUrl)}&t=${Date.now()}`;
+    }
+    
+    // For internal URLs, use them directly
     const baseUrl = pdfUrl.split('?')[0];
     return retryCount > 0 
       ? `${baseUrl}?retry=${retryCount}&t=${Date.now()}`
       : `${baseUrl}?t=${Date.now()}`;
-  }, [pdfUrl, retryCount]);
+  }, [pdfUrl, retryCount, isExternalUrl]);
 
   // Initialize the PDF worker
   useEffect(() => {
@@ -59,12 +80,13 @@ export function PDFThumbnail({
       clearTimeout(timeoutRef.current);
     }
 
-    // Set timeout for missing files
+    // Set timeout for missing files - longer timeout for external URLs since they go through proxy
+    const timeoutDuration = isExternalUrl ? 8000 : 3000;
     timeoutRef.current = setTimeout(() => {
-      console.log('PDF thumbnail: Timeout reached, setting File not found');
+      console.log('PDF thumbnail: Timeout reached, setting appropriate error');
       setIsLoading(false);
-      setError("File not found");
-    }, 3000);
+      setError(isExternalUrl ? "External PDF - Click to view" : "File not found");
+    }, timeoutDuration);
 
     return () => {
       if (timeoutRef.current) {
@@ -94,14 +116,27 @@ export function PDFThumbnail({
         </div>
       )}
       {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-2 text-center">
-          <FileText className="h-8 w-8 mb-1 text-gray-400" />
-          <span className="text-xs">
-            {error === "File not found" ? "File not found" : 
+        <div className={cn(
+          "absolute inset-0 flex flex-col items-center justify-center p-2 text-center",
+          isExternalUrl ? "bg-blue-50 text-gray-600" : "bg-gray-50 text-gray-500"
+        )}>
+          <FileText className={cn(
+            "h-8 w-8 mb-1",
+            isExternalUrl ? "text-blue-500" : "text-gray-400"
+          )} />
+          <span className="text-xs font-medium">
+            {error === "External PDF - Click to view" ? "PDF" : 
+             isExternalUrl ? "PDF" : 
+             error === "File not found" ? "File not found" : 
              error === "Invalid PDF file" ? "Invalid PDF file" : 
              "PDF unavailable"}
           </span>
-          {showTryDirect && error === "Invalid PDF file" && (
+          {(isExternalUrl || error === "External PDF - Click to view") && (
+            <span className="text-xs text-gray-500 mt-1">
+              {error === "External PDF - Click to view" ? "Click to view" : "External"}
+            </span>
+          )}
+          {showTryDirect && (error === "Invalid PDF file" || isExternalUrl || error === "External PDF - Click to view") && (
             <button
               className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
               onClick={(e) => {
@@ -113,7 +148,7 @@ export function PDFThumbnail({
               Try Direct
             </button>
           )}
-          {error !== "File not found" && error !== "Invalid PDF file" && (
+          {!isExternalUrl && error !== "File not found" && error !== "Invalid PDF file" && (
             <button
               className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
               onClick={handleRetry}

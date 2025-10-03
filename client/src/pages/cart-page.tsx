@@ -120,27 +120,49 @@ export default function CartPage() {
         </div>
       );
     } else if (product.storage_url) {
-      // 5. External URL (enhanced detection)
-      const isExternalUrl = (url: string): boolean => {
-        // Support various patterns including query parameters
-        const patterns = [
-          /^https?:\/\//i,  // Basic http/https
-          /\.(jpg|jpeg|png|gif|bmp|webp|svg|pdf|doc|docx)(\?.*)?$/i,  // File extensions with optional query params
-          /drive\.google\.com/i,  // Google Drive
-          /dropbox\.com/i,  // Dropbox
-          /onedrive\.live\.com/i,  // OneDrive
-          /github\.com.*\.(jpg|jpeg|png|gif|bmp|webp|svg|pdf)/i,  // GitHub hosted files
-          /githubusercontent\.com/i,  // GitHub raw content
-          /imgur\.com/i,  // Imgur
-          /cloudinary\.com/i,  // Cloudinary
-          /aws\.amazon\.com/i,  // AWS
-          /amazonaws\.com/i,  // AWS S3
-        ];
-        
-        return patterns.some(pattern => pattern.test(url));
-      };
-
-      if (isExternalUrl(product.storage_url)) {
+      // 5. External Storage URL
+      // Check for PDF first (more specific)
+      const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                      product.storage_url.includes('pdf') ||
+                      product.storage_url.includes('document');
+      
+      // Check for image only if it's not a PDF
+      const isImageUrl = !isPdfUrl && (
+                        product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (product.storage_url.includes('image') || 
+                         product.storage_url.includes('img') || 
+                         product.storage_url.includes('photo') ||
+                         product.storage_url.includes('picture') ||
+                         product.storage_url.includes('imgur') ||
+                         product.storage_url.includes('cloudinary') ||
+                         product.storage_url.includes('unsplash')));
+      
+      if (isImageUrl) {
+        // External Image URL
+        return (
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+            <ExternalUrlThumbnail
+              url={product.storage_url}
+              showTryDirect={false}
+              width={130}
+              height={182}
+            />
+          </div>
+        );
+      } else if (isPdfUrl) {
+        // External PDF URL
+        return (
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+            <PDFThumbnail
+              pdfUrl={product.storage_url}
+              showTryDirect={false}
+              width={130}
+              height={182}
+            />
+          </div>
+        );
+      } else {
+        // External URL that doesn't match image or PDF patterns - treat as generic external content
         return (
           <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
             <ExternalUrlThumbnail

@@ -22,8 +22,14 @@ export function ExternalUrlThumbnail({
   size,
   showTryDirect = true, // Default to true for backward compatibility
 }: ExternalUrlThumbnailProps) {
-  // Check if it's a PDF
-  const isPdf = url ? url.match(/\.(pdf)$/i) !== null : false;
+  // Check if it's a PDF - comprehensive detection
+  const isPdf = url ? (
+    url.match(/\.(pdf)(\?|$)/i) !== null ||
+    url.toLowerCase().includes('pdf') ||
+    url.toLowerCase().includes('document') ||
+    url.toLowerCase().includes('doc') ||
+    url.toLowerCase().includes('file')
+  ) : false;
   
   // Format the image source with a proxy for non-PDF URLs
   const formattedSrc = url && !isPdf 

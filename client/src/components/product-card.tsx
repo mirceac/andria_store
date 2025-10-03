@@ -38,19 +38,21 @@ export default function ProductCard({ product }: ProductCardProps) {
     
     // 5. External Storage URL
     if (product.storage_url) {
-      const isImageUrl = product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
-                        (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
-                         (product.storage_url.includes('image') || 
-                          product.storage_url.includes('img') || 
-                          product.storage_url.includes('photo') ||
-                          product.storage_url.includes('picture') ||
-                          product.storage_url.includes('imgur') ||
-                          product.storage_url.includes('cloudinary') ||
-                          product.storage_url.includes('unsplash')));
-      
+      // Check for PDF first (more specific)
       const isPdfUrl = product.storage_url.match(/\.(pdf)(\?|$)/i) ||
                       product.storage_url.includes('pdf') ||
                       product.storage_url.includes('document');
+      
+      // Check for image only if it's not a PDF
+      const isImageUrl = !isPdfUrl && (
+                        product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                        (product.storage_url.includes('image') || 
+                         product.storage_url.includes('img') || 
+                         product.storage_url.includes('photo') ||
+                         product.storage_url.includes('picture') ||
+                         product.storage_url.includes('imgur') ||
+                         product.storage_url.includes('cloudinary') ||
+                         product.storage_url.includes('unsplash')));
       
       if (isImageUrl) {
         return { url: product.storage_url, type: 'image' };

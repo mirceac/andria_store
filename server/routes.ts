@@ -404,6 +404,76 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // External PDF proxy endpoint to bypass CORS restrictions
+  app.get("/api/proxy/pdf", async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL parameter is required" });
+      }
+      
+      console.log(`Proxying PDF request for: ${url}`);
+      
+      // Validate URL format to prevent server-side request forgery
+      try {
+        new URL(url);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+      
+      // Make a request to the external URL
+      const fetch = await import('node-fetch');
+      const response = await fetch.default(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'application/pdf,*/*',
+        },
+        timeout: 10000, // 10 second timeout
+      });
+      
+      if (!response.ok) {
+        console.log(`PDF proxy failed with status: ${response.status}`);
+        return res.status(response.status).json({ 
+          message: `Failed to fetch PDF: ${response.statusText}` 
+        });
+      }
+      
+      // Get the content type
+      const contentType = response.headers.get('content-type') || 'application/pdf';
+      
+      // If it's not a PDF, return an error
+      if (!contentType.includes('pdf') && !contentType.includes('application/octet-stream')) {
+        console.log(`PDF proxy received non-PDF content type: ${contentType}`);
+        return res.status(400).json({ 
+          message: "URL does not point to a PDF file" 
+        });
+      }
+      
+      // Set appropriate headers
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      });
+      
+      // Stream the PDF data
+      const buffer = await response.buffer();
+      res.send(buffer);
+      
+    } catch (error) {
+      console.error("Error proxying PDF:", error);
+      res.status(500).json({ 
+        message: "Failed to proxy PDF", 
+        error: error instanceof Error ? error.message : String(error),
+        url: req.query.url
+      });
+    }
+  });
+
   // Categories routes
   app.get("/api/categories", async (req, res) => {
     try {

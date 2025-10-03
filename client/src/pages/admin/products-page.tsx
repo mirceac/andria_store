@@ -1543,12 +1543,24 @@ export default function AdminProductsPage() {
                                   }}
                                 >
                                   {product.storage_url && (
-                                    product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
-                                    (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
-                                     (product.storage_url.includes('image') || 
-                                      product.storage_url.includes('img') || 
-                                      product.storage_url.includes('photo') ||
-                                      product.storage_url.includes('picture'))) ? (
+                                    // Check PDF first, then image
+                                    (product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                                     product.storage_url.includes('pdf') ||
+                                     product.storage_url.includes('document')) ? (
+                                      <PDFThumbnail
+                                        pdfUrl={product.storage_url}
+                                        onClick={() => {
+                                          setSelectedPdf(product.storage_url);
+                                          setIsPdfViewerOpen(true);
+                                        }}
+                                        width={130}
+                                        height={182}
+                                      />
+                                    ) : (product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
+                                         (product.storage_url.includes('image') || 
+                                          product.storage_url.includes('img') || 
+                                          product.storage_url.includes('photo') ||
+                                          product.storage_url.includes('picture'))) ? (
                                       <ExternalUrlThumbnail
                                         url={product.storage_url}
                                         onClick={() => {
@@ -1563,8 +1575,14 @@ export default function AdminProductsPage() {
                                       <ExternalUrlThumbnail
                                         url={product.storage_url}
                                         onClick={() => {
-                                          setSelectedPdf(product.storage_url);
-                                          setIsPdfViewerOpen(true);
+                                          // For generic external URLs, try to determine content type
+                                          if (product.storage_url.includes('pdf') || product.storage_url.toLowerCase().includes('document')) {
+                                            setSelectedPdf(product.storage_url);
+                                            setIsPdfViewerOpen(true);
+                                          } else {
+                                            setSelectedImage(`/api/proxy/image?url=${encodeURIComponent(product.storage_url || '')}`);
+                                            setIsImageViewerOpen(true);
+                                          }
                                         }}
                                         width={130}
                                         height={182}
@@ -1578,8 +1596,11 @@ export default function AdminProductsPage() {
                                 <div className="text-xs text-left">
                                   <p className="font-semibold">External URL:</p>
                                   <p className="break-all">{product.storage_url}</p>
-                                  {product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
-                                   (!product.storage_url.match(/\.(pdf)(\?|$)/i) && 
+                                  {// Check PDF first, then image
+                                   !(product.storage_url.match(/\.(pdf)(\?|$)/i) ||
+                                     product.storage_url.includes('pdf') ||
+                                     product.storage_url.includes('document')) &&
+                                   (product.storage_url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)(\?|$)/i) || 
                                     (product.storage_url.includes('image') || 
                                      product.storage_url.includes('img') || 
                                      product.storage_url.includes('photo') ||
