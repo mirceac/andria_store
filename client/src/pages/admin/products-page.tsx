@@ -59,6 +59,8 @@ import {
   CheckCircle2,
   XCircle,
   Download,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -97,6 +99,7 @@ const formSchema = z.object({
   storage_url: z.string().optional(),
   has_physical_variant: z.boolean().default(false),
   physical_price: z.coerce.number().min(0, "Physical price must be positive").optional(),
+  hidden: z.boolean().default(false),
 });
 
 // Add these types at the top of the file
@@ -380,6 +383,7 @@ export default function AdminProductsPage() {
       storage_url: "",
       has_physical_variant: false,
       physical_price: 0,
+      hidden: false,
     },
   });
 
@@ -399,6 +403,7 @@ export default function AdminProductsPage() {
         storage_url: "",
         has_physical_variant: false,
         physical_price: 0,
+        hidden: false,
       });
     }
   };
@@ -440,6 +445,7 @@ export default function AdminProductsPage() {
       storage_url: product.storage_url || "",
       has_physical_variant: product.has_physical_variant || false,
       physical_price: product.physical_price ? Number(product.physical_price) : 0,
+      hidden: product.hidden || false,
     });
     setSelectedProduct(product);
     setIsDialogOpen(true);
@@ -611,6 +617,35 @@ export default function AdminProductsPage() {
     },
   });
 
+  const toggleHiddenMutation = useMutation({
+    mutationFn: async ({ productId, hidden }: { productId: number; hidden: boolean }) => {
+      const formData = new FormData();
+      formData.append("hidden", hidden.toString());
+      
+      const res = await apiRequest("PATCH", `/api/products/${productId}`, formData);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update product visibility");
+      }
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: variables.hidden ? "Product hidden" : "Product visible",
+        description: `Product is now ${variables.hidden ? "hidden from" : "visible to"} regular users.`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Error toggling product visibility:", error);
+      toast({
+        title: "Failed to update visibility",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       const formData = new FormData();
@@ -647,6 +682,11 @@ export default function AdminProductsPage() {
         
         if (data.has_physical_variant && Number(data.physical_price || 0) !== Number(selectedProduct.physical_price || 0)) {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
+        }
+        
+        // Handle hidden field
+        if (data.hidden !== (selectedProduct.hidden || false)) {
+          formData.append("hidden", data.hidden.toString());
         }
 
         // Add a flag if we're switching file types
@@ -721,6 +761,9 @@ export default function AdminProductsPage() {
         if (data.has_physical_variant) {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
+        
+        // Add hidden field
+        formData.append("hidden", data.hidden.toString());
 
         if (data.storage_location) {
           formData.append("storage_location", data.storage_location);
@@ -1254,6 +1297,35 @@ export default function AdminProductsPage() {
                         />
                       )}
                     </div>
+                    
+                    {/* Hidden Field Section */}
+                    <div className="space-y-3 border rounded-lg p-4 mt-4">
+                      <div className="flex items-center space-x-2">
+                        <FormField
+                          control={form.control}
+                          name="hidden"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4"
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                Hide from regular users (admin only)
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        When checked, this product will only be visible to administrators.
+                        Regular users won't see it in the product gallery.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1329,6 +1401,7 @@ export default function AdminProductsPage() {
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
                 <TableHead className="text-center w-[140px]">Variants</TableHead>
+                <TableHead className="text-center w-[80px]">Visible</TableHead>
                 <TableHead className="text-right px-4 w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -1715,6 +1788,41 @@ export default function AdminProductsPage() {
                           Digital Only
                         </div>
                       )}
+                    </TableCell>
+                    <TableCell className="text-center w-[80px]">
+                      <div className="flex items-center justify-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className={cn(
+                                  "h-8 w-8 p-0",
+                                  product.hidden 
+                                    ? "text-red-500 hover:text-red-600" 
+                                    : "text-green-500 hover:text-green-600"
+                                )}
+                                onClick={() => toggleHiddenMutation.mutate({
+                                  productId: product.id,
+                                  hidden: !product.hidden
+                                })}
+                                disabled={toggleHiddenMutation.isPending}
+                              >
+                                {toggleHiddenMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : product.hidden ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{product.hidden ? "Show to users" : "Hide from users"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right px-4 w-[100px]">
                       <div className="flex items-center justify-end gap-2">

@@ -671,6 +671,7 @@ export function registerRoutes(app: Express): Server {
           storage_url: products.storage_url,
           has_physical_variant: products.has_physical_variant,
           physical_price: products.physical_price,
+          hidden: products.hidden,
           created_at: products.created_at,
           updated_at: products.updated_at,
           category_name: categories.name,
@@ -678,12 +679,19 @@ export function registerRoutes(app: Express): Server {
         .from(products)
         .leftJoin(categories, eq(products.category_id, categories.id));
         
-      const productsWithNumberPrice = allProducts.map(product => ({
+      // Filter hidden products for non-admin users
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      const filteredProducts = isAdmin 
+        ? allProducts 
+        : allProducts.filter(product => !product.hidden);
+        
+      const productsWithNumberPrice = filteredProducts.map(product => ({
         ...product,
         price: Number(product.price),
         // Ensure variant fields exist with defaults if migration hasn't run yet
         has_physical_variant: product.has_physical_variant ?? false,
         physical_price: product.physical_price ?? null,
+        hidden: product.hidden ?? false,
       }));
       res.json(productsWithNumberPrice);
     } catch (error) {
@@ -709,6 +717,7 @@ export function registerRoutes(app: Express): Server {
           storage_url: products.storage_url,
           has_physical_variant: products.has_physical_variant,
           physical_price: products.physical_price,
+          hidden: products.hidden,
           created_at: products.created_at,
           updated_at: products.updated_at,
           category_name: categories.name,
@@ -720,12 +729,19 @@ export function registerRoutes(app: Express): Server {
 
       if (!product) return res.status(404).json({ message: "Product not found" });
       
+      // Check if product is hidden and user is not admin
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      if (product.hidden && !isAdmin) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
       const productWithNumberPrice = {
         ...product,
         price: Number(product.price),
         // Ensure variant fields exist with defaults if migration hasn't run yet
         has_physical_variant: product.has_physical_variant ?? false,
         physical_price: product.physical_price ?? null,
+        hidden: product.hidden ?? false,
       };
       res.json(productWithNumberPrice);
     } catch (error) {
@@ -983,6 +999,7 @@ export function registerRoutes(app: Express): Server {
         storage_url: req.body.storage_url || null,
         has_physical_variant: hasPhysicalVariant,
         physical_price: physicalPrice?.toString() || null,
+        hidden: req.body.hidden === 'true',
       };
 
       if (req.file) {
@@ -1108,6 +1125,11 @@ export function registerRoutes(app: Express): Server {
       if (req.body.physical_price !== undefined) {
         const physicalPrice = parseFloat(req.body.physical_price);
         updateData.physical_price = isNaN(physicalPrice) ? null : physicalPrice.toString();
+      }
+      
+      // Handle hidden field
+      if (req.body.hidden !== undefined) {
+        updateData.hidden = req.body.hidden === 'true';
       }
 
       // Handle file update if a new file is uploaded

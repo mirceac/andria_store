@@ -52,6 +52,8 @@ export const products = pgTable('products', {
   // New variant fields
   has_physical_variant: boolean('has_physical_variant').default(false),
   physical_price: decimal('physical_price', { precision: 10, scale: 2 }),
+  // Hide field to control visibility in gallery
+  hidden: boolean('hidden').default(false),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow()
 });
@@ -123,6 +125,7 @@ export const insertProductSchema = z.object({
   storage_url: z.string().nullable(),
   has_physical_variant: z.boolean().default(false),
   physical_price: z.number().min(0).nullable(),
+  hidden: z.boolean().default(false),
 });
 
 export type SelectProduct = {
@@ -139,6 +142,7 @@ export type SelectProduct = {
   storage_url: string | null;
   has_physical_variant: boolean;
   physical_price: string | null; // Decimal comes as string from DB
+  hidden: boolean;
   created_at: Date | null;
   updated_at: Date | null;
 };
