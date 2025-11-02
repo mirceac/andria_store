@@ -68,7 +68,7 @@ export default function HomePage() {
   }, [isMobile]);
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
-    queryKey: ["/api/products"],
+    queryKey: ["/api/products", user?.id], // Include user ID to refetch when auth changes
   });
 
   const { data: categories } = useQuery<Category[]>({
@@ -300,7 +300,10 @@ export default function HomePage() {
       ? getDescendantCategoryIds(selectedCategoryId, categories || []).includes(product.category_id!)
       : true;
     
-    return matchesSearch && matchesCategory;
+    // Filter out hidden products for regular users (admins can see them)
+    const isNotHidden = !product.hidden || (user?.is_admin === true);
+    
+    return matchesSearch && matchesCategory && isNotHidden;
   }).sort((a, b) => {
     switch (sort) {
       case "price_asc":
