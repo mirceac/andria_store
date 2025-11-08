@@ -53,6 +53,9 @@ import {
   Download,
   User,
   Globe,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -92,6 +95,7 @@ const formSchema = z.object({
   storage_url: z.string().optional(),
   has_physical_variant: z.boolean().default(false),
   physical_price: z.coerce.number().min(0, "Physical price must be positive").optional(),
+  is_public: z.boolean().default(true),
   hidden: z.boolean().default(false),
 });
 
@@ -139,6 +143,7 @@ export default function ProfilePage() {
       storage_url: "",
       has_physical_variant: false,
       physical_price: 0,
+      is_public: true,
       hidden: false,
     },
   });
@@ -159,6 +164,7 @@ export default function ProfilePage() {
         storage_url: "",
         has_physical_variant: false,
         physical_price: 0,
+        is_public: true,
         hidden: false,
       });
     }
@@ -187,6 +193,7 @@ export default function ProfilePage() {
       storage_url: product.storage_url || "",
       has_physical_variant: product.has_physical_variant || false,
       physical_price: product.physical_price ? Number(product.physical_price) : 0,
+      is_public: product.is_public !== false,
       hidden: product.hidden || false,
     });
     setSelectedProduct(product);
@@ -312,6 +319,9 @@ export default function ProfilePage() {
         if (data.has_physical_variant && Number(data.physical_price || 0) !== Number(selectedProduct.physical_price || 0)) {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
+        if (data.is_public !== (selectedProduct.is_public !== false)) {
+          formData.append("is_public", data.is_public.toString());
+        }
         if (data.hidden !== (selectedProduct.hidden || false)) {
           formData.append("hidden", data.hidden.toString());
         }
@@ -346,6 +356,7 @@ export default function ProfilePage() {
         if (data.has_physical_variant) {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
+        formData.append("is_public", data.is_public.toString());
         formData.append("hidden", data.hidden.toString());
 
         if (data.storage_location) {
@@ -696,9 +707,39 @@ export default function ProfilePage() {
                       )}
                     </div>
                     
-                    {/* Hidden Field */}
+                    {/* Visibility Settings */}
                     <div className="space-y-3 border rounded-lg p-4">
+                      <h4 className="font-semibold text-sm">Visibility Settings</h4>
+                      
+                      {/* Public Checkbox */}
                       <div className="flex items-center space-x-2">
+                        <FormField
+                          control={form.control}
+                          name="is_public"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4"
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                Public (visible to all users including guests)
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground ml-7">
+                        When checked, all users (including guests) can see this product in the gallery.
+                        When unchecked, only you can see it.
+                      </p>
+                      
+                      {/* Hidden Checkbox */}
+                      <div className="flex items-center space-x-2 pt-2">
                         <FormField
                           control={form.control}
                           name="hidden"
@@ -713,12 +754,16 @@ export default function ProfilePage() {
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal">
-                                Hide from gallery
+                                Hidden (not shown in gallery page at all)
                               </FormLabel>
                             </FormItem>
                           )}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground ml-7">
+                        When checked, this product will NOT appear in the main gallery page for anyone.
+                        This overrides the Public setting.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -766,13 +811,14 @@ export default function ProfilePage() {
                 <TableHead>Description</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-center">Stock</TableHead>
+                <TableHead className="text-center w-[120px]">Visibility</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products && products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No products yet. Click "Add Product" to create your first product!
                   </TableCell>
                 </TableRow>
@@ -843,6 +889,69 @@ export default function ProfilePage() {
                     <TableCell className="max-w-xs truncate">{product.description}</TableCell>
                     <TableCell className="text-right">${Number(product.price).toFixed(2)}</TableCell>
                     <TableCell className="text-center">{product.stock}</TableCell>
+                    <TableCell className="text-center w-[120px]">
+                      <div className="flex flex-col items-center gap-1">
+                        {/* Hidden status indicator */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={cn(
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                                product.hidden 
+                                  ? "bg-red-100 text-red-700 border border-red-300" 
+                                  : "bg-green-100 text-green-700 border border-green-300"
+                              )}>
+                                {product.hidden ? (
+                                  <>
+                                    <EyeOff className="h-3 w-3 mr-1" />
+                                    Hidden
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Visible
+                                  </>
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{product.hidden ? "Not shown in gallery" : "Shown in gallery"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        {/* Public status indicator (only show if not hidden) */}
+                        {!product.hidden && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={cn(
+                                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                                  product.is_public !== false
+                                    ? "bg-blue-100 text-blue-700 border border-blue-300" 
+                                    : "bg-amber-100 text-amber-700 border border-amber-300"
+                                )}>
+                                  {product.is_public !== false ? (
+                                    <>
+                                      <Globe className="h-3 w-3 mr-1" />
+                                      Public
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Lock className="h-3 w-3 mr-1" />
+                                      Private
+                                    </>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{product.is_public !== false ? "Visible to all users" : "Visible only to you"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
