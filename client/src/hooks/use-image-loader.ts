@@ -44,6 +44,7 @@ export function useImageLoader(
     
     // Add load and error handlers
     img.onload = () => {
+      console.log('Image loaded successfully:', actualSrc);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -51,7 +52,8 @@ export function useImageLoader(
       setError(false);
     };
     
-    img.onerror = () => {
+    img.onerror = (event) => {
+      console.log('Image loading error:', actualSrc, event);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }

@@ -67,8 +67,11 @@ export default function HomePage() {
     }
   }, [isMobile]);
 
+  // Home page always shows the public gallery (public products + user's own if logged in)
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
-    queryKey: ["/api/products", user?.id], // Include user ID to refetch when auth changes
+    queryKey: ["/api/products"],
+    refetchOnWindowFocus: true, // Refetch when user returns to the tab
+    staleTime: 0, // Consider data stale immediately to ensure fresh data
   });
 
   const { data: categories } = useQuery<Category[]>({
@@ -300,10 +303,29 @@ export default function HomePage() {
       ? getDescendantCategoryIds(selectedCategoryId, categories || []).includes(product.category_id!)
       : true;
     
-    // Filter out hidden products for regular users (admins can see them)
-    const isNotHidden = !product.hidden || (user?.is_admin === true);
+    // Visibility logic:
+    // 1. If hidden=true -> not visible to anyone in the gallery (only admins can see it in admin panel)
+    // 2. If hidden=false and is_public=false -> visible only to the owner
+    // 3. If hidden=false and is_public=true -> visible to everyone including guests
     
-    return matchesSearch && matchesCategory && isNotHidden;
+    // If the product is hidden, don't show it in the gallery at all
+    if (product.hidden) {
+      return false;
+    }
+    
+    // If the product is public, show it to everyone
+    if (product.is_public !== false) { // Default to true if undefined/null
+      return matchesSearch && matchesCategory;
+    }
+    
+    // If the product is not public, only show it to the owner
+    const isOwner = user && product.user_id === user.id;
+    if (isOwner) {
+      return matchesSearch && matchesCategory;
+    }
+    
+    // Don't show private products to other users
+    return false;
   }).sort((a, b) => {
     switch (sort) {
       case "price_asc":

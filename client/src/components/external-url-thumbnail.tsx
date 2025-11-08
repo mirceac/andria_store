@@ -31,14 +31,20 @@ export function ExternalUrlThumbnail({
     url.toLowerCase().includes('file')
   ) : false;
   
-  // Format the image source with a proxy for non-PDF URLs
+  // Format the image source - use direct URL for Supabase signed URLs, proxy for others
+  const isSupabaseSignedUrl = url?.includes('supabase.co/storage/v1/object/sign/');
   const formattedSrc = url && !isPdf 
-    ? `/api/proxy/image?url=${encodeURIComponent(url)}` 
+    ? (isSupabaseSignedUrl ? url : `/api/proxy/image?url=${encodeURIComponent(url)}`)
     : null;
   
-  // Use our custom hook for image loading
+  // Debug logging for Supabase URLs
+  if (url?.includes('supabase.co')) {
+    console.log('Supabase URL detected:', { url, formattedSrc, isPdf, isSupabaseSignedUrl });
+  }
+  
+  // Use our custom hook for image loading - standard timeout since Supabase URLs are now direct
   const { loading, error, retry, actualSrc } = useImageLoader(formattedSrc, { 
-    timeoutMs: 3000 
+    timeoutMs: 5000  // 5 seconds should be enough for direct URLs
   });
   
   // Size presets similar to ImageThumbnail

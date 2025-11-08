@@ -25,9 +25,11 @@ export const users = pgTable("users", {
 
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
+  name: text("name").notNull(),
   description: text("description"),
   parent_id: integer("parent_id"),
+  user_id: integer("user_id").references(() => users.id), // Owner of the category (null = public/admin)
+  is_public: boolean("is_public").default(true), // true = admin public category, false = user private
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => ({
   parentReference: foreignKey({
@@ -43,6 +45,8 @@ export const products = pgTable('products', {
   price: decimal('price', { precision: 10, scale: 2 }).notNull(), // Digital price
   stock: integer('stock').default(0), // Physical stock only
   category_id: integer('category_id').references(() => categories.id),
+  user_id: integer('user_id').references(() => users.id), // Owner of the product (null = public/admin)
+  is_public: boolean('is_public').default(true), // true = admin public product, false = user private
   // Existing media fields - keep these!
   image_file: text('image_file'),
   image_data: text('image_data'),
@@ -118,6 +122,8 @@ export const insertProductSchema = z.object({
   price: z.number().min(0), // Digital price
   stock: z.number().min(0), // Physical stock only
   category_id: z.number().nullable(),
+  user_id: z.number().nullable(),
+  is_public: z.boolean().default(true),
   image_file: z.string().nullable(),
   image_data: z.string().nullable(),
   pdf_file: z.string().nullable(),
@@ -135,6 +141,8 @@ export type SelectProduct = {
   price: string; // Digital price - Decimal comes as string from DB
   stock: number; // Physical stock only
   category_id: number | null;
+  user_id: number | null; // Owner of the product
+  is_public: boolean; // Admin public vs user private
   image_file: string | null;
   image_data: string | null;
   pdf_file: string | null;

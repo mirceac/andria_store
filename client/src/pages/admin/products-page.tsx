@@ -61,6 +61,8 @@ import {
   Download,
   Eye,
   EyeOff,
+  Globe,
+  Lock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -99,6 +101,7 @@ const formSchema = z.object({
   storage_url: z.string().optional(),
   has_physical_variant: z.boolean().default(false),
   physical_price: z.coerce.number().min(0, "Physical price must be positive").optional(),
+  is_public: z.boolean().default(true),
   hidden: z.boolean().default(false),
 });
 
@@ -403,6 +406,7 @@ export default function AdminProductsPage() {
         storage_url: "",
         has_physical_variant: false,
         physical_price: 0,
+        is_public: true,
         hidden: false,
       });
     }
@@ -445,6 +449,7 @@ export default function AdminProductsPage() {
       storage_url: product.storage_url || "",
       has_physical_variant: product.has_physical_variant || false,
       physical_price: product.physical_price ? Number(product.physical_price) : 0,
+      is_public: product.is_public !== false, // Default to true if null/undefined
       hidden: product.hidden || false,
     });
     setSelectedProduct(product);
@@ -684,7 +689,11 @@ export default function AdminProductsPage() {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
         
-        // Handle hidden field
+        // Handle visibility fields
+        if (data.is_public !== (selectedProduct.is_public !== false)) {
+          formData.append("is_public", data.is_public.toString());
+        }
+        
         if (data.hidden !== (selectedProduct.hidden || false)) {
           formData.append("hidden", data.hidden.toString());
         }
@@ -762,7 +771,8 @@ export default function AdminProductsPage() {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
         
-        // Add hidden field
+        // Add visibility fields
+        formData.append("is_public", data.is_public.toString());
         formData.append("hidden", data.hidden.toString());
 
         if (data.storage_location) {
@@ -1298,9 +1308,39 @@ export default function AdminProductsPage() {
                       )}
                     </div>
                     
-                    {/* Hidden Field Section */}
+                    {/* Visibility Settings Section */}
                     <div className="space-y-3 border rounded-lg p-4 mt-4">
+                      <h4 className="font-semibold text-sm">Visibility Settings</h4>
+                      
+                      {/* Public Checkbox */}
                       <div className="flex items-center space-x-2">
+                        <FormField
+                          control={form.control}
+                          name="is_public"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4"
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                Public (visible to all users including guests)
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground ml-7">
+                        When checked, all users (including guests) can see this product in the gallery.
+                        When unchecked, only you (the owner) can see it.
+                      </p>
+                      
+                      {/* Hidden Checkbox */}
+                      <div className="flex items-center space-x-2 pt-2">
                         <FormField
                           control={form.control}
                           name="hidden"
@@ -1315,15 +1355,15 @@ export default function AdminProductsPage() {
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal">
-                                Hide from regular users (admin only)
+                                Hidden (not shown in gallery page at all)
                               </FormLabel>
                             </FormItem>
                           )}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        When checked, this product will only be visible to administrators.
-                        Regular users won't see it in the product gallery.
+                      <p className="text-xs text-muted-foreground ml-7">
+                        When checked, this product will NOT appear in the main gallery page for anyone.
+                        This overrides the Public setting.
                       </p>
                     </div>
                   </div>
@@ -1790,38 +1830,66 @@ export default function AdminProductsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-center w-[80px]">
-                      <div className="flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-1">
+                        {/* Hidden status indicator */}
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                className={cn(
-                                  "h-8 w-8 p-0",
-                                  product.hidden 
-                                    ? "text-red-500 hover:text-red-600" 
-                                    : "text-green-500 hover:text-green-600"
-                                )}
-                                onClick={() => toggleHiddenMutation.mutate({
-                                  productId: product.id,
-                                  hidden: !product.hidden
-                                })}
-                                disabled={toggleHiddenMutation.isPending}
-                              >
-                                {toggleHiddenMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : product.hidden ? (
-                                  <EyeOff className="h-4 w-4" />
+                              <div className={cn(
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                                product.hidden 
+                                  ? "bg-red-100 text-red-700 border border-red-300" 
+                                  : "bg-green-100 text-green-700 border border-green-300"
+                              )}>
+                                {product.hidden ? (
+                                  <>
+                                    <EyeOff className="h-3 w-3 mr-1" />
+                                    Hidden
+                                  </>
                                 ) : (
-                                  <Eye className="h-4 w-4" />
+                                  <>
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Visible
+                                  </>
                                 )}
-                              </Button>
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{product.hidden ? "Show to users" : "Hide from users"}</p>
+                              <p>{product.hidden ? "Not shown in gallery" : "Shown in gallery"}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                        
+                        {/* Public status indicator (only show if not hidden) */}
+                        {!product.hidden && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={cn(
+                                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                                  product.is_public !== false
+                                    ? "bg-blue-100 text-blue-700 border border-blue-300" 
+                                    : "bg-amber-100 text-amber-700 border border-amber-300"
+                                )}>
+                                  {product.is_public !== false ? (
+                                    <>
+                                      <Globe className="h-3 w-3 mr-1" />
+                                      Public
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Lock className="h-3 w-3 mr-1" />
+                                      Private
+                                    </>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{product.is_public !== false ? "Visible to all users" : "Visible only to owner"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right px-4 w-[100px]">

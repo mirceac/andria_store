@@ -220,6 +220,13 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Handle Supabase signed URLs
+      if (url.includes('supabase.co/storage/v1/object/sign/')) {
+        console.log('Detected Supabase signed URL, using original URL');
+        // Supabase signed URLs should work directly, but we might need special headers
+        finalUrl = url;
+      }
+      
       // Handle Dropbox URLs
       if (url.includes('dropbox.com') && !url.includes('dl=1')) {
         // Convert shared Dropbox links to direct download links
@@ -248,16 +255,29 @@ export function registerRoutes(app: Express): Server {
       }
       
       console.log('Fetching from URL:', finalUrl);
+      
+      // Prepare headers based on URL type
+      const requestHeaders: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      };
+      
+      // Add specific headers based on URL type
+      if (finalUrl.includes('supabase.co')) {
+        // Supabase-specific headers
+        requestHeaders['Cache-Control'] = 'no-cache';
+        requestHeaders['Pragma'] = 'no-cache';
+      } else if (finalUrl.includes('photos.google.com') || finalUrl.includes('googleusercontent.com')) {
+        // Google Photos specific headers
+        requestHeaders['Referer'] = 'https://photos.google.com/';
+        requestHeaders['Sec-Fetch-Dest'] = 'image';
+        requestHeaders['Sec-Fetch-Mode'] = 'no-cors';
+        requestHeaders['Sec-Fetch-Site'] = 'cross-site';
+      }
+      
       const response = await fetch.default(finalUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': 'https://photos.google.com/',
-          'Sec-Fetch-Dest': 'image',
-          'Sec-Fetch-Mode': 'no-cors',
-          'Sec-Fetch-Site': 'cross-site'
-        }
+        headers: requestHeaders
       });
       
       if (!response.ok) {
@@ -664,6 +684,8 @@ export function registerRoutes(app: Express): Server {
           price: products.price,
           stock: products.stock,
           category_id: products.category_id,
+          user_id: products.user_id,
+          is_public: products.is_public,
           image_file: products.image_file,
           image_data: products.image_data,
           pdf_file: products.pdf_file,
@@ -679,11 +701,45 @@ export function registerRoutes(app: Express): Server {
         .from(products)
         .leftJoin(categories, eq(products.category_id, categories.id));
         
-      // Filter hidden products for non-admin users
+      // Filter products based on user authentication
       const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
-      const filteredProducts = isAdmin 
-        ? allProducts 
-        : allProducts.filter(product => !product.hidden);
+      const userId = req.isAuthenticated?.() ? req.user?.id : null;
+      
+      console.log('GET /api/products - User:', userId, 'isAdmin:', isAdmin, 'Total products:', allProducts.length);
+      
+      // Show: public products (not hidden) + user's own products (if authenticated)
+      const filteredProducts = allProducts.filter(product => {
+        // Admins see everything - NO FILTERING
+        if (isAdmin) {
+          return true;
+        }
+        
+        // Owner always sees their own products (regardless of hidden/public status)
+        if (userId && product.user_id === userId) {
+          return true;
+        }
+        
+        // Non-owners can only see products that are BOTH public AND not hidden
+        // If is_public is explicitly false, hide from non-owners
+        if (product.is_public === false) {
+          return false;
+        }
+        
+        // If product is hidden, hide from non-owners
+        if (product.hidden === true) {
+          return false;
+        }
+        
+        // Show public products (is_public === true OR null for legacy products)
+        if (product.is_public === true || product.is_public === null) {
+          return true;
+        }
+        
+        // Default: hide
+        return false;
+      });
+      
+      console.log('GET /api/products - Filtered to:', filteredProducts.length, 'products');
         
       const productsWithNumberPrice = filteredProducts.map(product => ({
         ...product,
@@ -692,6 +748,8 @@ export function registerRoutes(app: Express): Server {
         has_physical_variant: product.has_physical_variant ?? false,
         physical_price: product.physical_price ?? null,
         hidden: product.hidden ?? false,
+        user_id: product.user_id ?? null,
+        is_public: product.is_public ?? true,
       }));
       res.json(productsWithNumberPrice);
     } catch (error) {
@@ -710,6 +768,8 @@ export function registerRoutes(app: Express): Server {
           price: products.price,
           stock: products.stock,
           category_id: products.category_id,
+          user_id: products.user_id,
+          is_public: products.is_public,
           image_file: products.image_file,
           image_data: products.image_data,
           pdf_file: products.pdf_file,
@@ -729,9 +789,17 @@ export function registerRoutes(app: Express): Server {
 
       if (!product) return res.status(404).json({ message: "Product not found" });
       
-      // Check if product is hidden and user is not admin
+      // Check access permissions
       const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
-      if (product.hidden && !isAdmin) {
+      const userId = req.isAuthenticated?.() ? req.user?.id : null;
+      const isOwner = userId && product.user_id === userId;
+      
+      // Allow access if: admin, owner, or public non-hidden product
+      // Treat null is_public as true (legacy products before migration)
+      const isPublic = product.is_public === true || product.is_public === null;
+      const canAccess = isAdmin || isOwner || (isPublic && !product.hidden);
+      
+      if (!canAccess) {
         return res.status(404).json({ message: "Product not found" });
       }
       
@@ -742,6 +810,8 @@ export function registerRoutes(app: Express): Server {
         has_physical_variant: product.has_physical_variant ?? false,
         physical_price: product.physical_price ?? null,
         hidden: product.hidden ?? false,
+        user_id: product.user_id ?? null,
+        is_public: product.is_public ?? true,
       };
       res.json(productWithNumberPrice);
     } catch (error) {
@@ -965,7 +1035,8 @@ export function registerRoutes(app: Express): Server {
 
   // Protected admin routes
   app.post("/api/products", upload.single('file'), async (req, res) => {
-    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+    // Allow both admin (for public products) and regular users (for their own products)
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
@@ -978,6 +1049,18 @@ export function registerRoutes(app: Express): Server {
       // Handle variant fields
       const hasPhysicalVariant = req.body.has_physical_variant === 'true';
       const physicalPrice = hasPhysicalVariant ? parseFloat(req.body.physical_price || '0') : null;
+      
+      // Determine if this is a public (admin) product or user private product
+      const isAdmin = req.user?.is_admin || false;
+      const isPublicProduct = req.body.is_public === 'true';
+      
+      // Only admins can create public products
+      if (isPublicProduct && !isAdmin) {
+        return res.status(403).json({ message: "Only admins can create public products" });
+      }
+      
+      // Set user_id: null for admin public products, current user for user products
+      const userId = isPublicProduct ? null : req.user.id;
 
       // Add debug logging for the uploaded file
       console.log('Uploaded file details:', {
@@ -992,6 +1075,8 @@ export function registerRoutes(app: Express): Server {
         price: price.toString(),
         stock: stock, // Physical stock only
         category_id: req.body.category_id ? parseInt(req.body.category_id) : null,
+        user_id: userId,
+        is_public: isPublicProduct,
         pdf_data: null as string | null,
         pdf_file: null as string | null,
         image_data: null as string | null,
@@ -1071,12 +1156,30 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.patch("/api/products/:id", upload.single('file'), async (req, res) => {
-    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     try {
       const productId = parseInt(req.params.id);
+      
+      // Get the product to check ownership
+      const existingProduct = await db.query.products.findFirst({
+        where: eq(products.id, productId)
+      });
+      
+      if (!existingProduct) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Check if user has permission to edit this product
+      const isAdmin = req.user?.is_admin || false;
+      const isOwner = existingProduct.user_id === req.user?.id;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "You can only edit your own products" });
+      }
+
       const storeAsBinary = req.body.store_as_binary === 'true';
       const storageType = req.body.storage_type;
       
@@ -1127,7 +1230,11 @@ export function registerRoutes(app: Express): Server {
         updateData.physical_price = isNaN(physicalPrice) ? null : physicalPrice.toString();
       }
       
-      // Handle hidden field
+      // Handle visibility fields
+      if (req.body.is_public !== undefined) {
+        updateData.is_public = req.body.is_public === 'true';
+      }
+      
       if (req.body.hidden !== undefined) {
         updateData.hidden = req.body.hidden === 'true';
       }
@@ -1213,7 +1320,7 @@ export function registerRoutes(app: Express): Server {
 
   //New Delete Route
   app.delete("/api/products/:id", async (req, res) => {
-    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user?.is_admin) {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.status(403).json({ message: "You are not authorized to delete products." });
     }
 
@@ -1221,6 +1328,23 @@ export function registerRoutes(app: Express): Server {
       const productId = parseInt(req.params.id);
       if (isNaN(productId)) {
         return res.status(400).json({ message: "Invalid product ID" });
+      }
+
+      // Get the product to check ownership
+      const existingProduct = await db.query.products.findFirst({
+        where: eq(products.id, productId)
+      });
+      
+      if (!existingProduct) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Check if user has permission to delete this product
+      const isAdmin = req.user?.is_admin || false;
+      const isOwner = existingProduct.user_id === req.user?.id;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "You can only delete your own products" });
       }
 
       console.log(`Attempting to delete product with ID: ${productId}`);
@@ -1267,6 +1391,90 @@ export function registerRoutes(app: Express): Server {
     
     const filePath = req.file.path.replace('public/', '/');
     res.json({ path: filePath });
+  });
+
+  // User Profile routes - for managing user's own products and categories
+  
+  // Get user's products
+  app.get("/api/users/:userId/products", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const isOwner = req.isAuthenticated?.() && req.user?.id === userId;
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      
+      console.log('GET /api/users/:userId/products - Requesting user:', req.user?.id, 'Target userId:', userId, 'isOwner:', isOwner, 'isAdmin:', isAdmin);
+      
+      // Users can view their own products, admins can view any user's products
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const userProducts = await db
+        .select({
+          id: products.id,
+          name: products.name,
+          description: products.description,
+          price: products.price,
+          stock: products.stock,
+          category_id: products.category_id,
+          user_id: products.user_id,
+          is_public: products.is_public,
+          image_file: products.image_file,
+          image_data: products.image_data,
+          pdf_file: products.pdf_file,
+          pdf_data: products.pdf_data,
+          storage_url: products.storage_url,
+          has_physical_variant: products.has_physical_variant,
+          physical_price: products.physical_price,
+          hidden: products.hidden,
+          created_at: products.created_at,
+          updated_at: products.updated_at,
+          category_name: categories.name,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.category_id, categories.id))
+        .where(eq(products.user_id, userId));
+      
+      console.log('GET /api/users/:userId/products - Found:', userProducts.length, 'products for user', userId);
+        
+      const productsWithNumberPrice = userProducts.map(product => ({
+        ...product,
+        price: Number(product.price),
+        has_physical_variant: product.has_physical_variant ?? false,
+        physical_price: product.physical_price ?? null,
+        hidden: product.hidden ?? false,
+        is_public: product.is_public ?? false,
+      }));
+      
+      res.json(productsWithNumberPrice);
+    } catch (error) {
+      console.error("Error fetching user products:", error);
+      res.status(500).json({ message: "Failed to fetch user products" });
+    }
+  });
+  
+  // Get user's categories
+  app.get("/api/users/:userId/categories", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const isOwner = req.isAuthenticated?.() && req.user?.id === userId;
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      
+      // Users can view their own categories, admins can view any user's categories
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const userCategories = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.user_id, userId));
+        
+      res.json(userCategories);
+    } catch (error) {
+      console.error("Error fetching user categories:", error);
+      res.status(500).json({ message: "Failed to fetch user categories" });
+    }
   });
 
   // Orders routes

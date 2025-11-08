@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ProfileSwitcher } from "@/components/profile-switcher";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -78,6 +79,9 @@ export default function Navbar() {
 
         {/* Navigation Items - Fixed width */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          {/* Profile Switcher - for authenticated users */}
+          <ProfileSwitcher />
+          
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
