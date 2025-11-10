@@ -497,8 +497,67 @@ export function registerRoutes(app: Express): Server {
   // Categories routes
   app.get("/api/categories", async (req, res) => {
     try {
-      const allCategories = await db.select().from(categories);
-      res.json(allCategories);
+      const allCategories = await db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          description: categories.description,
+          parent_id: categories.parent_id,
+          is_public: categories.is_public,
+          hidden: categories.hidden,
+          user_id: categories.user_id,
+          created_at: categories.created_at,
+          username: users.username,
+        })
+        .from(categories)
+        .leftJoin(users, eq(categories.user_id, users.id));
+      
+      // Filter categories based on user authentication
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      const userId = req.isAuthenticated?.() ? req.user?.id : null;
+      
+      console.log('GET /api/categories - User:', userId, 'isAdmin:', isAdmin, 'Total categories:', allCategories.length);
+      
+      const filteredCategories = allCategories.filter(category => {
+        // Admins see everything - NO FILTERING
+        if (isAdmin) {
+          console.log('  - Admin sees category:', category.id, category.name, 'hidden:', category.hidden);
+          return true;
+        }
+        
+        // Owner always sees their own categories (regardless of hidden/public status)
+        if (userId && category.user_id === userId) {
+          console.log('  - Owner sees their category:', category.id, category.name);
+          return true;
+        }
+        
+        // Non-owners can only see categories that are BOTH public AND not hidden
+        // If is_public is explicitly false, hide from non-owners
+        if (category.is_public === false) {
+          console.log('  - Hiding private category:', category.id, category.name);
+          return false;
+        }
+        
+        // If category is hidden, hide from non-owners
+        if (category.hidden === true) {
+          console.log('  - Hiding hidden category:', category.id, category.name);
+          return false;
+        }
+        
+        // Show public categories (is_public === true OR null for legacy categories)
+        if (category.is_public === true || category.is_public === null) {
+          console.log('  - Showing public category:', category.id, category.name);
+          return true;
+        }
+        
+        // Default: hide
+        console.log('  - Default hiding category:', category.id, category.name);
+        return false;
+      });
+      
+      console.log('GET /api/categories - Filtered to:', filteredCategories.length, 'categories');
+      
+      res.json(filteredCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -508,30 +567,79 @@ export function registerRoutes(app: Express): Server {
   // New endpoint for hierarchical category tree
   app.get("/api/categories/tree", async (req, res) => {
     try {
-      const allCategories = await db.select().from(categories);
+      const allCategories = await db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          description: categories.description,
+          parent_id: categories.parent_id,
+          is_public: categories.is_public,
+          hidden: categories.hidden,
+          user_id: categories.user_id,
+          created_at: categories.created_at,
+          username: users.username,
+        })
+        .from(categories)
+        .leftJoin(users, eq(categories.user_id, users.id));
       
-      // Build hierarchical structure
-      const categoryMap = new Map();
-      const rootCategories: any[] = [];
+      // For the public tree view (sidebar menu), hide hidden categories from EVERYONE
+      // This is different from /api/categories which shows all categories to admins
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      const userId = req.isAuthenticated?.() ? req.user?.id : null;
       
-      // First pass: create map of all categories
-      allCategories.forEach(category => {
-        categoryMap.set(category.id, { ...category, children: [] });
-      });
+      console.log('GET /api/categories/tree - User:', userId, 'isAdmin:', isAdmin, 'Total categories:', allCategories.length);
       
-      // Second pass: build hierarchy
-      allCategories.forEach(category => {
-        if (category.parent_id) {
-          const parent = categoryMap.get(category.parent_id);
-          if (parent) {
-            parent.children.push(categoryMap.get(category.id));
-          }
-        } else {
-          rootCategories.push(categoryMap.get(category.id));
+      const filteredCategories = allCategories.filter(category => {
+        // ALWAYS hide categories that are marked as hidden (even from admins in public view)
+        if (category.hidden === true) {
+          console.log('  - Hiding hidden category from tree:', category.id, category.name);
+          return false;
         }
+        
+        // If is_public is explicitly false, only show to owner
+        if (category.is_public === false) {
+          // Admin-owned private categories (user_id = null) - only admin sees them
+          if (category.user_id === null && isAdmin) {
+            console.log('  - Admin sees admin-owned private category in tree:', category.id, category.name);
+            return true;
+          }
+          // User-owned private categories - only owner sees them
+          if (userId && category.user_id === userId) {
+            console.log('  - Owner sees their private category in tree:', category.id, category.name);
+            return true;
+          }
+          // Hide private categories from everyone else
+          console.log('  - Hiding private category from tree:', category.id, category.name);
+          return false;
+        }
+        
+        // Owner always sees their own public categories
+        if (userId && category.user_id === userId) {
+          console.log('  - Owner sees their public category in tree:', category.id, category.name);
+          return true;
+        }
+        
+        // Admin sees admin-owned public categories (user_id = null, is_public = true/null)
+        if (isAdmin && category.user_id === null) {
+          console.log('  - Admin sees admin-owned public category in tree:', category.id, category.name);
+          return true;
+        }
+        
+        // Show public categories to everyone (is_public === true OR null for legacy categories)
+        if (category.is_public === true || category.is_public === null) {
+          console.log('  - Showing public category in tree:', category.id, category.name);
+          return true;
+        }
+        
+        // Default: hide
+        console.log('  - Default hiding category from tree:', category.id, category.name);
+        return false;
       });
       
-      res.json(rootCategories);
+      console.log('GET /api/categories/tree - Filtered to:', filteredCategories.length, 'categories');
+      
+      // Return flat array (not hierarchical) for easier consumption
+      res.json(filteredCategories);
     } catch (error) {
       console.error("Error fetching category tree:", error);
       res.status(500).json({ message: "Failed to fetch category tree" });
@@ -547,6 +655,20 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Category not found" });
       }
       
+      // Check access permissions
+      const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
+      const userId = req.isAuthenticated?.() ? req.user?.id : null;
+      const isOwner = userId && category[0].user_id === userId;
+      
+      // Allow access if: admin, owner, or public non-hidden category
+      // Treat null is_public as true (legacy categories before migration)
+      const isPublic = category[0].is_public === true || category[0].is_public === null;
+      const canAccess = isAdmin || isOwner || (isPublic && !category[0].hidden);
+      
+      if (!canAccess) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
       res.json(category[0]);
     } catch (error) {
       console.error("Error fetching category:", error);
@@ -555,12 +677,34 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/categories", async (req, res) => {
+    // Allow both admin (for public categories) and regular users (for their own categories)
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
     try {
-      const { name, description, parent_id } = req.body;
+      const { name, description, parent_id, is_public, hidden } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: "Category name is required" });
       }
+
+      // Determine if this is a public category or private category
+      const isAdmin = req.user?.is_admin || false;
+      const isPublicCategory = is_public === 'true' || is_public === true;
+      
+      // Set user_id logic:
+      // - Admin categories (public or private): user_id = null
+      // - Regular user categories (public or private): user_id = current user
+      const userId = isAdmin ? null : req.user.id;
+      
+      console.log('POST /api/categories - Creating category:', { 
+        name, 
+        isAdmin, 
+        isPublicCategory, 
+        userId, 
+        requestUserId: req.user.id 
+      });
 
       // Validate parent_id if provided
       if (parent_id) {
@@ -574,6 +718,9 @@ export function registerRoutes(app: Express): Server {
         name,
         description: description || null,
         parent_id: parent_id || null,
+        user_id: userId,
+        is_public: isPublicCategory,
+        hidden: Boolean(hidden === 'true' || hidden === true),
       }).returning();
 
       res.status(201).json(newCategory[0] as any);
@@ -584,9 +731,33 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/categories/:id", async (req, res) => {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
     try {
       const categoryId = parseInt(req.params.id);
-      const { name, description, parent_id } = req.body;
+      
+      // Get the category to check ownership
+      const existingCategory = await db.select().from(categories).where(eq(categories.id, categoryId));
+      
+      if (existingCategory.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if user has permission to edit this category
+      const isAdmin = req.user?.is_admin || false;
+      const isOwner = existingCategory[0].user_id === req.user?.id;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "You can only edit your own categories" });
+      }
+
+      const { name, description, parent_id, is_public, hidden } = req.body;
+      
+      console.log('PUT /api/categories/:id - Request body:', { name, description, parent_id, is_public, hidden });
+      console.log('PUT /api/categories/:id - is_public type:', typeof is_public, 'value:', is_public);
+      console.log('PUT /api/categories/:id - hidden type:', typeof hidden, 'value:', hidden);
       
       if (!name) {
         return res.status(400).json({ message: "Category name is required" });
@@ -616,18 +787,37 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
+      // Build update object with only provided fields
+      const updateData: any = {
+        name,
+        description: description || null,
+        parent_id: parent_id || null,
+      };
+      
+      // Update is_public and hidden if provided (handle both boolean and string values)
+      if (is_public !== undefined) {
+        const publicValue = (is_public === 'true' || is_public === true);
+        updateData.is_public = publicValue;
+        console.log('PUT /api/categories/:id - Setting is_public to:', publicValue);
+      }
+      if (hidden !== undefined) {
+        const hiddenValue = (hidden === 'true' || hidden === true);
+        updateData.hidden = hiddenValue;
+        console.log('PUT /api/categories/:id - Setting hidden to:', hiddenValue);
+      }
+
+      console.log('PUT /api/categories/:id - Final update data:', updateData);
+
       const updatedCategory = await db.update(categories)
-        .set({
-          name,
-          description: description || null,
-          parent_id: parent_id || null,
-        })
+        .set(updateData)
         .where(eq(categories.id, categoryId))
         .returning();
 
       if (updatedCategory.length === 0) {
         return res.status(404).json({ message: "Category not found" });
       }
+
+      console.log('PUT /api/categories/:id - Updated category:', updatedCategory[0]);
 
       res.json(updatedCategory[0]);
     } catch (error) {
@@ -637,8 +827,27 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/categories/:id", async (req, res) => {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
     try {
       const categoryId = parseInt(req.params.id);
+      
+      // Get the category to check ownership
+      const existingCategory = await db.select().from(categories).where(eq(categories.id, categoryId));
+      
+      if (existingCategory.length === 0) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if user has permission to delete this category
+      const isAdmin = req.user?.is_admin || false;
+      const isOwner = existingCategory[0].user_id === req.user?.id;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "You can only delete your own categories" });
+      }
       
       // Check if any products are using this category
       const productsWithCategory = await db.select().from(products).where(eq(products.category_id, categoryId));
@@ -1460,15 +1669,30 @@ export function registerRoutes(app: Express): Server {
       const isOwner = req.isAuthenticated?.() && req.user?.id === userId;
       const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
       
+      console.log('GET /api/users/:userId/categories - Requesting user:', req.user?.id, 'Target userId:', userId, 'isOwner:', isOwner, 'isAdmin:', isAdmin);
+      
       // Users can view their own categories, admins can view any user's categories
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
       const userCategories = await db
-        .select()
+        .select({
+          id: categories.id,
+          name: categories.name,
+          description: categories.description,
+          parent_id: categories.parent_id,
+          is_public: categories.is_public,
+          hidden: categories.hidden,
+          user_id: categories.user_id,
+          created_at: categories.created_at,
+          username: users.username,
+        })
         .from(categories)
+        .leftJoin(users, eq(categories.user_id, users.id))
         .where(eq(categories.user_id, userId));
+      
+      console.log('GET /api/users/:userId/categories - Found:', userCategories.length, 'categories for user', userId);
         
       res.json(userCategories);
     } catch (error) {

@@ -24,6 +24,10 @@ type Category = {
   name: string;
   description: string | null;
   parent_id: number | null;
+  user_id?: number | null;
+  username?: string | null;
+  is_public?: boolean;
+  hidden?: boolean;
   created_at: string;
 };
 
@@ -74,8 +78,11 @@ export default function HomePage() {
     staleTime: 0, // Consider data stale immediately to ensure fresh data
   });
 
+  // Use /api/categories/tree for the public sidebar menu (hides hidden categories from everyone)
   const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: ["/api/categories/tree"],
+    refetchOnWindowFocus: true, // Refetch when user returns to the tab
+    staleTime: 0, // Consider data stale immediately to ensure fresh data
   });
 
   // Auto-expand root categories when categories load

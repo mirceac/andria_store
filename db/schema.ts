@@ -30,6 +30,7 @@ export const categories = pgTable("categories", {
   parent_id: integer("parent_id"),
   user_id: integer("user_id").references(() => users.id), // Owner of the category (null = public/admin)
   is_public: boolean("is_public").default(true), // true = admin public category, false = user private
+  hidden: boolean("hidden").default(false), // true = hidden from gallery
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => ({
   parentReference: foreignKey({

@@ -56,9 +56,11 @@ import {
   Lock,
   Eye,
   EyeOff,
+  FolderTree,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Link } from "wouter";
 import {
   Tooltip,
   TooltipContent,
@@ -125,7 +127,7 @@ export default function ProfilePage() {
     queryKey: [`/api/users/${user.id}/products`],
   });
 
-  const { data: categories } = useQuery<{id: number, name: string, description: string | null, parent_id: number | null, created_at: string}[]>({
+  const { data: categories } = useQuery<{id: number, name: string, description: string | null, parent_id: number | null, user_id?: number | null, username?: string | null, is_public?: boolean, hidden?: boolean, created_at: string}[]>({
     queryKey: ["/api/categories"],
   });
 
@@ -405,14 +407,21 @@ export default function ProfilePage() {
             Manage your personal product collection
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
+        <div className="flex gap-2">
+          <Link href="/profile/categories">
+            <Button variant="outline">
+              <FolderTree className="mr-2 h-4 w-4" />
+              My Categories
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          </Link>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedProduct ? "Edit Product" : "Add New Product"}
@@ -799,6 +808,7 @@ export default function ProfilePage() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="space-y-4">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, Edit, Plus } from 'lucide-react';
+import { Trash2, Edit, Plus, ArrowLeft, Globe, Lock, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'wouter';
 
 type Category = {
   id: number;
@@ -32,13 +33,13 @@ type Category = {
   description: string | null;
   parent_id: number | null;
   user_id: number | null;
-  username: string | null;
+  username?: string | null;
   is_public: boolean;
   hidden: boolean;
   created_at: string;
 };
 
-export default function CategoriesPage() {
+export default function UserCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -171,7 +172,7 @@ export default function CategoriesPage() {
     const url = editingCategory ? `/api/categories/${editingCategory.id}` : '/api/categories';
     const method = editingCategory ? 'PUT' : 'POST';
 
-    // Prepare the data with proper parent_id handling
+    // Prepare the data - users can now create both public and private categories
     const submitData = {
       name: formData.name,
       description: formData.description,
@@ -189,7 +190,7 @@ export default function CategoriesPage() {
       name: category.name,
       description: category.description || '',
       parent_id: category.parent_id ? category.parent_id.toString() : 'none',
-      is_public: category.is_public ?? true,
+      is_public: category.is_public ?? false,
       hidden: category.hidden ?? false,
     });
     setIsDialogOpen(true);
@@ -204,8 +205,14 @@ export default function CategoriesPage() {
   };
 
   const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      parent_id: '',
+      is_public: true,
+      hidden: false,
+    });
     setEditingCategory(null);
-    setFormData({ name: '', description: '', parent_id: 'none', is_public: true, hidden: false });
   };
 
   const openCreateDialog = () => {
@@ -213,10 +220,29 @@ export default function CategoriesPage() {
     setIsDialogOpen(true);
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <Link href="/profile">
+          <Button variant="ghost" className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to My Products
+          </Button>
+        </Link>
+      </div>
+      
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Category Management</h1>
+        <h1 className="text-2xl font-bold">My Categories</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog}>
@@ -230,23 +256,19 @@ export default function CategoriesPage() {
                 {editingCategory ? 'Edit Category' : 'Create New Category'}
               </DialogTitle>
               <DialogDescription>
-                {editingCategory 
-                  ? 'Update the category details below.'
-                  : 'Fill in the details to create a new category.'
-                }
+                {editingCategory ? 'Update your category details below.' : 'Create a new category. Public categories are visible to all users, private categories only to you.'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4">
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Category Name *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Category name"
                     required
                   />
                 </div>
@@ -258,25 +280,24 @@ export default function CategoriesPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    placeholder="Optional description"
                     rows={3}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="parent_id">Parent Category</Label>
+                  <Label htmlFor="parent">Parent Category</Label>
                   <Select
-                    value={formData.parent_id}
+                    value={formData.parent_id || "none"}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, parent_id: value })
+                      setFormData({ ...formData, parent_id: value === "none" ? '' : value })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select parent category (optional)" />
+                      <SelectValue placeholder="None (Root Category)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No Parent (Root Category)</SelectItem>
+                      <SelectItem value="none">None (Root Category)</SelectItem>
                       {categories
-                        .filter(cat => editingCategory ? cat.id !== editingCategory.id : true)
+                        .filter((cat) => !editingCategory || cat.id !== editingCategory.id)
                         .map((category) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             {category.name}
@@ -286,35 +307,46 @@ export default function CategoriesPage() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_public"
-                      checked={formData.is_public}
-                      onChange={(e) =>
-                        setFormData({ ...formData, is_public: e.target.checked })
-                      }
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="is_public" className="font-normal cursor-pointer">
-                      Public Category (visible to all users)
-                    </Label>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="hidden"
-                      checked={formData.hidden}
-                      onChange={(e) =>
-                        setFormData({ ...formData, hidden: e.target.checked })
-                      }
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="hidden" className="font-normal cursor-pointer">
-                      Hide from gallery
-                    </Label>
+                  <Label className="text-base font-semibold">Visibility Settings</Label>
+                  <div className="space-y-3 p-3 border rounded-md">
+                    <div className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id="is_public"
+                        checked={formData.is_public}
+                        onChange={(e) =>
+                          setFormData({ ...formData, is_public: e.target.checked })
+                        }
+                        className="h-4 w-4 mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="is_public" className="font-normal cursor-pointer">
+                          Public Category
+                        </Label>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Public categories are visible to all users including guests
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id="hidden"
+                        checked={formData.hidden}
+                        onChange={(e) =>
+                          setFormData({ ...formData, hidden: e.target.checked })
+                        }
+                        className="h-4 w-4 mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="hidden" className="font-normal cursor-pointer">
+                          Hidden
+                        </Label>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Hidden categories are not visible to anyone in the gallery (only in admin/your management page)
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -370,19 +402,22 @@ export default function CategoriesPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2 mb-2">
-                {!category.is_public && (
-                  <Badge variant="secondary">Private</Badge>
-                )}
-                {category.is_public && (
-                  <Badge variant="default">Public</Badge>
+                {category.is_public ? (
+                  <Badge variant="default" className="bg-green-600">
+                    <Globe className="h-3 w-3 mr-1" />
+                    Public
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Private
+                  </Badge>
                 )}
                 {category.hidden && (
-                  <Badge variant="destructive">Hidden</Badge>
-                )}
-                {category.user_id ? (
-                  <Badge variant="outline">Created by: {category.username || `User ID ${category.user_id}`}</Badge>
-                ) : (
-                  <Badge variant="outline">Created by: System</Badge>
+                  <Badge variant="destructive">
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    Hidden
+                  </Badge>
                 )}
               </div>
               {category.description && (
@@ -398,7 +433,7 @@ export default function CategoriesPage() {
         {categories.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-gray-500">No categories found. Create your first category to get started.</p>
+              <p className="text-gray-500">No categories found. Create your first category to organize your products.</p>
             </CardContent>
           </Card>
         )}
