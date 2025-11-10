@@ -683,7 +683,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const { name, description, parent_id, is_public, hidden } = req.body;
+      const { name, description, parent_id, is_public, hidden, user_owned } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: "Category name is required" });
@@ -694,15 +694,22 @@ export function registerRoutes(app: Express): Server {
       const isPublicCategory = is_public === 'true' || is_public === true;
       
       // Set user_id logic:
-      // - Admin categories (public or private): user_id = null
-      // - Regular user categories (public or private): user_id = current user
-      const userId = isAdmin ? null : req.user.id;
+      // - If user_owned flag is true: user_id = current user (even for admins)
+      // - If user_owned flag is false/undefined and admin: user_id = null (system category)
+      // - If regular user: always user_id = current user
+      let userId;
+      if (user_owned === true || !isAdmin) {
+        userId = req.user.id; // User-owned category
+      } else {
+        userId = null; // System category (admin only)
+      }
       
       console.log('POST /api/categories - Creating category:', { 
         name, 
         isAdmin, 
         isPublicCategory, 
         userId, 
+        user_owned,
         requestUserId: req.user.id 
       });
 

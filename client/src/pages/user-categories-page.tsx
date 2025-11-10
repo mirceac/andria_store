@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog,
   DialogContent,
@@ -50,10 +51,12 @@ export default function UserCategoriesPage() {
     hidden: false,
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Fetch categories using React Query
+  // Fetch only the user's own categories
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: [`/api/users/${user?.id}/categories`],
+    enabled: !!user?.id,
   });
 
   // Helper types for hierarchy
@@ -120,6 +123,7 @@ export default function UserCategoriesPage() {
       // Invalidate all category queries to refresh everywhere
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories/tree'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/categories`] });
       toast({
         title: 'Success',
         description: `Category ${editingCategory ? 'updated' : 'created'} successfully`,
@@ -152,6 +156,7 @@ export default function UserCategoriesPage() {
       // Invalidate all category queries to refresh everywhere
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories/tree'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/categories`] });
       toast({
         title: 'Success',
         description: 'Category deleted successfully',
@@ -173,12 +178,14 @@ export default function UserCategoriesPage() {
     const method = editingCategory ? 'PUT' : 'POST';
 
     // Prepare the data - users can now create both public and private categories
+    // For user profile page, always create user-owned categories (even for admins)
     const submitData = {
       name: formData.name,
       description: formData.description,
       parent_id: formData.parent_id && formData.parent_id !== "none" ? parseInt(formData.parent_id) : null,
       is_public: formData.is_public,
       hidden: formData.hidden,
+      user_owned: true, // Flag to indicate this should be user-owned
     };
 
     saveCategoryMutation.mutate({ url, method, body: submitData });
