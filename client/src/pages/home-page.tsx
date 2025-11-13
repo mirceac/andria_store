@@ -49,6 +49,18 @@ export default function HomePage() {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
 
+  // Read category from URL query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      const categoryId = parseInt(categoryParam, 10);
+      if (!isNaN(categoryId)) {
+        setSelectedCategoryId(categoryId);
+      }
+    }
+  }, []);
+
   // Close sidebar when category is selected on mobile
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategoryId(categoryId);

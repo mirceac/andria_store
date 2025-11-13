@@ -59,7 +59,7 @@ import {
   FolderTree,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import {
   Tooltip,
@@ -112,6 +112,16 @@ export default function ProfilePage() {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+
+  // Read category from URL query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      setSelectedCategoryFilter(categoryParam);
+    }
+  }, []);
 
   // Redirect if not authenticated
   if (!user) {

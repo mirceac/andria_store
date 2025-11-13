@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,6 +53,7 @@ export default function UserCategoriesPage() {
   });
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   // Fetch only the user's own categories
   const { data: categories = [], isLoading } = useQuery<Category[]>({
@@ -384,7 +386,12 @@ export default function UserCategoriesPage() {
                     {'├─'.repeat(category.level)}
                   </span>
                 )}
-                {category.name}
+                <button
+                  onClick={() => setLocation(`/profile?category=${category.id}`)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                >
+                  {category.name}
+                </button>
                 {category.level > 0 && (
                   <span className="text-sm text-gray-500 ml-2">
                     (Child of: {categories.find(c => c.id === category.parent_id)?.name})

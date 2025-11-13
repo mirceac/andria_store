@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,6 +50,7 @@ export default function CategoriesPage() {
     hidden: false,
   });
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Fetch categories using React Query
   const { data: categories = [], isLoading } = useQuery<Category[]>({
@@ -345,7 +347,12 @@ export default function CategoriesPage() {
                     {'├─'.repeat(category.level)}
                   </span>
                 )}
-                {category.name}
+                <button
+                  onClick={() => setLocation(`/admin/products?category=${category.id}`)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                >
+                  {category.name}
+                </button>
                 {category.level > 0 && (
                   <span className="text-sm text-gray-500 ml-2">
                     (Child of: {categories.find(c => c.id === category.parent_id)?.name})

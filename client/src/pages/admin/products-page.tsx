@@ -148,6 +148,15 @@ export default function AdminProductsPage() {
   const [selectedProductForDownload, setSelectedProductForDownload] = useState<SelectProduct | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
+  // Read category from URL query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      setSelectedCategoryFilter(categoryParam);
+    }
+  }, []);
+
   // Helper functions for hierarchical categories
   type CategoryWithChildren = {
     id: number;
