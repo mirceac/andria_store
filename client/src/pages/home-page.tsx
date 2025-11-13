@@ -85,14 +85,6 @@ export default function HomePage() {
     staleTime: 0, // Consider data stale immediately to ensure fresh data
   });
 
-  // Auto-expand root categories when categories load
-  useEffect(() => {
-    if (categories && categories.length > 0) {
-      const rootCategories = categories.filter(cat => !cat.parent_id);
-      setExpandedCategories(new Set(rootCategories.map(cat => cat.id)));
-    }
-  }, [categories]);
-
   // Helper functions for hierarchical categories
   type CategoryWithChildren = Category & { children: CategoryWithChildren[] };
   type CategoryWithLevel = Category & { level: number };
