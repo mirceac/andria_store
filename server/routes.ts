@@ -860,8 +860,14 @@ export function registerRoutes(app: Express): Server {
       const productsWithCategory = await db.select().from(products).where(eq(products.category_id, categoryId));
       
       if (productsWithCategory.length > 0) {
+        console.log(`Cannot delete category ${categoryId}: ${productsWithCategory.length} products still linked`);
+        console.log('Linked products:', productsWithCategory.map(p => ({ id: p.id, name: p.name })));
+        const productNames = productsWithCategory.map(p => p.name).join(', ');
         return res.status(400).json({ 
-          message: "Cannot remove category, unlink products first" 
+          message: `Cannot remove category. ${productsWithCategory.length} product(s) still linked: ${productNames}. Please remove or reassign these products first.`,
+          productCount: productsWithCategory.length,
+          productIds: productsWithCategory.map(p => p.id),
+          productNames: productsWithCategory.map(p => p.name)
         });
       }
 

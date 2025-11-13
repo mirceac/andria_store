@@ -892,9 +892,20 @@ export default function AdminProductsPage() {
     const selectedCategoryId = parseInt(selectedCategoryFilter);
     const allowedCategoryIds = getDescendantCategoryIds(selectedCategoryId, categoryMap);
     
-    return products.filter(product => 
-      product.category_id && allowedCategoryIds.includes(product.category_id)
-    );
+    console.log('Filtering products for category:', selectedCategoryId);
+    console.log('Allowed category IDs:', allowedCategoryIds);
+    console.log('Total products:', products.length);
+    
+    const filtered = products.filter(product => {
+      const matches = product.category_id && allowedCategoryIds.includes(product.category_id);
+      if (product.category_id === selectedCategoryId) {
+        console.log('Product match:', { id: product.id, name: product.name, category_id: product.category_id, matches });
+      }
+      return matches;
+    });
+    
+    console.log('Filtered products:', filtered.length);
+    return filtered;
   };
 
   // Get filtered products for pagination calculations
@@ -1414,7 +1425,17 @@ export default function AdminProductsPage() {
       <div className="space-y-4">
         <div className="w-full flex justify-between items-center mb-3 mt-1 pl-3">
           <div>
-            <h3 className="text-lg font-semibold">Products</h3>
+            <h3 className="text-lg font-semibold">
+              Products
+              {selectedCategoryFilter !== "all" && categories && (() => {
+                const selectedCat = categories.find(c => c.id === parseInt(selectedCategoryFilter));
+                return selectedCat ? (
+                  <span className="text-blue-600 ml-2">
+                    / {selectedCat.name}
+                  </span>
+                ) : null;
+              })()}
+            </h3>
             <p className="text-sm text-muted-foreground">
               Manage your product catalog
             </p>

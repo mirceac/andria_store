@@ -412,6 +412,14 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <User className="h-8 w-8" />
             My Products
+            {selectedCategoryFilter !== "all" && categories && (() => {
+              const selectedCat = categories.find(c => c.id === parseInt(selectedCategoryFilter));
+              return selectedCat ? (
+                <span className="text-blue-600 text-2xl">
+                  / {selectedCat.name}
+                </span>
+              ) : null;
+            })()}
           </h1>
           <p className="text-muted-foreground mt-2">
             Manage your personal product collection
