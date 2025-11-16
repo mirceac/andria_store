@@ -613,18 +613,6 @@ export function registerRoutes(app: Express): Server {
           return false;
         }
         
-        // Owner always sees their own public categories
-        if (userId && category.user_id === userId) {
-          console.log('  - Owner sees their public category in tree:', category.id, category.name);
-          return true;
-        }
-        
-        // Admin sees admin-owned public categories (user_id = null, is_public = true/null)
-        if (isAdmin && category.user_id === null) {
-          console.log('  - Admin sees admin-owned public category in tree:', category.id, category.name);
-          return true;
-        }
-        
         // Show public categories to everyone (is_public === true OR null for legacy categories)
         if (category.is_public === true || category.is_public === null) {
           console.log('  - Showing public category in tree:', category.id, category.name);
@@ -971,7 +959,7 @@ export function registerRoutes(app: Express): Server {
         physical_price: product.physical_price ?? null,
         hidden: product.hidden ?? false,
         user_id: product.user_id ?? null,
-        is_public: product.is_public ?? true,
+        is_public: product.is_public ?? true, // Default to true only if null/undefined (for legacy products)
       }));
       res.json(productsWithNumberPrice);
     } catch (error) {
@@ -1284,6 +1272,33 @@ export function registerRoutes(app: Express): Server {
       // Set user_id: null for admin public products, current user for user products
       const userId = isPublicProduct ? null : req.user.id;
 
+      // Validate category access if category_id is provided
+      if (req.body.category_id) {
+        const categoryId = parseInt(req.body.category_id);
+        const [category] = await db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, categoryId));
+        
+        if (!category) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        
+        // Check if user can use this category
+        const isCategoryOwner = category.user_id === req.user.id;
+        const isCategoryPublic = category.is_public !== false; // true or null
+        
+        // Users can only use:
+        // - Public categories
+        // - Their own private categories
+        // - System categories (user_id = null) if they're admin
+        if (!isCategoryPublic && !isCategoryOwner && !(isAdmin && category.user_id === null)) {
+          return res.status(403).json({ 
+            message: "You don't have permission to add products to this private category" 
+          });
+        }
+      }
+
       // Add debug logging for the uploaded file
       console.log('Uploaded file details:', {
         mimetype: req.file?.mimetype,
@@ -1439,7 +1454,35 @@ export function registerRoutes(app: Express): Server {
       
       // Handle category_id field
       if (req.body.category_id !== undefined) {
-        updateData.category_id = req.body.category_id ? parseInt(req.body.category_id) : null;
+        const newCategoryId = req.body.category_id ? parseInt(req.body.category_id) : null;
+        
+        // Validate category access if category_id is being changed
+        if (newCategoryId !== null) {
+          const [category] = await db
+            .select()
+            .from(categories)
+            .where(eq(categories.id, newCategoryId));
+          
+          if (!category) {
+            return res.status(404).json({ message: "Category not found" });
+          }
+          
+          // Check if user can use this category
+          const isCategoryOwner = category.user_id === req.user?.id;
+          const isCategoryPublic = category.is_public !== false; // true or null
+          
+          // Users can only use:
+          // - Public categories
+          // - Their own private categories
+          // - System categories (user_id = null) if they're admin
+          if (!isCategoryPublic && !isCategoryOwner && !(isAdmin && category.user_id === null)) {
+            return res.status(403).json({ 
+              message: "You don't have permission to add products to this private category" 
+            });
+          }
+        }
+        
+        updateData.category_id = newCategoryId;
       }
       
       // Handle variant fields
@@ -1455,10 +1498,12 @@ export function registerRoutes(app: Express): Server {
       // Handle visibility fields
       if (req.body.is_public !== undefined) {
         updateData.is_public = req.body.is_public === 'true';
+        console.log('PATCH /api/products - Setting is_public:', updateData.is_public, 'from:', req.body.is_public);
       }
       
       if (req.body.hidden !== undefined) {
         updateData.hidden = req.body.hidden === 'true';
+        console.log('PATCH /api/products - Setting hidden:', updateData.hidden, 'from:', req.body.hidden);
       }
 
       // Handle file update if a new file is uploaded
@@ -1524,6 +1569,9 @@ export function registerRoutes(app: Express): Server {
       console.log('Product updated:', {
         id: product.id,
         name: product.name,
+        is_public: product.is_public,
+        hidden: product.hidden,
+        user_id: product.user_id,
         type: storageType,
         storage: storeAsBinary ? 'database' : 'file',
         storageUrl: product.storage_url,

@@ -317,9 +317,13 @@ export default function HomePage() {
       : true;
     
     // Visibility logic:
-    // 1. If hidden=true -> not visible to anyone in the gallery (only admins can see it in admin panel)
-    // 2. If hidden=false and is_public=false -> visible only to the owner
-    // 3. If hidden=false and is_public=true -> visible to everyone including guests
+    // 1. If hidden=true -> not visible in gallery (only in admin/profile panels)
+    // 2. If is_public=false -> visible only to the owner (admin/creator) in gallery
+    // 3. If is_public=true -> visible to everyone including guests
+    
+    const isOwner = user && product.user_id === user.id;
+    const isSystemProduct = product.user_id === null;
+    const isAdminViewingSystemProduct = user?.is_admin && isSystemProduct;
     
     // If the product is hidden, don't show it in the gallery at all
     if (product.hidden) {
@@ -331,9 +335,10 @@ export default function HomePage() {
       return matchesSearch && matchesCategory;
     }
     
-    // If the product is not public, only show it to the owner
-    const isOwner = user && product.user_id === user.id;
-    if (isOwner) {
+    // If the product is not public (private), show it to:
+    // - The owner
+    // - Admin viewing system products (user_id is null)
+    if (isOwner || isAdminViewingSystemProduct) {
       return matchesSearch && matchesCategory;
     }
     

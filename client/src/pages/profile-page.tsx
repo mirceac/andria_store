@@ -331,12 +331,9 @@ export default function ProfilePage() {
         if (data.has_physical_variant && Number(data.physical_price || 0) !== Number(selectedProduct.physical_price || 0)) {
           formData.append("physical_price", Number(data.physical_price || 0).toFixed(2));
         }
-        if (data.is_public !== (selectedProduct.is_public !== false)) {
-          formData.append("is_public", data.is_public.toString());
-        }
-        if (data.hidden !== (selectedProduct.hidden || false)) {
-          formData.append("hidden", data.hidden.toString());
-        }
+        // Always include visibility fields to ensure proper updates
+        formData.append("is_public", data.is_public.toString());
+        formData.append("hidden", data.hidden.toString());
 
         if (data.file instanceof File) {
           formData.append("storage_type", data.storage_type);
@@ -452,8 +449,71 @@ export default function ProfilePage() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Product Type Section at Top */}
+                <div className="space-y-3 border rounded-lg p-4 bg-blue-50">
+                  <h4 className="font-semibold text-sm">Product Type</h4>
+                  
+                  {/* Public Checkbox */}
+                  <div className="flex items-start space-x-2">
+                    <FormField
+                      control={form.control}
+                      name="is_public"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4 mt-1"
+                            />
+                          </FormControl>
+                          <div className="flex-1">
+                            <FormLabel className="text-sm font-medium">
+                              Public Product (For Sale)
+                            </FormLabel>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {field.value 
+                                ? "This product will be available for purchase with price, stock, and shopping cart functionality."
+                                : "This is a private portfolio/gallery item. Price, stock, and purchase options will be hidden from customers."}
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Hidden Checkbox */}
+                  <div className="flex items-start space-x-2">
+                    <FormField
+                      control={form.control}
+                      name="hidden"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4 mt-1"
+                            />
+                          </FormControl>
+                          <div className="flex-1">
+                            <FormLabel className="text-sm font-medium">
+                              Hidden from Gallery
+                            </FormLabel>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Hide this product from all public views (only visible in your profile panel)
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 {/* Basic Product Information */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <FormField
                     control={form.control}
                     name="name"
@@ -467,48 +527,53 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Digital Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="stock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+                
+                {/* Price and Stock - Only show for public products */}
+                {form.watch("is_public") && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Digital Price</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseFloat(e.target.value))
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
@@ -685,113 +750,56 @@ export default function ProfilePage() {
                   </div>
                   
                   <div className="space-y-4">
-                    {/* Physical Variant */}
-                    <div className="space-y-3 border rounded-lg p-4">
-                      <div className="flex items-center space-x-2">
-                        <FormField
-                          control={form.control}
-                          name="has_physical_variant"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={field.onChange}
-                                  className="h-4 w-4"
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal">
-                                Also sell as physical product
-                              </FormLabel>
-                            </FormItem>
-                          )}
-                        />
+                    {/* Physical Variant - Only for public products */}
+                    {form.watch("is_public") && (
+                      <div className="space-y-3 border rounded-lg p-4">
+                        <div className="flex items-center space-x-2">
+                          <FormField
+                            control={form.control}
+                            name="has_physical_variant"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="h-4 w-4"
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">
+                                  Also sell as physical product
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        {form.watch("has_physical_variant") && (
+                          <FormField
+                            control={form.control}
+                            name="physical_price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Physical Price</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(parseFloat(e.target.value) || 0)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
-                      
-                      {form.watch("has_physical_variant") && (
-                        <FormField
-                          control={form.control}
-                          name="physical_price"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Physical Price</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="0.00"
-                                  {...field}
-                                  onChange={(e) =>
-                                    field.onChange(parseFloat(e.target.value) || 0)
-                                  }
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </div>
-                    
-                    {/* Visibility Settings */}
-                    <div className="space-y-3 border rounded-lg p-4">
-                      <h4 className="font-semibold text-sm">Visibility Settings</h4>
-                      
-                      {/* Public Checkbox */}
-                      <div className="flex items-center space-x-2">
-                        <FormField
-                          control={form.control}
-                          name="is_public"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={field.onChange}
-                                  className="h-4 w-4"
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal">
-                                Public (visible to all users including guests)
-                              </FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground ml-7">
-                        When checked, all users (including guests) can see this product in the gallery.
-                        When unchecked, only you can see it.
-                      </p>
-                      
-                      {/* Hidden Checkbox */}
-                      <div className="flex items-center space-x-2 pt-2">
-                        <FormField
-                          control={form.control}
-                          name="hidden"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={field.onChange}
-                                  className="h-4 w-4"
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal">
-                                Hidden (not shown in gallery page at all)
-                              </FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground ml-7">
-                        When checked, this product will NOT appear in the main gallery page for anyone.
-                        This overrides the Public setting.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
