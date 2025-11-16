@@ -48,6 +48,7 @@ export default function HomePage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+  const [selectedImageIsPrivate, setSelectedImageIsPrivate] = useState(false);
 
   // Read category from URL query parameter on mount
   useEffect(() => {
@@ -286,8 +287,9 @@ export default function HomePage() {
     setIsVariantDialogOpen(true);
   };
 
-  const handleImageClick = (imageUrl: string) => {
+  const handleImageClick = (imageUrl: string, isPrivate: boolean = false) => {
     setSelectedImageUrl(imageUrl);
+    setSelectedImageIsPrivate(isPrivate);
     setIsImageViewerOpen(true);
   };
 
@@ -369,7 +371,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`)}
+          onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, product.is_public === false)}
           title="Click to view full size image"
         >
           <ImageThumbnail
@@ -381,7 +383,7 @@ export default function HomePage() {
             height={180}
             className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
-            onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`)}
+            onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, product.is_public === false)}
           />
         </div>
       );
@@ -390,7 +392,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`)}
+          onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, product.is_public === false)}
           title="Click to view full size image"
         >
           <ImageThumbnail
@@ -402,7 +404,7 @@ export default function HomePage() {
             height={180}
             className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
-            onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`)}
+            onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, product.is_public === false)}
           />
         </div>
       );
@@ -796,121 +798,129 @@ export default function HomePage() {
               {getContentByPriority(product)}
             </div>
             
-            {/* Product info section with Add to Cart */}
+            {/* Product info section */}
             <div className={cn(
               "px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0 w-full overflow-hidden",
-              isMobile && "px-2 py-1" // Slightly more padding on mobile
+              isMobile && "px-2 py-1", // Slightly more padding on mobile
+              product.is_public === false && "justify-center items-center py-2" // Center for private products
             )}>
               <h3 className={cn(
                 "font-medium text-slate-900 line-clamp-1 truncate w-full",
-                isMobile ? "text-xs" : "text-sm" // Smaller text on mobile
+                isMobile ? "text-xs" : "text-sm", // Smaller text on mobile
+                product.is_public === false && "text-center font-serif italic text-base" // Elegant styling for private products
               )} style={{maxWidth: '100%'}}>{product.name}</h3>
               
-              {/* Price display - show range if multiple variants */}
-              <div className="mt-0.5">
-                {(() => {
-                  const digitalPrice = Number(product.price || 0); // price field is digital price
-                  const physicalPrice = product.physical_price ? Number(product.physical_price) : null;
-                  
-                  if (digitalPrice > 0 && physicalPrice && physicalPrice > 0) {
-                    const minPrice = Math.min(digitalPrice, physicalPrice);
-                    const maxPrice = Math.max(digitalPrice, physicalPrice);
-                    if (minPrice === maxPrice) {
-                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)}</span>;
+              {/* Price display - hidden for private products */}
+              {product.is_public !== false && (
+                <div className="mt-0.5">
+                  {(() => {
+                    const digitalPrice = Number(product.price || 0); // price field is digital price
+                    const physicalPrice = product.physical_price ? Number(product.physical_price) : null;
+                    
+                    if (digitalPrice > 0 && physicalPrice && physicalPrice > 0) {
+                      const minPrice = Math.min(digitalPrice, physicalPrice);
+                      const maxPrice = Math.max(digitalPrice, physicalPrice);
+                      if (minPrice === maxPrice) {
+                        return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)}</span>;
+                      }
+                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>;
+                    } else if (digitalPrice > 0) {
+                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${digitalPrice.toFixed(2)}</span>;
+                    } else if (physicalPrice && physicalPrice > 0) {
+                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${physicalPrice.toFixed(2)}</span>;
+                    } else {
+                      return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>$0.00</span>;
                     }
-                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>;
-                  } else if (digitalPrice > 0) {
-                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${digitalPrice.toFixed(2)}</span>;
-                  } else if (physicalPrice && physicalPrice > 0) {
-                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>${physicalPrice.toFixed(2)}</span>;
-                  } else {
-                    return <span className={cn("font-semibold text-slate-900", isMobile ? "text-xs" : "text-sm")}>$0.00</span>;
-                  }
-                })()}
-              </div>
+                  })()}
+                </div>
+              )}
               
-              {/* Availability status */}
-              <div className="mt-0.5 mb-0.5">
-                {(() => {
-                  const hasDigital = Number(product.price || 0) > 0; // price field is digital price
-                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
-                  const physicalStock = product.stock || 0;
-                  const physicalAvailable = hasPhysical && physicalStock > 0;
-                  
-                  if (hasDigital && physicalAvailable) {
-                    return (
-                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
-                        Physical
-                      </Badge>
-                    );
-                  } else if (hasDigital) {
-                    return (
-                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100">
-                        Digital
-                      </Badge>
-                    );
-                  } else if (physicalAvailable) {
-                    return (
-                      <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
-                        Physical ({physicalStock} left)
-                      </Badge>
-                    );
-                  } else {
-                    return (
-                      <Badge variant="destructive" className="text-xs px-2 py-0.5">
-                        Out of Stock
-                      </Badge>
-                    );
-                  }
-                })()}
-              </div>
+              {/* Availability status - hidden for private products */}
+              {product.is_public !== false && (
+                <div className="mt-0.5 mb-0.5">
+                  {(() => {
+                    const hasDigital = Number(product.price || 0) > 0; // price field is digital price
+                    const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                    const physicalStock = product.stock || 0;
+                    const physicalAvailable = hasPhysical && physicalStock > 0;
+                    
+                    if (hasDigital && physicalAvailable) {
+                      return (
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                          Physical
+                        </Badge>
+                      );
+                    } else if (hasDigital) {
+                      return (
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                          Digital
+                        </Badge>
+                      );
+                    } else if (physicalAvailable) {
+                      return (
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                          Physical ({physicalStock} left)
+                        </Badge>
+                      );
+                    } else {
+                      return (
+                        <Badge variant="destructive" className="text-xs px-2 py-0.5">
+                          Out of Stock
+                        </Badge>
+                      );
+                    }
+                  })()}
+                </div>
+              )}
               
-              {/* Add to Cart Button */}
-              <Button 
-                onClick={() => handleAddToCartClick(product)}
-                disabled={(() => {
-                  const hasDigital = Number(product.price || 0) > 0; // price field is digital price
-                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
-                  const physicalStock = product.stock || 0;
-                  const physicalAvailable = hasPhysical && physicalStock > 0;
-                  
-                  // Check if already at stock limit for physical items
-                  const existingPhysicalItem = cartItems.find(item => 
-                    item.product.id === product.id && item.variant_type === 'physical'
-                  );
-                  const existingDigitalItem = cartItems.find(item => 
-                    item.product.id === product.id && item.variant_type === 'digital'
-                  );
-                  
-                  // Disable if no variants available
-                  if (!hasDigital && !physicalAvailable) return true;
-                  
-                  // Disable if physical is at max stock
-                  if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) return true;
-                  
-                  // Disable if trying to add digital but physical already in cart
-                  if (hasDigital && !hasPhysical && existingPhysicalItem) return true;
-                  
-                  return false;
-                })()}
-                className={`mt-1 w-full ${isMobile ? 'h-6 text-xs' : 'h-7 text-xs'}`}
-                variant="default"
-                style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
-              >
-                <ShoppingCart className={`${isMobile ? 'mr-0.5 h-2.5 w-2.5' : 'mr-1 h-3 w-3'}`} />
-                {(() => {
-                  const existingPhysicalItem = cartItems.find(item => 
-                    item.product.id === product.id && item.variant_type === 'physical'
-                  );
-                  const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
-                  const physicalStock = product.stock || 0;
-                  
-                  if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) {
-                    return isMobile ? "Max Stock" : "Max Stock Reached";
-                  }
-                  return isMobile ? "Add" : "Add to Cart";
-                })()}
-              </Button>
+              {/* Add to Cart Button - hidden for private products */}
+              {product.is_public !== false && (
+                <Button 
+                  onClick={() => handleAddToCartClick(product)}
+                  disabled={(() => {
+                    const hasDigital = Number(product.price || 0) > 0; // price field is digital price
+                    const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                    const physicalStock = product.stock || 0;
+                    const physicalAvailable = hasPhysical && physicalStock > 0;
+                    
+                    // Check if already at stock limit for physical items
+                    const existingPhysicalItem = cartItems.find(item => 
+                      item.product.id === product.id && item.variant_type === 'physical'
+                    );
+                    const existingDigitalItem = cartItems.find(item => 
+                      item.product.id === product.id && item.variant_type === 'digital'
+                    );
+                    
+                    // Disable if no variants available
+                    if (!hasDigital && !physicalAvailable) return true;
+                    
+                    // Disable if physical is at max stock
+                    if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) return true;
+                    
+                    // Disable if trying to add digital but physical already in cart
+                    if (hasDigital && !hasPhysical && existingPhysicalItem) return true;
+                    
+                    return false;
+                  })()}
+                  className={`mt-1 w-full ${isMobile ? 'h-6 text-xs' : 'h-7 text-xs'}`}
+                  variant="default"
+                  style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
+                >
+                  <ShoppingCart className={`${isMobile ? 'mr-0.5 h-2.5 w-2.5' : 'mr-1 h-3 w-3'}`} />
+                  {(() => {
+                    const existingPhysicalItem = cartItems.find(item => 
+                      item.product.id === product.id && item.variant_type === 'physical'
+                    );
+                    const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
+                    const physicalStock = product.stock || 0;
+                    
+                    if (hasPhysical && existingPhysicalItem && existingPhysicalItem.quantity >= physicalStock) {
+                      return isMobile ? "Max Stock" : "Max Stock Reached";
+                    }
+                    return isMobile ? "Add" : "Add to Cart";
+                  })()}
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -932,6 +942,7 @@ export default function HomePage() {
         open={isImageViewerOpen}
         onOpenChange={setIsImageViewerOpen}
         url={selectedImageUrl}
+        isPrivateProduct={selectedImageIsPrivate}
       />
 
       {/* PDF Viewer Dialog */}

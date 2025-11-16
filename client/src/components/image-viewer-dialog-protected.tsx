@@ -7,9 +7,10 @@ interface ImageViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   url: string | null;
+  isPrivateProduct?: boolean;
 }
 
-export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageViewerDialogProps) {
+export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateProduct = false }: ImageViewerDialogProps) {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
@@ -253,8 +254,8 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url }: ImageVie
                 onDragStart={(e) => e.preventDefault()}
               />
               
-              {/* Copyright watermark overlay */}
-              {getCopyrightOverlay()}
+              {/* Copyright watermark overlay - only for public products */}
+              {!isPrivateProduct && getCopyrightOverlay()}
               
               {/* Invisible overlay to capture interactions */}
               <div 
