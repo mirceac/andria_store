@@ -65,6 +65,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Tooltip,
@@ -113,6 +114,7 @@ type SortConfig = {
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(
     null
   );
@@ -366,20 +368,68 @@ export default function AdminProductsPage() {
     queryKey: ["/api/products"],
   });
 
-  const { data: categories } = useQuery<{id: number, name: string, description: string | null, parent_id: number | null, created_at: string}[]>({
+  const { data: categories } = useQuery<{
+    id: number;
+    name: string;
+    description: string | null;
+    parent_id: number | null;
+    user_id: number | null;
+    is_public: boolean | null;
+    created_at: string;
+  }[]>({
     queryKey: ["/api/categories"],
   });
 
-  // Calculate hierarchical categories after categories are loaded (with fallback)
-  const hierarchicalCategories = useMemo(() => {
+  // Filter categories to only show ones the user can use
+  const usableCategories = useMemo(() => {
     if (!categories) return [];
+    console.log('Filtering categories. User:', user?.id, 'isAdmin:', user?.is_admin);
+    console.log('All categories:', categories.map(c => ({ 
+      id: c.id, 
+      name: c.name, 
+      user_id: c.user_id, 
+      is_public: c.is_public 
+    })));
+    
+    const filtered = categories.filter(category => {
+      // Public categories - anyone can use
+      if (category.is_public !== false) {
+        console.log(`  - Including public category: ${category.name}`);
+        return true;
+      }
+      
+      // Private categories - only owner can use
+      // Admin can use system categories (user_id = null)
+      if (category.is_public === false) {
+        if (category.user_id === user?.id) {
+          console.log(`  - Including private category owned by user: ${category.name}`);
+          return true;
+        }
+        if (user?.is_admin && category.user_id === null) {
+          console.log(`  - Including system private category for admin: ${category.name}`);
+          return true;
+        }
+        console.log(`  - Excluding private category: ${category.name} (user_id: ${category.user_id})`);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    console.log('Filtered categories:', filtered.map(c => c.name));
+    return filtered;
+  }, [categories, user]);
+
+  // Calculate hierarchical categories after filtering
+  const hierarchicalCategories = useMemo(() => {
+    if (!usableCategories) return [];
     try {
-      return flattenCategories(buildCategoryTree(categories));
+      return flattenCategories(buildCategoryTree(usableCategories));
     } catch (error) {
       console.error('Error building category tree:', error);
-      return categories.map(cat => ({ ...cat, level: 0 }));
+      return usableCategories.map(cat => ({ ...cat, level: 0 }));
     }
-  }, [categories]);
+  }, [usableCategories]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

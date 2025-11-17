@@ -49,6 +49,7 @@ export default function HomePage() {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
   const [selectedImageIsPrivate, setSelectedImageIsPrivate] = useState(false);
+  const [selectedPdfIsPrivate, setSelectedPdfIsPrivate] = useState(false);
 
   // Read category from URL query parameter on mount
   useEffect(() => {
@@ -287,14 +288,31 @@ export default function HomePage() {
     setIsVariantDialogOpen(true);
   };
 
-  const handleImageClick = (imageUrl: string, isPrivate: boolean = false) => {
+  // Helper function to determine if watermark should be hidden for a product
+  const shouldHideWatermark = (product: SelectProduct): boolean => {
+    // Hide watermark for all private products (is_public === false)
+    // Private products are portfolio items, not for sale, so no watermark needed
+    const result = product.is_public === false;
+    console.log('shouldHideWatermark check:', {
+      productId: product.id,
+      productName: product.name,
+      is_public: product.is_public,
+      result: result
+    });
+    return result;
+  };
+
+  const handleImageClick = (imageUrl: string, hideWatermark: boolean = false) => {
+    console.log('handleImageClick called:', { imageUrl, hideWatermark });
     setSelectedImageUrl(imageUrl);
-    setSelectedImageIsPrivate(isPrivate);
+    setSelectedImageIsPrivate(hideWatermark);
     setIsImageViewerOpen(true);
   };
 
-  const handlePdfClick = (pdfUrl: string) => {
+    const handlePdfClick = (pdfUrl: string, hideWatermark: boolean = false) => {
+    console.log('handlePdfClick called:', { pdfUrl, hideWatermark });
     setSelectedPdfUrl(pdfUrl);
+    setSelectedPdfIsPrivate(hideWatermark);
     setIsPdfViewerOpen(true);
   };
 
@@ -325,6 +343,27 @@ export default function HomePage() {
     const isSystemProduct = product.user_id === null;
     const isAdminViewingSystemProduct = user?.is_admin && isSystemProduct;
     
+    // Debug logging when a category is selected
+    if (selectedCategoryId && matchesCategory) {
+      console.log('Product in selected category:', {
+        name: product.name,
+        id: product.id,
+        category_id: product.category_id,
+        user_id: product.user_id,
+        is_public: product.is_public,
+        hidden: product.hidden,
+        isOwner,
+        isSystemProduct,
+        isAdminViewingSystemProduct,
+        currentUserId: user?.id,
+        currentUserIdType: typeof user?.id,
+        productUserIdType: typeof product.user_id,
+        strictEquality: product.user_id === user?.id,
+        looseEquality: product.user_id == user?.id,
+        isAdmin: user?.is_admin
+      });
+    }
+    
     // If the product is hidden, don't show it in the gallery at all
     if (product.hidden) {
       return false;
@@ -336,13 +375,15 @@ export default function HomePage() {
     }
     
     // If the product is not public (private), show it to:
-    // - The owner
+    // - The owner (with explicit type conversion to handle any mismatches)
     // - Admin viewing system products (user_id is null)
-    if (isOwner || isAdminViewingSystemProduct) {
+    const userIdMatch = user && (product.user_id === user.id || Number(product.user_id) === Number(user.id));
+    if (userIdMatch || isAdminViewingSystemProduct) {
       return matchesSearch && matchesCategory;
     }
     
     // Don't show private products to other users
+    console.log('Filtering out private product:', product.name, 'userIdMatch:', userIdMatch, 'user.id:', user?.id, 'product.user_id:', product.user_id);
     return false;
   }).sort((a, b) => {
     switch (sort) {
@@ -376,7 +417,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, product.is_public === false)}
+          onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, shouldHideWatermark(product))}
           title="Click to view full size image"
         >
           <ImageThumbnail
@@ -388,7 +429,7 @@ export default function HomePage() {
             height={180}
             className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
-            onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, product.is_public === false)}
+            onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, shouldHideWatermark(product))}
           />
         </div>
       );
@@ -397,7 +438,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, product.is_public === false)}
+          onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, shouldHideWatermark(product))}
           title="Click to view full size image"
         >
           <ImageThumbnail
@@ -409,7 +450,7 @@ export default function HomePage() {
             height={180}
             className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
             showTryDirect={false}
-            onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, product.is_public === false)}
+            onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, shouldHideWatermark(product))}
           />
         </div>
       );
@@ -418,7 +459,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handlePdfClick(`${product.pdf_file}?v=${timestamp}`)}
+          onClick={() => handlePdfClick(`${product.pdf_file}?v=${timestamp}`, shouldHideWatermark(product))}
           title="Click to view full size PDF"
         >
           <PDFThumbnail
@@ -434,7 +475,7 @@ export default function HomePage() {
       return (
         <div 
           className="w-full h-full flex items-center justify-center cursor-pointer"
-          onClick={() => handlePdfClick(`${getPdfUrl(product.id)}?v=${timestamp}`)}
+          onClick={() => handlePdfClick(`${getPdfUrl(product.id)}?v=${timestamp}`, shouldHideWatermark(product))}
           title="Click to view full size PDF"
         >
           <PDFThumbnail
@@ -468,7 +509,7 @@ export default function HomePage() {
         return (
           <div 
             className="w-full h-full flex items-center justify-center cursor-pointer"
-            onClick={() => handleImageClick(product.storage_url!)}
+            onClick={() => handleImageClick(product.storage_url!, shouldHideWatermark(product))}
             title="Click to view full size image"
           >
             <ExternalUrlThumbnail
@@ -484,7 +525,7 @@ export default function HomePage() {
         return (
           <div 
             className="w-full h-full flex items-center justify-center cursor-pointer"
-            onClick={() => handlePdfClick(product.storage_url!)}
+            onClick={() => handlePdfClick(product.storage_url!, shouldHideWatermark(product))}
             title="Click to view full size PDF"
           >
             <PDFThumbnail
@@ -504,9 +545,9 @@ export default function HomePage() {
               // Try to determine if it should be treated as image or PDF based on content
               if (product.storage_url) {
                 if (product.storage_url.includes('pdf') || product.storage_url.toLowerCase().includes('document')) {
-                  handlePdfClick(product.storage_url);
+                  handlePdfClick(product.storage_url, shouldHideWatermark(product));
                 } else {
-                  handleImageClick(product.storage_url);
+                  handleImageClick(product.storage_url, shouldHideWatermark(product));
                 }
               }
             }}
@@ -955,6 +996,7 @@ export default function HomePage() {
         open={isPdfViewerOpen}
         onOpenChange={setIsPdfViewerOpen}
         pdfUrl={selectedPdfUrl}
+        isPrivateProduct={selectedPdfIsPrivate}
       />
     </div>
   );

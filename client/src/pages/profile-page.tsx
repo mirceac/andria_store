@@ -59,7 +59,7 @@ import {
   FolderTree,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import {
   Tooltip,
@@ -140,6 +140,20 @@ export default function ProfilePage() {
   const { data: categories } = useQuery<{id: number, name: string, description: string | null, parent_id: number | null, user_id?: number | null, username?: string | null, is_public?: boolean, hidden?: boolean, created_at: string}[]>({
     queryKey: ["/api/categories"],
   });
+
+  // Filter categories to only show ones the user can use
+  const usableCategories = useMemo(() => {
+    if (!categories) return [];
+    return categories.filter(category => {
+      // Public categories - anyone can use
+      if (category.is_public !== false) return true;
+      
+      // Private categories - only owner can use
+      if (category.is_public === false && category.user_id === user.id) return true;
+      
+      return false;
+    });
+  }, [categories, user.id]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -607,7 +621,7 @@ export default function ProfilePage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">No category</SelectItem>
-                            {categories?.map((category) => (
+                            {usableCategories?.map((category) => (
                               <SelectItem key={category.id} value={category.id.toString()}>
                                 {category.name}
                               </SelectItem>

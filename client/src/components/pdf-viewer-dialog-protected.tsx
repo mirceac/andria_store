@@ -17,13 +17,15 @@ interface PDFViewerDialogProtectedProps {
   onOpenChange: (open: boolean) => void;
   pdfUrl: string | null;
   title?: string;
+  isPrivateProduct?: boolean;
 }
 
 export function PDFViewerDialogProtected({
   open,
   onOpenChange,
   pdfUrl,
-  title
+  title,
+  isPrivateProduct = false
 }: PDFViewerDialogProtectedProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,17 @@ export function PDFViewerDialogProtected({
     setPosition({ x: 0, y: 0 });
     setRotation(0);
   };
+
+  // Debug logging
+  useEffect(() => {
+    if (open) {
+      console.log('PDFViewerDialogProtected opened:', {
+        pdfUrl,
+        isPrivateProduct,
+        willShowWatermark: !isPrivateProduct
+      });
+    }
+  }, [open, pdfUrl, isPrivateProduct]);
 
   // Security measures and reset state when PDF changes or dialog opens/closes
   useEffect(() => {
@@ -475,8 +488,8 @@ export function PDFViewerDialogProtected({
               )}
             </div>
 
-            {/* Copyright overlay */}
-            {getCopyrightOverlay()}
+            {/* Copyright overlay - only for public products */}
+            {!isPrivateProduct && getCopyrightOverlay()}
           </div>
         </div>
       </DialogContent>

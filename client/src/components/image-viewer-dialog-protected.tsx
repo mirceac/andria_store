@@ -20,6 +20,17 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Debug logging
+  useEffect(() => {
+    if (open) {
+      console.log('ImageViewerDialogProtected opened:', {
+        url,
+        isPrivateProduct,
+        willShowWatermark: !isPrivateProduct
+      });
+    }
+  }, [open, url, isPrivateProduct]);
+
   // Reset state when image changes or dialog opens/closes
   useEffect(() => {
     if (open && url) {
