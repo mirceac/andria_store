@@ -207,7 +207,7 @@ export default function HomePage() {
                   )}
                 </button>
               )}
-              {!categoryHasChildren && level > 0 && (
+              {!categoryHasChildren && (
                 <div className="w-5 mr-2 flex justify-center">
                   <div className={cn(
                     "w-1.5 h-1.5 rounded-full transition-colors duration-200",
