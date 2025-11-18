@@ -10,7 +10,6 @@ import {
   Palette,
   Search,
 } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
+import { useCart } from "@/hooks/use-cart";
 import {
   Select,
   SelectContent,
@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProfileSwitcher } from "@/components/profile-switcher";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -79,8 +78,15 @@ export default function Navbar() {
 
         {/* Navigation Items - Fixed width */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          {/* Profile Switcher - for authenticated users */}
-          <ProfileSwitcher />
+          {/* My Profile Button - for authenticated users */}
+          {user && (
+            <Link href="/profile">
+              <Button variant="ghost" className={buttonClasses}>
+                <User className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">My Profile</span>
+              </Button>
+            </Link>
+          )}
           
           {user?.is_admin && (
             <DropdownMenu>
