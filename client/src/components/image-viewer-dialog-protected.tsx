@@ -61,18 +61,16 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale > 1) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y
-      });
-      e.preventDefault();
-    }
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+    e.preventDefault();
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && scale > 1) {
+    if (isDragging) {
       setPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -196,12 +194,13 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden relative"
           ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          onMouseMove={handleMouseMove}
         >
           <div 
-            className="w-full h-full flex items-center justify-center bg-black/10 relative"
+            className="w-full h-full flex items-center justify-center bg-black/10 relative cursor-grab active:cursor-grabbing"
           >
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
@@ -222,8 +221,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
             )}
             
             <div
-              className="relative"
-              onMouseDown={handleMouseDown}
+              className="relative pointer-events-none"
               onContextMenu={(e) => e.preventDefault()}
               style={{
                 userSelect: 'none',
@@ -235,7 +233,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
               <img
                 src={url}
                 alt="Protected Viewer"
-                className={scale > 1 ? "cursor-grab active:cursor-grabbing select-none" : "select-none"}
+                className="select-none pointer-events-none"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -267,20 +265,6 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
               
               {/* Copyright watermark overlay - only for public products */}
               {!isPrivateProduct && getCopyrightOverlay()}
-              
-              {/* Invisible overlay to capture interactions */}
-              <div 
-                className={scale > 1 ? "absolute inset-0 cursor-grab active:cursor-grabbing" : "absolute inset-0"}
-                onMouseDown={handleMouseDown}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  MozUserSelect: 'none',
-                  msUserSelect: 'none',
-                  zIndex: 20,
-                }}
-              />
             </div>
           </div>
         </div>

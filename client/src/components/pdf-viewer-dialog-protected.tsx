@@ -350,7 +350,7 @@ export function PDFViewerDialogProtected({
         </div>        {/* PDF Container - flex-grow to take up available space */}
         <div 
           ref={containerRef}
-          className="flex-1 w-full h-full min-h-0 overflow-hidden relative"
+          className="flex-1 w-full h-full min-h-0 overflow-hidden relative cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -390,10 +390,9 @@ export function PDFViewerDialogProtected({
               </div>
             )}
             <div 
-              className="relative"
+              className="relative pointer-events-none"
               style={{
                 transform: `translate(${position.x}px, ${position.y}px)`,
-                cursor: isDragging ? 'grabbing' : (error ? 'default' : 'grab')
               }}
             >
               {currentUrl && !error && !hasErrorOccurred && (

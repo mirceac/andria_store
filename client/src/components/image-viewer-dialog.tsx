@@ -49,18 +49,16 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale > 1) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y
-      });
-      e.preventDefault();
-    }
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+    e.preventDefault();
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && scale > 1) {
+    if (isDragging) {
       setPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -119,12 +117,13 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden"
           ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          onMouseMove={handleMouseMove}
         >
           <div 
-            className="w-full h-full flex items-center justify-center bg-black/10"
+            className="w-full h-full flex items-center justify-center bg-black/10 cursor-grab active:cursor-grabbing"
           >
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
@@ -147,7 +146,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
             <img
               src={url}
               alt="Viewer"
-              className={scale > 1 ? "cursor-grab active:cursor-grabbing select-none" : "select-none"}
+              className="select-none pointer-events-none"
               style={{
                 width: '100%',
                 height: '100%',
@@ -156,7 +155,6 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
                 transformOrigin: 'center center',
                 transition: isDragging ? 'none' : 'transform 0.2s ease-out'
               }}
-              onMouseDown={handleMouseDown}
               onLoad={() => {
                 setIsLoading(false);
                 setImageError(null);
