@@ -49,7 +49,9 @@ import {
   Trash2,
   Loader2,
   FileText,
+  FileImage,
   X,
+  XCircle,
   Download,
   User,
   Globe,
@@ -132,6 +134,111 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [selectedProductForDownload, setSelectedProductForDownload] = useState<SelectProduct | null>(null);
+  
+  // Storage removal state
+  const [storageToRemove, setStorageToRemove] = useState<{
+    productId: number;
+    type: "image_file" | "image_data" | "pdf_file" | "pdf_data";
+  } | null>(null);
+
+  // Download function for digital products
+  const openDownloadDialog = (product: SelectProduct) => {
+    setSelectedProductForDownload(product);
+    setDownloadDialogOpen(true);
+  };
+
+  const downloadFromStorageType = async (product: SelectProduct, storageType: string) => {
+    try {
+      let downloadUrl = '';
+      let filename = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      
+      switch (storageType) {
+        case 'image_file':
+          if (!product.image_file) {
+            toast({ title: "No Content", description: "No image file available.", variant: "destructive" });
+            return;
+          }
+          downloadUrl = product.image_file;
+          filename += `.${product.image_file.split('.').pop() || 'jpg'}`;
+          break;
+          
+        case 'image_data':
+          if (!product.image_data) {
+            toast({ title: "No Content", description: "No image data available.", variant: "destructive" });
+            return;
+          }
+          downloadUrl = `/api/products/${product.id}/download/image`;
+          filename += '.jpg';
+          break;
+          
+        case 'pdf_file':
+          if (!product.pdf_file) {
+            toast({ title: "No Content", description: "No PDF file available.", variant: "destructive" });
+            return;
+          }
+          downloadUrl = product.pdf_file;
+          filename += '.pdf';
+          break;
+          
+        case 'pdf_data':
+          if (!product.pdf_data) {
+            toast({ title: "No Content", description: "No PDF data available.", variant: "destructive" });
+            return;
+          }
+          downloadUrl = `/api/products/${product.id}/pdf`;
+          filename += '.pdf';
+          break;
+          
+        case 'storage_url':
+          if (!product.storage_url) {
+            toast({ title: "No Content", description: "No storage URL available.", variant: "destructive" });
+            return;
+          }
+          downloadUrl = product.storage_url;
+          const extension = product.storage_url.split('.').pop();
+          if (extension && extension.length <= 5) {
+            filename += `.${extension}`;
+          }
+          break;
+          
+        default:
+          toast({ title: "Invalid Selection", description: "Please select a valid storage type.", variant: "destructive" });
+          return;
+      }
+
+      if (downloadUrl.startsWith('/api/')) {
+        const response = await fetch(downloadUrl);
+        if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast({ title: "Download Started", description: `Download of ${product.name} from ${storageType} has been initiated.` });
+      setDownloadDialogOpen(false);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({ title: "Download Failed", description: "Please try again.", variant: "destructive" });
+    }
+  };
 
   const { data: products, isLoading } = useQuery<SelectProduct[]>({
     queryKey: [`/api/users/${user.id}/products`],
@@ -292,6 +399,50 @@ export default function ProfilePage() {
     },
   });
 
+  const removeStorageMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      type,
+    }: {
+      productId: number;
+      type: string;
+    }) => {
+      const res = await apiRequest("DELETE", `/api/products/${productId}/storage/${type}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let error;
+        try {
+          error = JSON.parse(text);
+        } catch (e) {
+          error = { message: text || "Failed to remove storage" };
+        }
+        throw new Error(error.message || "Failed to remove storage");
+      }
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return res.json();
+      } else {
+        return { success: true };
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/products`] });
+      setRefreshTimestamp(Date.now());
+      toast({
+        title: "Storage removed",
+        description: `Successfully removed ${getStorageLabel(variables.type)} from product.`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Error removing storage:", error);
+      toast({
+        title: "Failed to remove storage",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: number) => {
       const res = await apiRequest("DELETE", `/api/products/${productId}`);
@@ -316,6 +467,35 @@ export default function ProfilePage() {
       });
     },
   });
+
+  const handleRemoveStorage = (
+    productId: number,
+    type: "image_file" | "image_data" | "pdf_file" | "pdf_data"
+  ) => {
+    setStorageToRemove({ productId, type });
+  };
+
+  const confirmRemoveStorage = () => {
+    if (storageToRemove) {
+      removeStorageMutation.mutate(storageToRemove);
+      setStorageToRemove(null);
+    }
+  };
+
+  const getStorageLabel = (type: string) => {
+    switch (type) {
+      case "image_file":
+        return "Image File";
+      case "image_data":
+        return "Image DB";
+      case "pdf_file":
+        return "PDF File";
+      case "pdf_data":
+        return "PDF DB";
+      default:
+        return "Storage";
+    }
+  };
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
@@ -668,14 +848,14 @@ export default function ProfilePage() {
                         name="storage_location"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Storage</FormLabel>
+                            <FormLabel>Storage Location</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select storage" />
+                                  <SelectValue placeholder="Select storage location" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -689,11 +869,12 @@ export default function ProfilePage() {
                       />
                     </div>
                     
+                    {/* External URL */}
                     <div>
                       <Label>External URL</Label>
                       <Input
                         {...form.register("storage_url")}
-                        placeholder="https://example.com/file.jpg"
+                        placeholder="Enter public image/PDF URL (e.g., https://example.com/image.jpg)"
                       />
                     </div>
 
@@ -763,7 +944,39 @@ export default function ProfilePage() {
                     />
                   </div>
                   
+                  {/* Right Column - Help Text and Physical Variant */}
                   <div className="space-y-4">
+                    {/* Help Text */}
+                    <div className="text-xs text-muted-foreground space-y-2 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="font-medium">Storage Options:</span>
+                        <ul className="list-disc pl-4 mt-1">
+                          <li><span className="font-medium">File Type:</span> Choose between PDF or Image</li>
+                          <li><span className="font-medium">Storage Location:</span> Save in database or file system</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <span className="font-medium text-amber-600">For External URLs:</span>
+                        <ul className="list-disc pl-4 mt-1">
+                          <li>Use JPEG/PNG formats (HEIC may not display correctly)</li>
+                          <li>URL must be publicly accessible</li>
+                          <li>Include proper file extension (.jpg, .png, .pdf)</li>
+                          <li>For Google Photos: Use "Share" → "Create link", ensure "Anyone with the link" is selected</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <span className="font-medium">Upload Options:</span>
+                        <ul className="list-disc pl-4 mt-1">
+                          <li>Choose storage location before uploading</li>
+                          <li>Database: Best for smaller files</li>
+                          <li>File System: Better for larger files</li>
+                          <li>External URL: Link to files hosted elsewhere</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
                     {/* Physical Variant - Only for public products */}
                     {form.watch("is_public") && (
                       <div className="space-y-3 border rounded-lg p-4">
@@ -852,30 +1065,185 @@ export default function ProfilePage() {
       </div>
 
       <div className="space-y-4">
-        <div className="border rounded-md">
+        <div className="border rounded-md overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[130px]">Preview</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-center">Stock</TableHead>
-                <TableHead className="text-center w-[120px]">Visibility</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Image File</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Image DB</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
+                <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
+                <TableHead className="text-center w-[250px]">Name & Category</TableHead>
+                <TableHead className="text-center w-[180px]">Description</TableHead>
+                <TableHead className="text-center w-[80px]">Digital Price</TableHead>
+                <TableHead className="text-center w-[140px]">Variants</TableHead>
+                <TableHead className="text-center w-[80px]">Visible</TableHead>
+                <TableHead className="text-right px-4 w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products && products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No products yet. Click "Add Product" to create your first product!
                   </TableCell>
                 </TableRow>
               ) : (
                 products?.map((product) => (
                   <TableRow key={product.id}>
-                    <TableCell>
+                    {/* Image File column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                      {product.image_file ? (
+                        <div className="relative">
+                          <ImageThumbnail
+                            productId={product.id}
+                            imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
+                            imageData={null}
+                            alt={product.name}
+                            onClick={() => {
+                              setSelectedImage(product.image_file);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'image_file');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove image file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* Image DB column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                      {product.image_data ? (
+                        <div className="relative">
+                          <ImageThumbnail
+                            productId={product.id}
+                            imageUrl={`/api/products/${product.id}/img?v=${refreshTimestamp}`}
+                            imageData={null}
+                            alt={product.name}
+                            onClick={() => {
+                              setSelectedImage(`/api/products/${product.id}/img`);
+                              setIsImageViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'image_data');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove image from database</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* PDF File column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                      {product.pdf_file ? (
+                        <div className="relative">
+                          <PDFThumbnail
+                            pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(product.pdf_file);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_file');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* PDF DB column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
+                      {product.pdf_data ? (
+                        <div className="relative">
+                          <PDFThumbnail
+                            pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
+                            onClick={() => {
+                              setSelectedPdf(`/api/products/${product.id}/pdf`);
+                              setIsPdfViewerOpen(true);
+                            }}
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStorage(product.id, 'pdf_data');
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove PDF from database</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* Storage URL column */}
+                    <TableCell className="px-0 text-center align-middle w-[60px]">
                       {product.storage_url ? (
                         <ExternalUrlThumbnail
                           url={product.storage_url}
@@ -891,55 +1259,66 @@ export default function ProfilePage() {
                             }
                           }}
                         />
-                      ) : product.pdf_file ? (
-                        <PDFThumbnail
-                          pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
-                          onClick={() => {
-                            setSelectedPdf(product.pdf_file);
-                            setIsPdfViewerOpen(true);
-                          }}
-                        />
-                      ) : product.pdf_data ? (
-                        <PDFThumbnail
-                          pdfUrl={`/api/products/${product.id}/pdf?v=${refreshTimestamp}`}
-                          onClick={() => {
-                            setSelectedPdf(`/api/products/${product.id}/pdf`);
-                            setIsPdfViewerOpen(true);
-                          }}
-                        />
-                      ) : product.image_file ? (
-                        <ImageThumbnail
-                          productId={product.id}
-                          imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
-                          imageData={null}
-                          alt={product.name}
-                          onClick={() => {
-                            setSelectedImage(product.image_file);
-                            setIsImageViewerOpen(true);
-                          }}
-                        />
-                      ) : product.image_data ? (
-                        <ImageThumbnail
-                          productId={product.id}
-                          imageUrl={`/api/products/${product.id}/img?v=${refreshTimestamp}`}
-                          imageData={null}
-                          alt={product.name}
-                          onClick={() => {
-                            setSelectedImage(`/api/products/${product.id}/img`);
-                            setIsImageViewerOpen(true);
-                          }}
-                        />
                       ) : (
-                        <div className="w-[130px] h-[182px] bg-gray-100 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">No media</span>
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                      )}
+                    </TableCell>
+
+                    {/* Name & Category column */}
+                    <TableCell className="text-center w-[250px]">
+                      <div className="flex flex-col items-center gap-1">
+                        <p className="text-sm text-gray-700 font-medium">{product.name}</p>
+                        <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full max-w-full truncate">
+                          {categories?.find(c => c.id === product.category_id)?.name || 'No category'}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Description column */}
+                    <TableCell className="text-center w-[180px] max-w-[180px] overflow-hidden">
+                      <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                        {product.description}
+                      </p>
+                    </TableCell>
+
+                    {/* Digital Price column */}
+                    <TableCell className="text-center w-[80px]">
+                      <p className="text-sm font-medium">
+                        ${Number(product.price).toFixed(2)}
+                      </p>
+                    </TableCell>
+
+                    {/* Variants column */}
+                    <TableCell className="text-center w-[140px]">
+                      {product.has_physical_variant ? (
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 text-green-700 border-green-200">
+                            Physical
+                          </div>
+                          <div className="text-xs">
+                            <span className="text-sm font-medium">${Number(product.physical_price || 0).toFixed(2)}</span>
+                            <br />
+                            <span 
+                              className={cn(
+                                "font-bold text-sm",
+                                (product.stock || 0) === 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              )}
+                            >
+                              {product.stock || 0} in stock
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                          Digital Only
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{product.description}</TableCell>
-                    <TableCell className="text-right">${Number(product.price).toFixed(2)}</TableCell>
-                    <TableCell className="text-center">{product.stock}</TableCell>
-                    <TableCell className="text-center w-[120px]">
+
+                    {/* Visible column */}
+                    <TableCell className="text-center w-[80px]">
                       <div className="flex flex-col items-center gap-1">
                         {/* Hidden status indicator */}
                         <TooltipProvider>
@@ -1002,17 +1381,27 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+
+                    {/* Actions column */}
+                    <TableCell className="text-right px-4 w-[100px]">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => openDownloadDialog(product)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           onClick={() => handleEditProduct(product)}
+                          className="h-8 w-8 p-0"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" className="text-destructive">
+                            <Button className="btn-danger h-8 w-8 p-0">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -1060,6 +1449,107 @@ export default function ProfilePage() {
         onOpenChange={setIsImageViewerOpen}
         url={selectedImage}
       />
+
+      {/* Download Storage Selection Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Download Source</DialogTitle>
+            <DialogDescription>
+              Select which storage type to download from for &quot;{selectedProductForDownload?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {selectedProductForDownload?.image_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_file')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.image_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'image_data')}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Image Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_file && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_file')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF File
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.pdf_data && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'pdf_data')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                PDF Database (Stored in DB)
+              </Button>
+            )}
+            
+            {selectedProductForDownload?.storage_url && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => downloadFromStorageType(selectedProductForDownload, 'storage_url')}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                External Storage URL
+              </Button>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog for Storage Removal */}
+      <AlertDialog
+        open={!!storageToRemove}
+        onOpenChange={(open) => !open && setStorageToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Storage</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the{" "}
+              {storageToRemove ? getStorageLabel(storageToRemove.type) : ""} from
+              this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveStorage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
