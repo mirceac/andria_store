@@ -2409,6 +2409,126 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get current user profile
+  app.get("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    try {
+      const [user] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          first_name: users.first_name,
+          last_name: users.last_name,
+          email: users.email,
+          phone: users.phone,
+          address: users.address,
+          city: users.city,
+          state: users.state,
+          country: users.country,
+          postal_code: users.postal_code,
+          picture: users.picture,
+          bio: users.bio,
+          job_title: users.job_title,
+          company: users.company,
+          website: users.website,
+          linkedin_url: users.linkedin_url,
+          twitter_url: users.twitter_url,
+          instagram_url: users.instagram_url,
+          facebook_url: users.facebook_url,
+          is_admin: users.is_admin,
+        })
+        .from(users)
+        .where(eq(users.id, req.user!.id));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    try {
+      const { 
+        first_name, last_name, email, phone, 
+        address, city, state, country, postal_code,
+        picture, bio, job_title, company, website,
+        linkedin_url, twitter_url, instagram_url, facebook_url
+      } = req.body;
+
+      // Build update object with only provided fields
+      const updateData: any = {};
+      if (first_name !== undefined) updateData.first_name = first_name || null;
+      if (last_name !== undefined) updateData.last_name = last_name || null;
+      if (email !== undefined) updateData.email = email || null;
+      if (phone !== undefined) updateData.phone = phone || null;
+      if (address !== undefined) updateData.address = address || null;
+      if (city !== undefined) updateData.city = city || null;
+      if (state !== undefined) updateData.state = state || null;
+      if (country !== undefined) updateData.country = country || null;
+      if (postal_code !== undefined) updateData.postal_code = postal_code || null;
+      if (picture !== undefined) updateData.picture = picture || null;
+      if (bio !== undefined) updateData.bio = bio || null;
+      if (job_title !== undefined) updateData.job_title = job_title || null;
+      if (company !== undefined) updateData.company = company || null;
+      if (website !== undefined) updateData.website = website || null;
+      if (linkedin_url !== undefined) updateData.linkedin_url = linkedin_url || null;
+      if (twitter_url !== undefined) updateData.twitter_url = twitter_url || null;
+      if (instagram_url !== undefined) updateData.instagram_url = instagram_url || null;
+      if (facebook_url !== undefined) updateData.facebook_url = facebook_url || null;
+
+      await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, req.user!.id));
+
+      // Fetch updated user
+      const [updatedUser] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          first_name: users.first_name,
+          last_name: users.last_name,
+          email: users.email,
+          phone: users.phone,
+          address: users.address,
+          city: users.city,
+          state: users.state,
+          country: users.country,
+          postal_code: users.postal_code,
+          picture: users.picture,
+          bio: users.bio,
+          job_title: users.job_title,
+          company: users.company,
+          website: users.website,
+          linkedin_url: users.linkedin_url,
+          twitter_url: users.twitter_url,
+          instagram_url: users.instagram_url,
+          facebook_url: users.facebook_url,
+          is_admin: users.is_admin,
+        })
+        .from(users)
+        .where(eq(users.id, req.user!.id));
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

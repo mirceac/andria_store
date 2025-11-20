@@ -617,6 +617,12 @@ export default function ProfilePage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/profile/settings">
+            <Button variant="outline">
+              <User className="mr-2 h-4 w-4" />
+              Profile Settings
+            </Button>
+          </Link>
           <Link href="/profile/categories">
             <Button variant="outline">
               <FolderTree className="mr-2 h-4 w-4" />

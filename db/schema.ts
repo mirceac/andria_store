@@ -20,6 +20,26 @@ export const users = pgTable("users", {
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
   is_admin: boolean("is_admin").default(false).notNull(),
+  // Personal Information
+  first_name: text("first_name"),
+  last_name: text("last_name"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  postal_code: text("postal_code"),
+  picture: text("picture"), // Profile picture (base64 or URL)
+  // Professional Information
+  bio: text("bio"), // Short biography/description
+  job_title: text("job_title"),
+  company: text("company"),
+  website: text("website"),
+  linkedin_url: text("linkedin_url"),
+  twitter_url: text("twitter_url"),
+  instagram_url: text("instagram_url"),
+  facebook_url: text("facebook_url"),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

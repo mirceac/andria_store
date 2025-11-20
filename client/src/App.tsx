@@ -15,6 +15,7 @@ import AdminCategoriesPage from "@/pages/admin/categories-page";
 import AdminOrdersPage from "@/pages/admin/orders-page";
 import ProfilePage from "@/pages/profile-page";
 import UserCategoriesPage from "@/pages/user-categories-page";
+import UserSettingsPage from "@/pages/user-settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
 import { initPdfWorker } from '@/lib/pdf-worker';
@@ -37,6 +38,7 @@ function Router() {
         <ProtectedRoute path="/orders" component={OrdersPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
         <ProtectedRoute path="/profile/categories" component={UserCategoriesPage} />
+        <ProtectedRoute path="/profile/settings" component={UserSettingsPage} />
         <ProtectedRoute path="/checkout/success" component={CheckoutSuccessPage} />
         <ProtectedRoute path="/admin/products" component={AdminProductsPage} adminOnly />
         <ProtectedRoute path="/admin/categories" component={AdminCategoriesPage} adminOnly />
