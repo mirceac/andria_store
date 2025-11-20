@@ -9,13 +9,17 @@ import {
   Box,
   Palette,
   Search,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
@@ -27,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -35,7 +40,24 @@ export default function Navbar() {
   const { search, setSearch } = useSearch();
   const { sort, setSort } = useSort();
 
+  // Fetch user profile for picture
+  const { data: profile } = useQuery<{
+    id: number;
+    username: string;
+    first_name: string | null;
+    last_name: string | null;
+    picture: string | null;
+  }>({
+    queryKey: ["/api/user/profile"],
+    enabled: !!user,
+  });
+
   const buttonClasses = "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700";
+
+  // Get user initials for avatar fallback
+  const userInitials = user
+    ? `${profile?.first_name?.[0] || user.username[0]}${profile?.last_name?.[0] || ""}`.toUpperCase()
+    : "U";
 
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
@@ -78,16 +100,6 @@ export default function Navbar() {
 
         {/* Navigation Items - Fixed width */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          {/* My Profile Button - for authenticated users */}
-          {user && (
-            <Link href="/profile">
-              <Button variant="ghost" className={buttonClasses}>
-                <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">My Profile</span>
-              </Button>
-            </Link>
-          )}
-          
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -119,15 +131,6 @@ export default function Navbar() {
             </DropdownMenu>
           )}
 
-          {user && (
-            <Link href="/orders">
-              <Button variant="ghost" className={buttonClasses}>
-                <Package className="h-4 w-4" />
-                <span className="ml-2">Orders</span>
-              </Button>
-            </Link>
-          )}
-
           <Link href="/cart">
             <Button variant="ghost" className={`relative ${buttonClasses}`}>
               <ShoppingCart className="h-4 w-4" />
@@ -143,17 +146,66 @@ export default function Navbar() {
           <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block" />
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-slate-700">{user.username}</span>
-              <Button
-                variant="ghost"
-                className={buttonClasses}
-                onClick={() => logoutMutation.mutate()}
-              >
-                <User className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
+                  <Avatar className="h-8 w-8 ring-2 ring-slate-200 hover:ring-slate-300 transition-all">
+                    <AvatarImage src={profile?.picture || undefined} />
+                    <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline text-sm font-medium text-slate-700">
+                    {profile?.first_name || user.username}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={profile?.picture || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium">
+                      {profile?.first_name && profile?.last_name
+                        ? `${profile.first_name} ${profile.last_name}`
+                        : user.username}
+                    </p>
+                    <p className="text-xs text-muted-foreground">@{user.username}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile/settings" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Profile Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Products</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/orders" className="flex items-center cursor-pointer">
+                    <Package className="mr-2 h-4 w-4" />
+                    <span>My Orders</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 cursor-pointer"
+                  onClick={() => logoutMutation.mutate()}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link href="/auth">
               <Button variant="ghost" className={buttonClasses}>
