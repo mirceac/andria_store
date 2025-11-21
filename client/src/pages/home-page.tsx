@@ -42,7 +42,7 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Default closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
@@ -78,9 +78,19 @@ export default function HomePage() {
     // No interval to prevent reloading icons
   }, []);
 
+  // Listen for sidebar toggle event from navbar
+  useEffect(() => {
+    const handleToggleSidebar = () => {
+      setSidebarOpen(prev => !prev);
+    };
+    
+    window.addEventListener('toggleSidebar', handleToggleSidebar);
+    return () => window.removeEventListener('toggleSidebar', handleToggleSidebar);
+  }, []);
+
   // Close sidebar on mobile when screen size changes
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile && sidebarOpen) {
       setSidebarOpen(false);
     }
   }, [isMobile]);
@@ -639,129 +649,71 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Sidebar Overlay for Mobile */}
-      {isMobile && sidebarOpen && (
+      {/* Sidebar Overlay - Shows when sidebar is open */}
+      {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
       <div className={cn(
-        "transition-all duration-300 bg-gray-50/50 border-r border-gray-200 shadow-sm",
-        isMobile ? 
-          // Mobile: Fixed sidebar that slides in from left
-          cn(
-            "fixed left-0 top-0 bottom-0 z-50 w-64 transform",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          ) :
-          // Desktop: Normal sidebar behavior
-          sidebarOpen ? "w-64" : "w-16"
+        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className={cn("p-3", isMobile && "pt-24")}> {/* Add top padding on mobile for header */}
+        <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
           <div className="flex items-center justify-between mb-4">
-            {sidebarOpen && (
-              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
-                Categories
-              </h2>
-            )}
-            {/* Close button for mobile inside sidebar */}
-            {isMobile && sidebarOpen && (
-              <Button
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSidebarOpen(false);
-                }}
-                className="h-8 w-8 p-0 flex-shrink-0"
-                title="Close sidebar"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-            {/* Toggle button for desktop */}
-            {!isMobile && (
-              <Button
-                variant="ghost"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="h-8 w-8 p-0 flex-shrink-0"
-                title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              >
-                <Filter className="h-4 w-4" />
-              </Button>
-            )}
+            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+              Categories
+            </h2>
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(false);
+              }}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
-          {sidebarOpen && (
-            <div className="space-y-1">
-              <div
-                className={cn(
-                  "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                  "hover:bg-gray-50 active:bg-gray-100",
-                  selectedCategoryId === null && "bg-indigo-50 border border-indigo-200 shadow-sm",
-                  selectedCategoryId !== null && "border border-transparent"
-                )}
-                onClick={() => handleCategorySelect(null)}
-              >
-                <span className={cn(
-                  "text-sm font-medium transition-colors duration-200",
-                  selectedCategoryId === null ? "text-indigo-900" : "text-gray-700",
-                  "hover:text-gray-900"
-                )}>
-                  All Products
-                </span>
-              </div>
-              <div className="h-px bg-gray-200 my-3"></div>
-              <div className="space-y-0.5">
-                {buildCategoryTree(categories || []).map((category) => (
-                  <CategoryTreeNode key={category.id} category={category} />
-                ))}
-              </div>
+          <div className="space-y-1">
+            <div
+              className={cn(
+                "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                "hover:bg-gray-50 active:bg-gray-100",
+                selectedCategoryId === null && "bg-indigo-50 border border-indigo-200 shadow-sm",
+                selectedCategoryId !== null && "border border-transparent"
+              )}
+              onClick={() => handleCategorySelect(null)}
+            >
+              <span className={cn(
+                "text-sm font-medium transition-colors duration-200",
+                selectedCategoryId === null ? "text-indigo-900" : "text-gray-700",
+                "hover:text-gray-900"
+              )}>
+                All Products
+              </span>
             </div>
-          )}
-          
-          {/* Show compact category buttons when collapsed */}
-          {!sidebarOpen && (
-            <div className="space-y-2">
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-md cursor-pointer flex items-center justify-center transition-all duration-200",
-                  "hover:bg-gray-100 active:bg-gray-200",
-                  selectedCategoryId === null && "bg-indigo-100 text-indigo-700 shadow-sm",
-                  selectedCategoryId !== null && "bg-gray-50 text-gray-600"
-                )}
-                onClick={() => handleCategorySelect(null)}
-                title="All Products"
-              >
-                <span className="text-xs font-bold">A</span>
-              </div>
-              {flattenCategories(buildCategoryTree(categories || [])).slice(0, 6).map((category, index) => (
-                <div
-                  key={category.id}
-                  className={cn(
-                    "w-8 h-8 rounded-md cursor-pointer flex items-center justify-center transition-all duration-200",
-                    "hover:bg-gray-100 active:bg-gray-200",
-                    selectedCategoryId === category.id && "bg-indigo-100 text-indigo-700 shadow-sm",
-                    selectedCategoryId !== category.id && "bg-gray-50 text-gray-600"
-                  )}
-                  onClick={() => handleCategorySelect(category.id)}
-                  title={category.name}
-                >
-                  <span className="text-xs font-bold">{index + 1}</span>
-                </div>
+            <div className="h-px bg-gray-200 my-3"></div>
+            <div className="space-y-0.5">
+              {buildCategoryTree(categories || []).map((category) => (
+                <CategoryTreeNode key={category.id} category={category} />
               ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
-        "flex-1 transition-all duration-300 w-full overflow-x-hidden",
-        isMobile ? "pt-20" : "p-4" // Add top padding on mobile for fixed header
+        "flex-1 w-full",
+        isMobile ? "pt-20 px-2 py-4" : "p-4"
       )}>
-        <div className={cn(isMobile && "px-2 py-4")}>
+        <div>
           {/* Breadcrumb Navigation */}
           {selectedCategoryId && categories && (
             <div className="mb-6 border-b border-gray-200 pb-3">

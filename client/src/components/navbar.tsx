@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   LogOut,
+  Menu,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,46 +61,60 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto px-6 h-16 flex items-center">
-        {/* Logo Section - Now with minimal width */}
-        <Link href="/" className="flex items-center space-x-3 shrink-0 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-            <Palette className="h-6 w-6 text-white" />
-          </div>
-          <div className="hidden sm:flex flex-col">
-            <h1 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Gallery</h1>
-            <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors">Digital Products</p>
-          </div>
-        </Link>
+    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50">
+      <div className="w-full px-2 h-16 flex items-center justify-between gap-4">
+        {/* Left Side: Menu Button (on home page) + Gallery Logo */}
+        <div className="flex items-center gap-3">
+          {/* Menu Button - only shown on home page */}
+          {window.location.pathname === "/" && (
+            <Button
+              variant="ghost"
+              className={`h-10 w-10 p-0 ${buttonClasses}`}
+              onClick={() => {
+                // This will be handled by the home page component
+                window.dispatchEvent(new CustomEvent('toggleSidebar'));
+              }}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <Link href="/" className="flex items-center space-x-2 group px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+              <Palette className="h-6 w-6 text-white" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <h1 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Gallery</h1>
+              <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors">Digital Products</p>
+            </div>
+          </Link>
+        </div>
 
-        {/* Search and Sort Section - Takes remaining space */}
-        <div className="hidden md:flex items-center gap-4 flex-1 mx-8">
-          <div className="relative flex-1">
+        {/* Right Side: Search + Sort + Navigation Items */}
+        <div className="flex items-center gap-2">
+          {/* Search Bar */}
+          <div className="relative w-64 hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 bg-slate-50 border-slate-200 focus:border-blue-500"
+              className="w-full pl-9 bg-white border-slate-200 focus:border-blue-500"
             />
           </div>
-
           <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-            <SelectTrigger className="w-[180px] bg-slate-50">
+            <SelectTrigger className="w-[140px] bg-slate-50 hidden md:flex">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Name (A-Z)</SelectItem>
-              <SelectItem value="price_asc">Price (Low to High)</SelectItem>
-              <SelectItem value="price_desc">Price (High to Low)</SelectItem>
+              <SelectItem value="price_asc">Price (Low-High)</SelectItem>
+              <SelectItem value="price_desc">Price (High-Low)</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Navigation Items - Fixed width */}
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="h-6 w-px bg-slate-200 hidden md:block" />
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -148,8 +163,8 @@ export default function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
-                  <Avatar className="h-8 w-8 ring-2 ring-slate-200 hover:ring-slate-300 transition-all">
+                <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200">
+                  <Avatar className="h-8 w-8 ring-2 ring-slate-200 hover:ring-blue-300 transition-all">
                     <AvatarImage src={profile?.picture || undefined} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                       {userInitials}
