@@ -49,7 +49,7 @@ export default function Navbar() {
     last_name: string | null;
     picture: string | null;
   }>({
-    queryKey: ["/api/user/profile"],
+    queryKey: ["/api/user/profile", user?.id],
     enabled: !!user,
   });
 

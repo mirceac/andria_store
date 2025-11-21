@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -76,10 +77,12 @@ interface UserProfile {
 
 export default function UserSettingsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
-    queryKey: ["/api/user/profile"],
+    queryKey: ["/api/user/profile", user?.id],
+    enabled: !!user,
   });
 
   const form = useForm<ProfileFormValues>({
@@ -133,7 +136,7 @@ export default function UserSettingsPage() {
       return await apiRequest("PATCH", "/api/user/profile", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/profile", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
