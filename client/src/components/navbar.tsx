@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Menu,
+  LayoutGrid,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -132,7 +133,7 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/admin/categories" className="flex items-center text-slate-600 hover:text-slate-700">
-                    <Box className="mr-2 h-4 w-4" />
+                    <LayoutGrid className="mr-2 h-4 w-4" />
                     <span>Categories</span>
                   </Link>
                 </DropdownMenuItem>
