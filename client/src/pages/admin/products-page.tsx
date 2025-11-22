@@ -1057,7 +1057,7 @@ export default function AdminProductsPage() {
   return (
     <div className="container mx-auto ml-16 py-10">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Products</h1>
+        <h1 className="text-3xl font-bold">Products Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button>
@@ -1887,6 +1887,9 @@ export default function AdminProductsPage() {
                             });
                             return getCategoryChain(product.category_id, categoryMap);
                           })()}
+                        </span>
+                        <span className="text-xs font-bold text-gray-800">
+                          {(product as any).creator_username || 'System'}
                         </span>
                       </div>
                     </TableCell>

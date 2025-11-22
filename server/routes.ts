@@ -907,9 +907,11 @@ export function registerRoutes(app: Express): Server {
           created_at: products.created_at,
           updated_at: products.updated_at,
           category_name: categories.name,
+          creator_username: users.username,
         })
         .from(products)
-        .leftJoin(categories, eq(products.category_id, categories.id));
+        .leftJoin(categories, eq(products.category_id, categories.id))
+        .leftJoin(users, eq(products.user_id, users.id));
         
       // Filter products based on user authentication
       const isAdmin = req.isAuthenticated?.() && req.user?.is_admin;
