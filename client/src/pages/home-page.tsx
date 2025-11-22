@@ -594,7 +594,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen relative overflow-x-hidden ml-16" style={{ width: 'calc(100vw - 64px)' }}>
+    <div className="flex relative overflow-x-hidden ml-16" style={{ width: 'calc(100vw - 64px)' }}>
       {/* Mobile Header */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -721,7 +721,7 @@ export default function HomePage() {
 
       {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
-        "flex-1 max-w-full overflow-x-hidden",
+        "flex-1 max-w-full",
         isMobile ? "pt-20 px-2 py-4" : "p-4"
       )}>
         <div>

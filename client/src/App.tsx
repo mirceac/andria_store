@@ -29,7 +29,7 @@ initPdfWorker();
 
 function Router() {
   return (
-    <>
+    <div style={{ overflowX: 'hidden', width: '100%', minHeight: '100vh' }}>
       <Navbar />
       <VerticalMenu />
       <Switch>
@@ -48,7 +48,7 @@ function Router() {
         <Route path="/checkout" component={CheckoutPage} />
         <Route component={NotFound} />
       </Switch>
-    </>
+    </div>
   );
 }
 
