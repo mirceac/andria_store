@@ -88,6 +88,17 @@ export default function HomePage() {
     return () => window.removeEventListener('toggleSidebar', handleToggleSidebar);
   }, []);
 
+  // Listen for category selection from vertical menu
+  useEffect(() => {
+    const handleSelectCategory = (e: CustomEvent) => {
+      const { categoryId } = e.detail;
+      setSelectedCategoryId(categoryId);
+    };
+    
+    window.addEventListener('selectCategory', handleSelectCategory as EventListener);
+    return () => window.removeEventListener('selectCategory', handleSelectCategory as EventListener);
+  }, []);
+
   // Close sidebar on mobile when screen size changes
   useEffect(() => {
     if (isMobile && sidebarOpen) {
@@ -583,7 +594,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen relative w-full overflow-x-hidden max-w-full">
+    <div className="flex min-h-screen relative w-full overflow-x-hidden max-w-full ml-16">
       {/* Mobile Header */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">

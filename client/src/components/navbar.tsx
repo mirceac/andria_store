@@ -90,7 +90,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right Side: Search + Sort + Navigation Items */}
+        {/* Right Side: Search + Sort + Profile */}
         <div className="flex items-center gap-2">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block">
@@ -145,18 +145,6 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          <Link href="/cart">
-            <Button variant="ghost" className={`relative ${buttonClasses}`}>
-              <ShoppingCart className="h-4 w-4" />
-              <span className="ml-2">Cart</span>
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-100 text-slate-600 text-xs font-medium px-2 min-w-[20px] h-5 rounded-full flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </Button>
-          </Link>
 
           <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block" />
 

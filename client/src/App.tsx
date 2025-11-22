@@ -18,6 +18,7 @@ import UserCategoriesPage from "@/pages/user-categories-page";
 import UserSettingsPage from "@/pages/user-settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
+import VerticalMenu from "./components/vertical-menu";
 import { initPdfWorker } from '@/lib/pdf-worker';
 import { SearchProvider } from '@/contexts/search-context';
 import { SortProvider } from '@/contexts/sort-context';
@@ -30,6 +31,7 @@ function Router() {
   return (
     <>
       <Navbar />
+      <VerticalMenu />
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/product/:id" component={ProductPage} />

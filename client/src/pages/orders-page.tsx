@@ -188,7 +188,7 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen ml-16">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -196,7 +196,7 @@ export default function OrdersPage() {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto ml-16 px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">My Orders</h1>
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -391,7 +391,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4 max-w-full' : 'px-4 py-8'} overflow-x-hidden w-full`}>
+      <div className={`container mx-auto ml-16 ${isMobile ? 'px-2 py-4 max-w-full' : 'px-4 py-8'} overflow-x-hidden w-full`}>
         <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-6`}>My Orders</h1>
         <div className="space-y-6 w-full overflow-x-hidden">
           {processedOrders.map((order) => (

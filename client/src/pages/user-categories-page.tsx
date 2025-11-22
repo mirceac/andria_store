@@ -240,7 +240,7 @@ export default function UserCategoriesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto ml-16 p-6">
       <div className="mb-6">
         <Link href="/profile">
           <Button variant="ghost" className="mb-4">

@@ -188,7 +188,7 @@ export default function UserSettingsPage() {
     : "U";
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
+    <div className="container mx-auto ml-16 py-8 px-4 max-w-4xl">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">

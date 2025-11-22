@@ -597,7 +597,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto ml-16 py-10">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">

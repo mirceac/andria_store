@@ -216,7 +216,7 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto ml-16 p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Category Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
