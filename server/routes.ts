@@ -6,7 +6,7 @@ import { db } from "@db";
 import { products, orders, orderItems, users, categories } from "@db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { createCheckoutSession, stripe } from "./stripe";
-import { sendOrderConfirmationEmail } from "./email.js";
+import { sendOrderConfirmationEmail, sendPasswordResetEmail } from "./email.js";
 import { testEmailConfiguration } from "./email.js";
 import type Stripe from "stripe";
 import * as express from 'express';
@@ -2592,12 +2592,28 @@ export function registerRoutes(app: Express): Server {
         })
         .where(eq(users.id, user.id));
 
-      // In a real app, you would send this token via email
-      // For now, we'll return it in the response
+      // Send reset token via email if user has email
+      if (user.email) {
+        try {
+          console.log(`Sending password reset email to ${user.email} for user ${user.username}`);
+          await sendPasswordResetEmail(user.username, user.email, resetToken);
+          console.log("Password reset email sent successfully");
+        } catch (emailError) {
+          console.error("Failed to send password reset email:", emailError);
+          // Continue even if email fails - user can still use the token shown in UI
+        }
+      } else {
+        console.log(`User ${user.username} has no email address, skipping email send`);
+      }
+
+      // Return the token in response (for development/users without email)
       res.json({ 
-        message: "Reset token generated",
-        resetToken, // Remove this in production!
-        username: user.username
+        message: user.email 
+          ? "Reset token has been sent to your email address" 
+          : "Reset token generated",
+        resetToken, // In production with email, you might remove this
+        username: user.username,
+        emailSent: !!user.email
       });
     } catch (error) {
       console.error("Error requesting password reset:", error);

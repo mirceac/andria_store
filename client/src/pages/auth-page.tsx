@@ -53,9 +53,14 @@ export default function AuthPage() {
       setResetToken(data.resetToken);
       setResetUsername(data.username);
       setResetStep('reset');
+      
+      const description = data.emailSent 
+        ? "A reset token has been sent to your email. You can also find it on the next screen."
+        : "IMPORTANT: Copy the token from the blue box and paste it in the Reset Token field.";
+      
       toast({
         title: "Reset Token Generated",
-        description: "IMPORTANT: Copy the token from the blue box and paste it in the Reset Token field.",
+        description,
         duration: 8000,
       });
     },
