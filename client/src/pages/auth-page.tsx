@@ -12,17 +12,95 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { InsertUser } from "@db/schema";
 import { Redirect } from "wouter";
-import { Loader2, LockKeyhole, User } from "lucide-react";
+import { Loader2, LockKeyhole, User, KeyRound } from "lucide-react";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetStep, setResetStep] = useState<'request' | 'reset'>('request');
+  const [resetToken, setResetToken] = useState('');
+  const [resetUsername, setResetUsername] = useState('');
 
   const loginForm = useForm<InsertUser>();
   const registerForm = useForm<InsertUser>();
+  const resetRequestForm = useForm<{ username: string }>();
+  const resetPasswordForm = useForm<{ resetToken: string; newPassword: string; confirmPassword: string }>();
+
+  const resetRequestMutation = useMutation({
+    mutationFn: async (data: { username: string }) => {
+      const response = await fetch('/api/auth/reset-password-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to request password reset');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setResetToken(data.resetToken);
+      setResetUsername(data.username);
+      setResetStep('reset');
+      toast({
+        title: "Reset Token Generated",
+        description: "IMPORTANT: Copy the token from the blue box and paste it in the Reset Token field.",
+        duration: 8000,
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to request password reset",
+      });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (data: { username: string; resetToken: string; newPassword: string }) => {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to reset password');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Password reset successfully. Please login with your new password.",
+      });
+      setResetDialogOpen(false);
+      setResetStep('request');
+      setResetToken('');
+      setResetUsername('');
+      resetRequestForm.reset();
+      resetPasswordForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    },
+  });
 
   if (user) {
     return <Redirect to="/" />;
@@ -103,6 +181,14 @@ export default function AuthPage() {
                       </>
                     )}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full text-sm text-white hover:text-white/80"
+                    onClick={() => setResetDialogOpen(true)}
+                  >
+                    Forgot password?
+                  </Button>
                 </form>
               </Form>
             </TabsContent>
@@ -161,6 +247,157 @@ export default function AuthPage() {
           </Tabs>
         </Card>
       </div>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {resetStep === 'request'
+                ? 'Enter your username below. A reset token will be generated and displayed on the next screen.'
+                : 'Copy the reset token from the blue box below and paste it into the Reset Token field, then enter your new password.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetStep === 'request' ? (
+            <Form {...resetRequestForm}>
+              <form
+                onSubmit={resetRequestForm.handleSubmit((data) =>
+                  resetRequestMutation.mutate(data)
+                )}
+                className="space-y-4"
+              >
+                <FormField
+                  control={resetRequestForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input {...field} required />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={resetRequestMutation.isPending}
+                >
+                  {resetRequestMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      Request Reset Token
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...resetPasswordForm}>
+              <form
+                onSubmit={resetPasswordForm.handleSubmit((data) => {
+                  if (data.newPassword !== data.confirmPassword) {
+                    toast({
+                      variant: "destructive",
+                      title: "Error",
+                      description: "Passwords do not match",
+                    });
+                    return;
+                  }
+                  resetPasswordMutation.mutate({
+                    username: resetUsername,
+                    resetToken: data.resetToken,
+                    newPassword: data.newPassword,
+                  });
+                })}
+                className="space-y-4"
+              >
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">Your Reset Token (Copy This):</p>
+                  <p className="text-xs text-blue-700 mb-2">This token was generated for your username. Copy it and paste it in the field below.</p>
+                  <div className="bg-white p-2 rounded border border-blue-200">
+                    <p className="text-xs font-mono break-all text-slate-700 select-all">{resetToken}</p>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">💡 In a real system, this would be sent to your email instead.</p>
+                </div>
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="resetToken"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reset Token</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          required 
+                          placeholder="Paste the reset token here"
+                          className="font-mono text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} required />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} required />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setResetStep('request');
+                      setResetToken('');
+                      setResetUsername('');
+                    }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={resetPasswordMutation.isPending}
+                  >
+                    {resetPasswordMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Reset Password'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

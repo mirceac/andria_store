@@ -40,6 +40,8 @@ export const users = pgTable("users", {
   twitter_url: text("twitter_url"),
   instagram_url: text("instagram_url"),
   facebook_url: text("facebook_url"),
+  reset_token: text("reset_token"),
+  reset_token_expires: timestamp("reset_token_expires", { withTimezone: true }),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
 import fs from 'fs';
+import { randomBytes } from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -2556,6 +2557,98 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Request password reset
+  app.post("/api/auth/reset-password-request", async (req, res) => {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (!user) {
+        // Don't reveal if user exists
+        return res.json({ message: "If the username exists, a reset token has been generated" });
+      }
+
+      // Generate a random reset token
+      const resetToken = randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+
+      await db
+        .update(users)
+        .set({
+          reset_token: resetToken,
+          reset_token_expires: resetExpires,
+        })
+        .where(eq(users.id, user.id));
+
+      // In a real app, you would send this token via email
+      // For now, we'll return it in the response
+      res.json({ 
+        message: "Reset token generated",
+        resetToken, // Remove this in production!
+        username: user.username
+      });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).json({ message: "Failed to request password reset" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    const { username, resetToken, newPassword } = req.body;
+
+    if (!username || !resetToken || !newPassword) {
+      return res.status(400).json({ message: "Username, reset token, and new password are required" });
+    }
+
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (!user || !user.reset_token || !user.reset_token_expires) {
+        return res.status(400).json({ message: "Invalid reset token" });
+      }
+
+      if (user.reset_token !== resetToken) {
+        return res.status(400).json({ message: "Invalid reset token" });
+      }
+
+      if (new Date() > user.reset_token_expires) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password and clear reset token
+      await db
+        .update(users)
+        .set({
+          password: hashedPassword,
+          reset_token: null,
+          reset_token_expires: null,
+        })
+        .where(eq(users.id, user.id));
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 
