@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   LayoutGrid,
+  Users,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -135,6 +136,12 @@ export default function Navbar() {
                   <Link href="/admin/categories" className="flex items-center text-slate-600 hover:text-slate-700">
                     <LayoutGrid className="mr-2 h-4 w-4" />
                     <span>Categories</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/users" className="flex items-center text-slate-600 hover:text-slate-700">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Users</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

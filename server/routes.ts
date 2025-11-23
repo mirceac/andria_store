@@ -2531,6 +2531,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin: Get all users
+  app.get("/api/admin/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const allUsers = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          is_admin: users.is_admin,
+          created_at: users.created_at,
+          first_name: users.first_name,
+          last_name: users.last_name,
+          email: users.email,
+          picture: users.picture,
+        })
+        .from(users)
+        .orderBy(users.created_at);
+
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

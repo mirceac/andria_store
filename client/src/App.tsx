@@ -11,6 +11,7 @@ import CartPage from "@/pages/cart-page";
 import OrdersPage from "@/pages/orders-page";
 import CheckoutSuccessPage from "@/pages/checkout/success-page";
 import AdminProductsPage from "@/pages/admin/products-page";
+import AdminUsersPage from "@/pages/admin/users-page";
 import AdminCategoriesPage from "@/pages/admin/categories-page";
 import AdminOrdersPage from "@/pages/admin/orders-page";
 import ProfilePage from "@/pages/profile-page";
@@ -43,6 +44,7 @@ function Router() {
         <ProtectedRoute path="/profile/settings" component={UserSettingsPage} />
         <ProtectedRoute path="/checkout/success" component={CheckoutSuccessPage} />
         <ProtectedRoute path="/admin/products" component={AdminProductsPage} adminOnly />
+        <ProtectedRoute path="/admin/users" component={AdminUsersPage} adminOnly />
         <ProtectedRoute path="/admin/categories" component={AdminCategoriesPage} adminOnly />
         <ProtectedRoute path="/admin/orders" component={AdminOrdersPage} adminOnly />
         <Route path="/checkout" component={CheckoutPage} />
