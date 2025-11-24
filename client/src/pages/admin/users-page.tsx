@@ -78,85 +78,147 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">Avatar</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="text-center">Role</TableHead>
-              <TableHead className="text-center">Joined</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users && users.length > 0 ? (
-              users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.picture || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
-                        {getUserInitials(user)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{user.username}</span>
+      {/* Mobile Card Layout */}
+      {isMobile ? (
+        <div className="space-y-4">
+          {users && users.length > 0 ? (
+            users.map((user) => (
+              <div key={user.id} className="border rounded-lg p-4 bg-white">
+                <div className="flex items-start gap-3 mb-3">
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={user.picture || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                      {getUserInitials(user)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium truncate">{user.username}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
                     {user.first_name || user.last_name ? (
-                      <span>
+                      <p className="text-sm text-muted-foreground truncate">
                         {user.first_name} {user.last_name}
-                      </span>
+                      </p>
                     ) : (
-                      <span className="text-muted-foreground italic">Not provided</span>
+                      <p className="text-sm text-muted-foreground italic">Not provided</p>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    {user.email ? (
+                  </div>
+                </div>
+                
+                {user.email && (
+                  <div className="flex items-center gap-2 mb-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    {formatDate(user.created_at)}
+                  </div>
+                  {user.is_admin ? (
+                    <Badge className="bg-red-100 text-red-700 hover:bg-red-200">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Admin
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      User
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop Table Layout */
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Avatar</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Full Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead className="text-center">Role</TableHead>
+                <TableHead className="text-center">Joined</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users && users.length > 0 ? (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.picture || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{user.email}</span>
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{user.username}</span>
                       </div>
-                    ) : (
-                      <span className="text-muted-foreground italic">Not provided</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {user.is_admin ? (
-                      <Badge className="bg-red-100 text-red-700 hover:bg-red-200">
-                        <Shield className="h-3 w-3 mr-1" />
-                        Admin
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        User
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      {formatDate(user.created_at)}
-                    </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.first_name || user.last_name ? (
+                        <span>
+                          {user.first_name} {user.last_name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">Not provided</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.email ? (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{user.email}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic">Not provided</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {user.is_admin ? (
+                        <Badge className="bg-red-100 text-red-700 hover:bg-red-200">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Admin
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          User
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        {formatDate(user.created_at)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No users found
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No users found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

@@ -1491,9 +1491,9 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="w-full flex justify-between items-center mb-3 mt-1 pl-3">
+        <div className={`w-full flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} mb-3 mt-1 ${isMobile ? 'px-0' : 'pl-3'}`}>
           <div>
-            <h3 className="text-lg font-semibold">
+            <h3 className={`${isMobile ? 'text-lg' : 'text-lg'} font-semibold`}>
               Products
               {selectedCategoryFilter !== "all" && categories && (() => {
                 const selectedCat = categories.find(c => c.id === parseInt(selectedCategoryFilter));
@@ -1507,9 +1507,9 @@ export default function AdminProductsPage() {
             <p className="text-sm text-muted-foreground">
               Manage your product catalog
             </p>
-            <div className="mt-2">
+            <div className={`${isMobile ? 'mt-3' : 'mt-2'}`}>
               <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className={isMobile ? 'w-full' : 'w-[200px]'}>
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -1526,7 +1526,12 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Improved table container with proper overflow handling */}
-        <div className="border rounded-md mx-3 overflow-x-auto">
+        <div className={`border rounded-md ${isMobile ? 'mx-0' : 'mx-3'} overflow-x-auto`}>
+          {isMobile && (
+            <div className="p-3 bg-blue-50 text-sm text-blue-800 border-b">
+              ← Swipe left/right to see all columns →
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -2048,14 +2053,14 @@ export default function AdminProductsPage() {
           </Table>
 
           {/* Update the pagination container too */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
-            <div className="text-sm text-slate-500">
+          <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center justify-between'} px-4 py-3 border-t border-slate-200`}>
+            <div className={`text-sm text-slate-500 ${isMobile ? 'text-center' : ''}`}>
               Showing{" "}
               {((currentPage - 1) * itemsPerPage) + 1} to{" "}
               {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of{" "}
               {filteredProducts.length} products
             </div>
-            <div className="flex gap-2">
+            <div className={`flex gap-2 ${isMobile ? 'justify-center' : ''}`}>
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0"
