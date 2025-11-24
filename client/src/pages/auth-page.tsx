@@ -327,7 +327,9 @@ export default function AuthPage() {
                   <div className="bg-white p-2 rounded border border-blue-200">
                     <p className="text-xs font-mono break-all text-slate-700 select-all">{resetToken}</p>
                   </div>
-                  <p className="text-xs text-blue-600 mt-2">💡 In a real system, this would be sent to your email instead.</p>
+                  {!import.meta.env.PROD && (
+                    <p className="text-xs text-blue-600 mt-2">💡 In a real system, this would be sent to your email instead.</p>
+                  )}
                 </div>
                 <FormField
                   control={resetPasswordForm.control}
