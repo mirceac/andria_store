@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RefreshCw, RotateCw } from "lucide-react";
+import { ZoomIn, ZoomOut, RefreshCw, RotateCw, Maximize, Minimize } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode } from "react";
 
 interface ImageViewerDialogProps {
@@ -18,6 +18,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageError, setImageError] = useState<ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Debug logging
@@ -58,6 +59,10 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
 
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -143,7 +148,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="max-w-screen-lg h-[80vh] flex flex-col select-none"
+        className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col select-none" : "max-w-screen-lg h-[80vh] flex flex-col select-none"}
         style={{
           userSelect: 'none',
           WebkitUserSelect: 'none',
@@ -187,6 +192,14 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
               title="Rotate 90°"
             >
               <RotateCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
           </div>
           <div className="w-24"></div>

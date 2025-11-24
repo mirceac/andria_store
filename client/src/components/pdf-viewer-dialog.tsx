@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, ZoomIn, ZoomOut, X, RefreshCw, FileText, RotateCw } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut, X, RefreshCw, FileText, RotateCw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page } from 'react-pdf';
 import { initPdfWorker } from '@/lib/pdf-worker';
@@ -67,6 +67,7 @@ export function PDFViewerDialog({
   const [rotation, setRotation] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(pdfUrl);
@@ -74,6 +75,7 @@ export function PDFViewerDialog({
   const handleZoomIn = () => setScale(prev => prev + 0.1);
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
+  const toggleFullscreen = () => setIsFullscreen(prev => !prev);
   const resetView = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
@@ -216,7 +218,7 @@ export function PDFViewerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-screen-lg h-[80vh] flex flex-col">
+      <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col" : "max-w-screen-lg h-[80vh] flex flex-col"}>
         {/* Title and controls row */}
         <div className="flex items-center justify-between py-2 border-b">
           {/* Left: Controls */}
@@ -256,6 +258,14 @@ export function PDFViewerDialog({
               title="Rotate 90°"
             >
               <RotateCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
           </div>
           

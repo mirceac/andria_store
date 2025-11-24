@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RefreshCw, RotateCw } from "lucide-react";
+import { ZoomIn, ZoomOut, RefreshCw, RotateCw, Maximize, Minimize } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode } from "react";
 
 interface ImageViewerDialogProps {
@@ -17,6 +17,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageError, setImageError] = useState<ReactNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset state when image changes or dialog opens/closes
@@ -48,6 +49,10 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
     setRotation(prev => (prev + 90) % 360);
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({
@@ -74,7 +79,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-screen-lg h-[80vh] flex flex-col">
+      <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col" : "max-w-screen-lg h-[80vh] flex flex-col"}>
         <div className="flex items-center justify-between py-2 border-b">
           <div className="flex items-center gap-4">
             <Button
@@ -110,6 +115,14 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               title="Rotate 90°"
             >
               <RotateCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              className="p-2"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
           </div>
           <div className="w-24"></div>
