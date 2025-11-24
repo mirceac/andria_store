@@ -594,7 +594,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex relative overflow-x-hidden ml-16" style={{ width: 'calc(100vw - 64px)' }}>
+    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
       {/* Mobile Header */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">

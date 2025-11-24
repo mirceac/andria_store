@@ -2,6 +2,7 @@ import * as z from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -115,6 +116,7 @@ type SortConfig = {
 export default function AdminProductsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [selectedProduct, setSelectedProduct] = useState<SelectProduct | null>(
     null
   );
@@ -1055,9 +1057,9 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="container mx-auto ml-16 py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Products Management</h1>
+    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 py-10'}`}>
+      <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold`}>Products Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button>

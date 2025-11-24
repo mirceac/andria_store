@@ -112,7 +112,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] grid md:grid-cols-2">
+    <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex md:grid md:grid-cols-2">
       <div className="hidden md:block relative">
         <img
           src="https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4"
@@ -130,21 +130,21 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-8">
-        <Card className="w-full max-w-md p-6">
+      <div className="flex items-center justify-center w-full p-4 sm:p-6 md:p-8">
+        <Card className="w-full max-w-md p-5 sm:p-6">
           <Tabs defaultValue="login">
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login">
+            <TabsContent value="login" className="mt-0">
               <Form {...loginForm}>
                 <form
                   onSubmit={loginForm.handleSubmit((data) =>
                     loginMutation.mutate(data)
                   )}
-                  className="space-y-4"
+                  className="space-y-3 sm:space-y-4"
                 >
                   <FormField
                     control={loginForm.control}
@@ -188,8 +188,8 @@ export default function AuthPage() {
                   </Button>
                   <Button
                     type="button"
-                    variant="link"
-                    className="w-full text-sm text-white hover:text-white/80"
+                    variant="outline"
+                    className="w-full"
                     onClick={() => setResetDialogOpen(true)}
                   >
                     Forgot password?
@@ -198,13 +198,13 @@ export default function AuthPage() {
               </Form>
             </TabsContent>
 
-            <TabsContent value="register">
+            <TabsContent value="register" className="mt-0">
               <Form {...registerForm}>
                 <form
                   onSubmit={registerForm.handleSubmit((data) =>
                     registerMutation.mutate(data)
                   )}
-                  className="space-y-4"
+                  className="space-y-3 sm:space-y-4"
                 >
                   <FormField
                     control={registerForm.control}
@@ -254,10 +254,10 @@ export default function AuthPage() {
       </div>
 
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {resetStep === 'request'
                 ? 'Enter your username below. A reset token will be generated and displayed on the next screen.'
                 : 'Copy the reset token from the blue box below and paste it into the Reset Token field, then enter your new password.'}
@@ -270,7 +270,7 @@ export default function AuthPage() {
                 onSubmit={resetRequestForm.handleSubmit((data) =>
                   resetRequestMutation.mutate(data)
                 )}
-                className="space-y-4"
+                className="space-y-3 sm:space-y-4"
               >
                 <FormField
                   control={resetRequestForm.control}
@@ -319,10 +319,10 @@ export default function AuthPage() {
                     newPassword: data.newPassword,
                   });
                 })}
-                className="space-y-4"
+                className="space-y-3 sm:space-y-4"
               >
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-900 mb-1">Your Reset Token (Copy This):</p>
+                <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs sm:text-sm font-semibold text-blue-900 mb-1">Your Reset Token (Copy This):</p>
                   <p className="text-xs text-blue-700 mb-2">This token was generated for your username. Copy it and paste it in the field below.</p>
                   <div className="bg-white p-2 rounded border border-blue-200">
                     <p className="text-xs font-mono break-all text-slate-700 select-all">{resetToken}</p>

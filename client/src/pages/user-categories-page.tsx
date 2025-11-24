@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,6 +55,7 @@ export default function UserCategoriesPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const isMobile = useIsMobile();
 
   // Fetch only the user's own categories
   const { data: categories = [], isLoading } = useQuery<Category[]>({
@@ -231,7 +233,7 @@ export default function UserCategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className={`container mx-auto ${isMobile ? 'p-2' : 'p-6'}`}>
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -240,7 +242,7 @@ export default function UserCategoriesPage() {
   }
 
   return (
-    <div className="container mx-auto ml-16 p-6">
+    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 p-6'}`}>
       <div className="mb-6">
         <Link href="/profile">
           <Button variant="ghost" className="mb-4">

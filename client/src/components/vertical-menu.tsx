@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   ShoppingCart,
@@ -41,6 +42,7 @@ type CategoryWithChildren = Category & {
 export default function VerticalMenu() {
   const { user } = useAuth();
   const { items } = useCart();
+  const isMobile = useIsMobile();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const [location, setLocation] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
@@ -48,6 +50,11 @@ export default function VerticalMenu() {
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  // Hide vertical menu on mobile
+  if (isMobile) {
+    return null;
+  }
 
   // Build category tree
   const buildCategoryTree = (cats: Category[]): CategoryWithChildren[] => {

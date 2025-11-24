@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectOrder } from "@db/schema";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Table,
   TableBody,
@@ -64,6 +65,7 @@ interface OrderWithDetails extends SelectOrder {
 export default function AdminOrdersPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { data: orders, isLoading } = useQuery<OrderWithDetails[]>({
     queryKey: ["/api/admin/orders"],
     staleTime: 30000, // Consider data fresh for 30 seconds
@@ -202,8 +204,8 @@ export default function AdminOrdersPage() {
 
   if (!user?.is_admin) {
     return (
-      <div className="container mx-auto ml-16 px-4 py-8">
-        <h1 className="text-2xl font-bold">Unauthorized Access</h1>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Unauthorized Access</h1>
         <p className="text-muted-foreground mt-2">
           You do not have permission to view this page.
         </p>
@@ -213,7 +215,7 @@ export default function AdminOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ml-16">
+      <div className={`flex items-center justify-center min-h-screen ${isMobile ? '' : 'ml-16'}`}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -221,8 +223,8 @@ export default function AdminOrdersPage() {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="container mx-auto ml-16 px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Manage Orders</h1>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold mb-8`}>Manage Orders</h1>
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
@@ -402,8 +404,8 @@ export default function AdminOrdersPage() {
 
   return (
     <>
-      <div className="container mx-auto ml-16 px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Manage Orders</h1>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold mb-8`}>Manage Orders</h1>
 
         <div className="space-y-6">
           {processedOrders.map((order) => (

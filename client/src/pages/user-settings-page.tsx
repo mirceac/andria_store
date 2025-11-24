@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -78,6 +79,7 @@ interface UserProfile {
 export default function UserSettingsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
@@ -188,7 +190,7 @@ export default function UserSettingsPage() {
     : "U";
 
   return (
-    <div className="container mx-auto ml-16 py-8 px-4 max-w-4xl">
+    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'} max-w-4xl`}>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">

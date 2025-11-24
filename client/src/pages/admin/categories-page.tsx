@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -51,6 +52,7 @@ export default function CategoriesPage() {
   });
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const isMobile = useIsMobile();
 
   // Fetch categories using React Query
   const { data: categories = [], isLoading } = useQuery<Category[]>({
@@ -216,9 +218,9 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="container mx-auto ml-16 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Category Management</h1>
+    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 p-6'}`}>
+      <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-6`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Category Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog}>

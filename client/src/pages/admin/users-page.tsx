@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2, User, Mail, Shield, Calendar } from "lucide-react";
 import {
   Table,
@@ -25,6 +26,7 @@ type User = {
 
 export default function AdminUsersPage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -33,8 +35,8 @@ export default function AdminUsersPage() {
 
   if (!user?.is_admin) {
     return (
-      <div className="container mx-auto ml-16 px-4 py-8">
-        <h1 className="text-2xl font-bold">Unauthorized Access</h1>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Unauthorized Access</h1>
         <p className="text-muted-foreground mt-2">
           You do not have permission to view this page.
         </p>
@@ -44,7 +46,7 @@ export default function AdminUsersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ml-16">
+      <div className={`flex items-center justify-center min-h-screen ${isMobile ? '' : 'ml-16'}`}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -66,10 +68,10 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="container mx-auto ml-16 py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
+    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 py-8 px-4'}`}>
+      <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
         <div>
-          <h1 className="text-3xl font-bold">Users Management</h1>
+          <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold`}>Users Management</h1>
           <p className="text-muted-foreground mt-2">
             Total Users: {users?.length || 0}
           </p>
