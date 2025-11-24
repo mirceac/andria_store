@@ -391,7 +391,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4 max-w-full' : 'ml-16 px-4 py-8'} overflow-x-hidden w-full`}>
+      <div className={`container mx-auto ${isMobile ? 'px-1 py-3 max-w-full' : 'ml-16 px-4 py-8'} overflow-x-hidden w-full`}>
         <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-6`}>My Orders</h1>
         <div className="space-y-6 w-full overflow-x-hidden">
           {processedOrders.map((order) => (

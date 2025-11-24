@@ -722,7 +722,7 @@ export default function HomePage() {
       {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
         "flex-1 max-w-full",
-        isMobile ? "pt-20 px-2 py-4" : "p-4"
+        isMobile ? "pt-20 px-1 py-3" : "p-4"
       )}>
         <div>
           {/* Breadcrumb Navigation */}

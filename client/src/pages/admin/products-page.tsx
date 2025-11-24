@@ -1057,7 +1057,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 py-10'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-10'}`}>
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
         <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold`}>Products Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>

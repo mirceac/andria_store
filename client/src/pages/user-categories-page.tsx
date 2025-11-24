@@ -242,7 +242,7 @@ export default function UserCategoriesPage() {
   }
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 p-6'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 p-6'}`}>
       <div className="mb-6">
         <Link href="/profile">
           <Button variant="ghost" className="mb-4">

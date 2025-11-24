@@ -190,7 +190,7 @@ export default function UserSettingsPage() {
     : "U";
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'} max-w-4xl`}>
+    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 px-4 py-8'} max-w-4xl`}>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">

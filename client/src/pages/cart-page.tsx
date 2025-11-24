@@ -191,7 +191,7 @@ export default function CartPage() {
 
   return (
     <div 
-      className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 py-8'}`}
+      className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-8'}`}
       onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
     >
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-6`}>

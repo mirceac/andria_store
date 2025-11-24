@@ -218,7 +218,7 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 p-6'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 p-6'}`}>
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-6`}>
         <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Category Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

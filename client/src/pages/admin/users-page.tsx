@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 py-8 px-4'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-8 px-4'}`}>
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
         <div>
           <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold`}>Users Management</h1>
