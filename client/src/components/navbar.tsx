@@ -64,26 +64,26 @@ export default function Navbar() {
 
   return (
     <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50">
-      <div className="w-full px-2 h-16 flex items-center justify-between gap-4">
+      <div className="w-full px-1 sm:px-2 h-16 flex items-center justify-between gap-1 sm:gap-4 overflow-x-hidden">
         {/* Left Side: Menu Button (on home page) + Gallery Logo */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
           {/* Menu Button - only shown on home page */}
           {window.location.pathname === "/" && (
             <Button
               variant="ghost"
-              className={`h-10 w-10 p-0 ${buttonClasses}`}
+              className={`h-8 w-8 sm:h-10 sm:w-10 p-0 ${buttonClasses}`}
               onClick={() => {
                 // This will be handled by the home page component
                 window.dispatchEvent(new CustomEvent('toggleSidebar'));
               }}
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           )}
           
-          <Link href="/" className="flex items-center space-x-2 group px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-              <Palette className="h-6 w-6 text-white" />
+          <Link href="/" className="flex items-center space-x-2 group px-1 sm:px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex-shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+              <Palette className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="hidden sm:flex flex-col">
               <h1 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Gallery</h1>
@@ -93,7 +93,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink min-w-0">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -159,14 +159,14 @@ export default function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200">
+                <button className="flex items-center gap-1 sm:gap-2 p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 flex-shrink-0">
                   <Avatar className="h-8 w-8 ring-2 ring-slate-200 hover:ring-blue-300 transition-all">
                     <AvatarImage src={profile?.picture || undefined} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:inline text-sm font-medium text-slate-700">
+                  <span className="hidden lg:inline text-sm font-medium text-slate-700 truncate max-w-[100px]">
                     {profile?.first_name || user.username}
                   </span>
                 </button>
@@ -219,9 +219,9 @@ export default function Navbar() {
             </DropdownMenu>
           ) : (
             <Link href="/auth">
-              <Button variant="ghost" className={buttonClasses}>
+              <Button variant="ghost" className={`${buttonClasses} flex-shrink-0`}>
                 <User className="mr-2 h-4 w-4" />
-                <span>Sign In</span>
+                <span className="hidden sm:inline">Sign In</span>
               </Button>
             </Link>
           )}
