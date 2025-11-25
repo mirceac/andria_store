@@ -93,9 +93,9 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink min-w-0 max-w-full overflow-hidden">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink min-w-0">
           {/* Search Bar */}
-          <div className="relative w-64 hidden md:block">
+          <div className="relative w-64 hidden md:block flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -106,7 +106,7 @@ export default function Navbar() {
             />
           </div>
           <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-            <SelectTrigger className="w-[140px] bg-slate-50 hidden md:flex">
+            <SelectTrigger className="w-[140px] bg-slate-50 hidden md:flex flex-shrink-0">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>

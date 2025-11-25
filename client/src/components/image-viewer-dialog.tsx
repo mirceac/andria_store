@@ -153,6 +153,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden"
           ref={containerRef}
+          style={{ touchAction: 'none' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -185,11 +186,12 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
             <img
               src={url}
               alt="Viewer"
-              className="select-none pointer-events-none"
+              className="select-none"
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
+                pointerEvents: 'none',
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
                 transformOrigin: 'center center',
                 transition: isDragging ? 'none' : 'transform 0.2s ease-out'

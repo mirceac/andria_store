@@ -299,6 +299,7 @@ export function PDFViewerDialog({
         <div 
           ref={containerRef}
           className="flex-1 w-full h-full min-h-0 overflow-hidden cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

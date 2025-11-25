@@ -239,6 +239,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden relative"
           ref={containerRef}
+          style={{ touchAction: 'none' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
