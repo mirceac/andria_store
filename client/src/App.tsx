@@ -20,6 +20,7 @@ import UserSettingsPage from "@/pages/user-settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
 import VerticalMenu from "./components/vertical-menu";
+import { InstallPWAPrompt } from "./components/install-pwa-prompt";
 import { initPdfWorker } from '@/lib/pdf-worker';
 import { SearchProvider } from '@/contexts/search-context';
 import { SortProvider } from '@/contexts/sort-context';
@@ -62,6 +63,7 @@ function App() {
           <AuthProvider>
             <Router />
             <Toaster />
+            <InstallPWAPrompt />
           </AuthProvider>
         </QueryClientProvider>
       </SortProvider>
