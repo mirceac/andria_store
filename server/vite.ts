@@ -81,6 +81,19 @@ export function serveStatic(app: Express) {
 
   log(`Serving static files from ${distPath}`);
   
+  // Serve manifest.json with correct MIME type
+  app.get('/manifest.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.sendFile(path.resolve(distPath, 'manifest.json'));
+  });
+
+  // Serve service worker with correct MIME type
+  app.get('/service-worker.js', (_req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.sendFile(path.resolve(distPath, 'service-worker.js'));
+  });
+
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist

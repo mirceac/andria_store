@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Check - Gallery</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .check-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+        .check-item.pass {
+            border-left-color: #4caf50;
+        }
+        .check-item.fail {
+            border-left-color: #f44336;
+        }
+        .check-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .check-item code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .status.pass { color: #4caf50; }
+        .status.fail { color: #f44336; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 20px 0;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <h1>PWA Installation Check</h1>
+    <p>This page will help diagnose why the install prompt isn't appearing.</p>
+    
+    <div id="checks"></div>
+    
+    <button onclick="checkAll()">Run Diagnostics</button>
+    <button onclick="tryInstall()" id="installBtn" style="display:none;">Try Install</button>
+    
+    <script>
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'block';
+        });
+        
+        async function tryInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                addCheck('Install Prompt', outcome === 'accepted' ? 'User accepted' : 'User dismissed', outcome === 'accepted');
+                deferredPrompt = null;
+                document.getElementById('installBtn').style.display = 'none';
+            }
+        }
+        
+        function addCheck(name, message, pass) {
+            const div = document.createElement('div');
+            div.className = 'check-item ' + (pass ? 'pass' : 'fail');
+            div.innerHTML = `
+                <h3>${name} <span class="status ${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'}</span></h3>
+                <div>${message}</div>
+            `;
+            document.getElementById('checks').appendChild(div);
+        }
+        
+        async function checkAll() {
+            document.getElementById('checks').innerHTML = '';
+            
+            // Check HTTPS
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+            addCheck('HTTPS', 
+                isSecure ? 'Site is served over HTTPS ✓' : 'Site must be served over HTTPS',
+                isSecure
+            );
+            
+            // Check Service Worker
+            const hasSW = 'serviceWorker' in navigator;
+            addCheck('Service Worker Support', 
+                hasSW ? 'Browser supports service workers' : 'Browser does not support service workers',
+                hasSW
+            );
+            
+            if (hasSW) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    addCheck('Service Worker Registration',
+                        registration ? `Registered at scope: ${registration.scope}` : 'Not registered yet',
+                        !!registration
+                    );
+                    
+                    if (registration && registration.active) {
+                        addCheck('Service Worker Active',
+                            'Service worker is active and running',
+                            true
+                        );
+                    }
+                } catch (e) {
+                    addCheck('Service Worker Check', `Error: ${e.message}`, false);
+                }
+            }
+            
+            // Check Manifest
+            try {
+                const response = await fetch('/manifest.json');
+                const manifest = await response.json();
+                addCheck('Manifest File',
+                    `Found: ${manifest.name || manifest.short_name}`,
+                    response.ok
+                );
+                
+                // Check manifest properties
+                const hasName = manifest.name || manifest.short_name;
+                addCheck('Manifest Name', hasName ? `Name: ${hasName}` : 'Missing name', !!hasName);
+                
+                const hasIcons = manifest.icons && manifest.icons.length > 0;
+                addCheck('Manifest Icons', 
+                    hasIcons ? `${manifest.icons.length} icons defined` : 'No icons defined',
+                    hasIcons
+                );
+                
+                const has192 = manifest.icons?.some(i => i.sizes === '192x192');
+                const has512 = manifest.icons?.some(i => i.sizes === '512x512');
+                addCheck('Required Icon Sizes',
+                    `192x192: ${has192 ? '✓' : '✗'}, 512x512: ${has512 ? '✓' : '✗'}`,
+                    has192 && has512
+                );
+                
+                addCheck('Start URL', manifest.start_url || 'Not defined', !!manifest.start_url);
+                addCheck('Display Mode', manifest.display || 'Not defined', !!manifest.display);
+                
+            } catch (e) {
+                addCheck('Manifest File', `Error loading: ${e.message}`, false);
+            }
+            
+            // Check if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                addCheck('Installation Status', 'App is already installed!', true);
+            }
+            
+            // Check beforeinstallprompt
+            setTimeout(() => {
+                if (deferredPrompt) {
+                    addCheck('Install Prompt', 'Install prompt is ready! Click "Try Install" button above.', true);
+                } else if (!window.matchMedia('(display-mode: standalone)').matches) {
+                    addCheck('Install Prompt', 
+                        'Install prompt not triggered. Common reasons: already installed, PWA criteria not met, or browser doesn\'t support it (Safari on iOS requires "Add to Home Screen" manually)',
+                        false
+                    );
+                }
+            }, 1000);
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', checkAll);
+    </script>
+</body>
+</html>
