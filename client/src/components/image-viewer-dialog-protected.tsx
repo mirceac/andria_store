@@ -94,15 +94,36 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
         x: e.touches[0].clientX - position.x,
         y: e.touches[0].clientY - position.y
       });
+    } else if (e.touches.length === 2) {
+      // Pinch to zoom
+      setIsDragging(false);
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      setDragStart({ x: distance, y: scale });
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && e.touches.length === 1) {
+    if (e.touches.length === 1 && isDragging) {
       setPosition({
         x: e.touches[0].clientX - dragStart.x,
         y: e.touches[0].clientY - dragStart.y
       });
+    } else if (e.touches.length === 2) {
+      // Pinch to zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      const newScale = Math.min(Math.max((distance / dragStart.x) * dragStart.y, 0.25), 5);
+      setScale(newScale);
     }
   };
 
@@ -193,7 +214,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={resetView}
               title="Reset view"
             >
@@ -201,25 +222,25 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
             </Button>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleZoomOut}
               disabled={scale <= 0.25}
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="w-16 text-center">
+            <span className="w-16 text-center hidden md:block">
               {Math.round(scale * 100)}%
             </span>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleZoomIn}
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleRotate}
               title="Rotate 90°"
             >

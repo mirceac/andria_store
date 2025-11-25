@@ -130,21 +130,43 @@ export function PDFViewerDialog({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (error || e.touches.length !== 1) return;
-    setIsDragging(true);
-    setStartPosition({
-      x: e.touches[0].clientX - position.x,
-      y: e.touches[0].clientY - position.y
-    });
+    if (error) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setStartPosition({
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      });
+    } else if (e.touches.length === 2) {
+      // Pinch to zoom
+      setIsDragging(false);
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      setStartPosition({ x: distance, y: scale });
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    
-    const newX = e.touches[0].clientX - startPosition.x;
-    const newY = e.touches[0].clientY - startPosition.y;
-    
-    setPosition({ x: newX, y: newY });
+    if (e.touches.length === 1 && isDragging) {
+      const newX = e.touches[0].clientX - startPosition.x;
+      const newY = e.touches[0].clientY - startPosition.y;
+      setPosition({ x: newX, y: newY });
+    } else if (e.touches.length === 2) {
+      // Pinch to zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      const newScale = Math.min(Math.max((distance / startPosition.x) * startPosition.y, 0.5), 3);
+      setScale(newScale);
+    }
   };
 
   const handleTouchEnd = () => {
@@ -247,7 +269,7 @@ export function PDFViewerDialog({
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={resetView}
               title="Reset view"
             >
@@ -255,19 +277,19 @@ export function PDFViewerDialog({
             </Button>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleZoomOut}
               disabled={scale <= 0.5}
               title="Zoom Out"
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="w-16 text-center">
+            <span className="w-16 text-center hidden md:block">
               {zoomPercentage}%
             </span>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleZoomIn}
               title="Zoom In"
             >
@@ -275,7 +297,7 @@ export function PDFViewerDialog({
             </Button>
             <Button
               variant="secondary"
-              className="p-2"
+              className="p-2 hidden md:block"
               onClick={handleRotate}
               title="Rotate 90°"
             >
