@@ -75,11 +75,34 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
     setIsDragging(false);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   if (!url) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col" : "max-w-screen-lg h-[80vh] flex flex-col"}>
+      <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col"} style={isFullscreen ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' } : {}}>
         <div className="flex items-center justify-between py-2 border-b">
           <div className="flex items-center gap-4">
             <Button
@@ -134,6 +157,9 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div 
             className="w-full h-full flex items-center justify-center bg-black/10 cursor-grab active:cursor-grabbing"

@@ -87,6 +87,29 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
     setIsDragging(false);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   // Copyright watermark overlay - static regardless of zoom level
   const getCopyrightOverlay = () => {
     // Fixed protection - same at all zoom levels
@@ -148,8 +171,17 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col select-none" : "max-w-screen-lg h-[80vh] flex flex-col select-none"}
-        style={{
+        className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col select-none p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col select-none"}
+        style={isFullscreen ? {
+          width: '100vw',
+          height: '100vh',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+        } : {
           userSelect: 'none',
           WebkitUserSelect: 'none',
           MozUserSelect: 'none',
@@ -211,6 +243,9 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div 
             className="w-full h-full flex items-center justify-center bg-black/10 relative cursor-grab active:cursor-grabbing"

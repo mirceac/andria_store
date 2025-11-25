@@ -112,7 +112,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex md:grid md:grid-cols-2">
+    <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex md:grid md:grid-cols-2 w-full max-w-full overflow-hidden">
       <div className="hidden md:block relative">
         <img
           src="https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4"
@@ -130,8 +130,8 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center w-full p-4 sm:p-6 md:p-8">
-        <Card className="w-full max-w-md p-5 sm:p-6">
+      <div className="flex items-center justify-center w-full max-w-full p-4 sm:p-6 md:p-8 overflow-hidden">
+        <Card className="w-full max-w-md p-5 sm:p-6 overflow-hidden">
           <Tabs defaultValue="login">
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>

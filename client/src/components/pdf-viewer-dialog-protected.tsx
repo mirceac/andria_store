@@ -146,6 +146,28 @@ export function PDFViewerDialogProtected({
     setIsDragging(false);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (error || e.touches.length !== 1) return;
+    setIsDragging(true);
+    setStartPosition({
+      x: e.touches[0].clientX - position.x,
+      y: e.touches[0].clientY - position.y
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    
+    const newX = e.touches[0].clientX - startPosition.x;
+    const newY = e.touches[0].clientY - startPosition.y;
+    
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   const handleRetry = () => {
     setIsLoading(true);
     setError(null);
@@ -294,8 +316,17 @@ export function PDFViewerDialogProtected({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col select-none" : "max-w-screen-lg h-[80vh] flex flex-col select-none"}
-        style={{
+        className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col select-none p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col select-none"}
+        style={isFullscreen ? {
+          width: '100vw',
+          height: '100vh',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+        } : {
           userSelect: 'none',
           WebkitUserSelect: 'none',
           MozUserSelect: 'none',
@@ -365,6 +396,9 @@ export function PDFViewerDialogProtected({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div className="w-full h-full flex items-center justify-center bg-black/10 relative">
             {isLoading && !error && (

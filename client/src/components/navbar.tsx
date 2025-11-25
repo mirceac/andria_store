@@ -63,8 +63,8 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50">
-      <div className="w-full px-1 sm:px-2 h-16 flex items-center justify-between gap-1 sm:gap-4 overflow-x-hidden">
+    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full max-w-full overflow-hidden">
+      <div className="w-full max-w-full px-1 sm:px-2 h-16 flex items-center justify-between gap-1 sm:gap-4 overflow-hidden">
         {/* Left Side: Menu Button (on home page) + Gallery Logo */}
         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
           {/* Menu Button - only shown on home page */}
@@ -93,7 +93,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink min-w-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink min-w-0 max-w-full overflow-hidden">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
