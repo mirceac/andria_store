@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   ShoppingCart,
@@ -42,6 +43,7 @@ export default function Navbar() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const { search, setSearch } = useSearch();
   const { sort, setSort } = useSort();
+  const isMobile = useIsMobile();
 
   // Fetch user profile for picture
   const { data: profile } = useQuery<{
@@ -61,6 +63,12 @@ export default function Navbar() {
   const userInitials = user
     ? `${profile?.first_name?.[0] || user.username[0]}${profile?.last_name?.[0] || ""}`.toUpperCase()
     : "U";
+
+  // Show navbar on mobile for admin pages
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
+  if (isMobile && !isAdminRoute) {
+    return null;
+  }
 
   return (
     <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
