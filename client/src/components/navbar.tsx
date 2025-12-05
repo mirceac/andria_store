@@ -120,7 +120,7 @@ export default function Navbar() {
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0`}>
+                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0 hidden md:flex`}>
                   <Box className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -183,6 +183,40 @@ export default function Navbar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                
+                {/* Admin menu items - shown on mobile when admin */}
+                {user.is_admin && (
+                  <>
+                    <div className="md:hidden">
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/products" className="flex items-center cursor-pointer">
+                          <Box className="mr-2 h-4 w-4" />
+                          <span>Admin: Products</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/categories" className="flex items-center cursor-pointer">
+                          <LayoutGrid className="mr-2 h-4 w-4" />
+                          <span>Admin: Categories</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/users" className="flex items-center cursor-pointer">
+                          <Users className="mr-2 h-4 w-4" />
+                          <span>Admin: Users</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/orders" className="flex items-center cursor-pointer">
+                          <ClipboardList className="mr-2 h-4 w-4" />
+                          <span>Admin: Orders</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </div>
+                  </>
+                )}
+                
                 <DropdownMenuItem asChild>
                   <Link href="/profile/settings" className="flex items-center cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
