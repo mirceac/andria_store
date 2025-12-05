@@ -264,9 +264,9 @@ export function PDFViewerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col"} style={isFullscreen ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' } : {}}>
         {/* Title and controls row */}
-        <div className="flex items-center justify-between py-2 border-b">
+        <div className="flex items-center justify-between py-2 px-2 border-b bg-white z-50 relative">
           {/* Left: Controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Button
               variant="secondary"
               className="p-2 hidden md:block"
@@ -313,10 +313,18 @@ export function PDFViewerDialog({
             </Button>
           </div>
           
-          {/* Right: Title */}
-          <div className="w-24">
-            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
-          </div>
+          {/* Right: Close button */}
+          <Button
+            variant="ghost"
+            className="p-2"
+            onClick={() => onOpenChange(false)}
+            title="Close"
+          >
+            <span className="sr-only">Close</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </Button>
         </div>        {/* PDF Container - flex-grow to take up available space */}
         <div 
           ref={containerRef}

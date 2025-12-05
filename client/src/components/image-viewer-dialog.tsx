@@ -124,8 +124,8 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col"} style={isFullscreen ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' } : {}}>
-        <div className="flex items-center justify-between py-2 border-b">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between py-2 px-2 border-b bg-white z-50 relative">
+          <div className="flex items-center gap-2 md:gap-4">
             <Button
               variant="secondary"
               className="p-2 hidden md:block"
@@ -169,7 +169,17 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
           </div>
-          <div className="w-24"></div>
+          <Button
+            variant="ghost"
+            className="p-2"
+            onClick={() => onOpenChange(false)}
+            title="Close"
+          >
+            <span className="sr-only">Close</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </Button>
         </div>
         <div 
           className="flex-1 w-full h-full min-h-0 overflow-hidden"
