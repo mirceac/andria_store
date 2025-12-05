@@ -64,9 +64,9 @@ export default function Navbar() {
 
   return (
     <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-screen max-w-[100vw] overflow-x-hidden">
-      <div className="w-full max-w-[100vw] px-0.5 sm:px-2 h-16 flex items-center justify-between gap-0.5 sm:gap-4 overflow-x-hidden">
+      <div className="w-full max-w-[100vw] px-0.5 sm:px-2 h-16 flex items-center gap-0.5 sm:gap-4 overflow-x-hidden">
         {/* Left Side: Menu Button (on home page) + Gallery Logo */}
-        <div className="flex items-center gap-0.5 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-3 flex-shrink-0 flex-1 min-w-0">
           {/* Menu Button - only shown on home page */}
           {window.location.pathname === "/" && (
             <Button
@@ -93,7 +93,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile */}
-        <div className="flex items-center gap-0.5 sm:gap-2 flex-shrink-0 min-w-0">
+        <div className="flex items-center gap-0.5 sm:gap-2 flex-shrink-0 ml-auto">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -120,7 +120,7 @@ export default function Navbar() {
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0 hidden md:flex`}>
+                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0`}>
                   <Box className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -183,40 +183,6 @@ export default function Navbar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                
-                {/* Admin menu items - shown on mobile when admin */}
-                {user.is_admin && (
-                  <>
-                    <div className="md:hidden">
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/products" className="flex items-center cursor-pointer">
-                          <Box className="mr-2 h-4 w-4" />
-                          <span>Admin: Products</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/categories" className="flex items-center cursor-pointer">
-                          <LayoutGrid className="mr-2 h-4 w-4" />
-                          <span>Admin: Categories</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/users" className="flex items-center cursor-pointer">
-                          <Users className="mr-2 h-4 w-4" />
-                          <span>Admin: Users</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/orders" className="flex items-center cursor-pointer">
-                          <ClipboardList className="mr-2 h-4 w-4" />
-                          <span>Admin: Orders</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </div>
-                  </>
-                )}
-                
                 <DropdownMenuItem asChild>
                   <Link href="/profile/settings" className="flex items-center cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
