@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SelectProduct } from "@db/schema";
-import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown, Menu, X, User, Package } from "lucide-react";
+import { FileText, FileImage, Loader2, XCircle, ShoppingCart, Filter, ChevronRight, ChevronDown, Menu, X, User, Package, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { ImageThumbnail } from "@/components/image-thumbnail";
@@ -636,7 +636,7 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 px-3 h-10 min-w-[90px]"
+                className="h-10 w-10 p-0 flex-shrink-0"
                 onClick={() => {
                   if (user) {
                     logoutMutation.mutate(undefined, {
@@ -648,11 +648,10 @@ export default function HomePage() {
                 }}
                 title={user ? "Sign Out" : "Sign In"}
               >
-                <User className="h-5 w-5" />
                 {user ? (
-                  <span className="font-medium text-slate-700">{user.username} (Sign Out)</span>
+                  <LogOut className="h-5 w-5" />
                 ) : (
-                  <span className="font-medium text-slate-700">Sign In</span>
+                  <User className="h-5 w-5" />
                 )}
               </Button>
             </div>

@@ -63,8 +63,8 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full max-w-full overflow-hidden">
-      <div className="w-full max-w-full px-1 sm:px-2 h-16 flex items-center justify-between gap-1 sm:gap-4 overflow-hidden">
+    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-screen max-w-[100vw] overflow-x-hidden">
+      <div className="w-full max-w-[100vw] px-1 sm:px-2 h-16 flex items-center justify-between gap-1 sm:gap-4 overflow-x-hidden">
         {/* Left Side: Menu Button (on home page) + Gallery Logo */}
         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
           {/* Menu Button - only shown on home page */}
@@ -120,12 +120,11 @@ export default function Navbar() {
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={`font-medium ${buttonClasses}`}>
-                  <Box className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Admin</span>
+                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0`}>
+                  <Box className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-56 max-w-sm">
                 <DropdownMenuItem asChild>
                   <Link href="/admin/products" className="flex items-center text-slate-600 hover:text-slate-700">
                     <Box className="mr-2 h-4 w-4" />
@@ -159,19 +158,16 @@ export default function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 sm:gap-2 p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 flex-shrink-0 min-w-0">
+                <button className="p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 flex-shrink-0">
                   <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-slate-200 hover:ring-blue-300 transition-all">
                     <AvatarImage src={profile?.picture || undefined} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden lg:inline text-sm font-medium text-slate-700 truncate max-w-[80px]">
-                    {profile?.first_name || user.username}
-                  </span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-56 max-w-sm">
                 <div className="flex items-center gap-2 p-2">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={profile?.picture || undefined} />
@@ -219,9 +215,8 @@ export default function Navbar() {
             </DropdownMenu>
           ) : (
             <Link href="/auth">
-              <Button variant="ghost" className={`${buttonClasses} flex-shrink-0`}>
-                <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Sign In</span>
+              <Button variant="ghost" className={`${buttonClasses} flex-shrink-0 h-10 w-10 p-0`}>
+                <User className="h-5 w-5" />
               </Button>
             </Link>
           )}

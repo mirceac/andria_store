@@ -31,7 +31,7 @@ initPdfWorker();
 
 function Router() {
   return (
-    <div style={{ overflowX: 'hidden', width: '100%', minHeight: '100vh' }}>
+    <div className="overflow-x-hidden w-full max-w-[100vw] min-h-screen">
       <Navbar />
       <VerticalMenu />
       <Switch>
