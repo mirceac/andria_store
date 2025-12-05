@@ -153,8 +153,6 @@ export default function Navbar() {
             </DropdownMenu>
           )}
 
-          <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block" />
-
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

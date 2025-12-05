@@ -609,7 +609,6 @@ export default function HomePage() {
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <h1 className="text-lg font-semibold text-gray-900 mx-2">Store</h1>
             
             {/* Navigation buttons */}
             <div className="flex items-center gap-1 flex-shrink-0">
