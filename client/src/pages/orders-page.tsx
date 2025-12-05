@@ -15,10 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, XCircle, Download, FileText, FileImage } from "lucide-react";
+import { Loader2, Package, XCircle, Download, FileText, FileImage, ShoppingCart, User, LogOut, Menu, X, Box, LayoutGrid, Users, ClipboardList } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
@@ -29,6 +36,9 @@ import { ImageViewerDialog } from "@/components/image-viewer-dialog";
 import { ExternalUrlThumbnail } from "@/components/external-url-thumbnail";
 import { PDFViewerDialog } from "@/components/pdf-viewer-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/use-cart";
+import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 
 interface OrderItem {
   id: number;
@@ -54,6 +64,9 @@ export default function OrdersPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { items: cartItems } = useCart();
+  const [, setLocation] = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: orders, isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ["/api/orders", user?.id],
     enabled: !!user,
@@ -188,22 +201,247 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ml-16">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+        {/* Mobile Header */}
+        {isMobile && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(!sidebarOpen);
+                }}
+                className="h-10 w-10 p-0 flex-shrink-0"
+              >
+                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+              
+              {/* Navigation buttons */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/cart")}
+                  className="h-10 w-10 p-0 relative flex-shrink-0"
+                  title="Cart"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/orders")}
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                  title="Orders"
+                >
+                  <Package className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                  onClick={() => {
+                    if (user) {
+                      // Already on orders page, do nothing
+                    } else {
+                      setLocation("/auth");
+                    }
+                  }}
+                  title={user ? "Sign Out" : "Sign In"}
+                >
+                  {user ? (
+                    <LogOut className="h-5 w-5" />
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar Overlay - Shows when sidebar is open */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
+        <div className={cn(
+          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+                Categories
+              </h2>
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(false);
+                }}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-1">
+              <div
+                className={cn(
+                  "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                  "hover:bg-gray-50 active:bg-gray-100",
+                  "bg-indigo-50 border border-indigo-200 shadow-sm"
+                )}
+                onClick={() => setLocation("/")}
+              >
+                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                  All Products
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 max-w-full px-1 py-3">
+          <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!orders || orders.length === 0) {
     return (
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
-        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
-        <div className="text-center py-12">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
-          <p className="text-muted-foreground">
-            Your order history will appear here once you make a purchase
-          </p>
+      <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+        {/* Mobile Header */}
+        {isMobile && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(!sidebarOpen);
+                }}
+                className="h-10 w-10 p-0 flex-shrink-0"
+              >
+                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+              
+              {/* Navigation buttons */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/cart")}
+                  className="h-10 w-10 p-0 relative flex-shrink-0"
+                  title="Cart"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/orders")}
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                  title="Orders"
+                >
+                  <Package className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                  onClick={() => {
+                    if (user) {
+                      // Already on orders page, do nothing
+                    } else {
+                      setLocation("/auth");
+                    }
+                  }}
+                  title={user ? "Sign Out" : "Sign In"}
+                >
+                  {user ? (
+                    <LogOut className="h-5 w-5" />
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar Overlay - Shows when sidebar is open */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
+        <div className={cn(
+          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+                Categories
+              </h2>
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(false);
+                }}
+                className="h-8 w-8 p-0 flex-shrink-0"
+                title="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-1">
+              <div
+                className={cn(
+                  "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                  "hover:bg-gray-50 active:bg-gray-100",
+                  "bg-indigo-50 border border-indigo-200 shadow-sm"
+                )}
+                onClick={() => setLocation("/")}
+              >
+                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                  All Products
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 max-w-full px-1 py-3">
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
+            <p className="text-muted-foreground">
+              Your order history will appear here once you make a purchase
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -390,8 +628,153 @@ export default function OrdersPage() {
   };
 
   return (
-    <>
-      <div className={`container mx-auto ${isMobile ? 'px-1 py-3 max-w-full' : 'ml-16 px-4 py-8'} overflow-x-hidden w-full`}>
+    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(!sidebarOpen);
+              }}
+              className="h-10 w-10 p-0 flex-shrink-0"
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/cart")}
+                className="h-10 w-10 p-0 relative flex-shrink-0"
+                title="Cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/orders")}
+                className="h-10 w-10 p-0 flex-shrink-0"
+                title="Orders"
+              >
+                <Package className="h-5 w-5" />
+              </Button>
+              {user?.is_admin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-10 w-10 p-0 flex-shrink-0">
+                      <Box className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] max-w-sm">
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/products" className="flex items-center text-slate-600 hover:text-slate-700">
+                        <Box className="mr-2 h-4 w-4" />
+                        <span>Products</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/categories" className="flex items-center text-slate-600 hover:text-slate-700">
+                        <LayoutGrid className="mr-2 h-4 w-4" />
+                        <span>Categories</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/users" className="flex items-center text-slate-600 hover:text-slate-700">
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>Users</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/orders" className="flex items-center text-slate-600 hover:text-slate-700">
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        <span>Orders</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <Button
+                variant="ghost"
+                className="h-10 w-10 p-0 flex-shrink-0"
+                onClick={() => {
+                  if (user) {
+                    // Already on orders page, do nothing
+                  } else {
+                    setLocation("/auth");
+                  }
+                }}
+                title={user ? "Sign Out" : "Sign In"}
+              >
+                {user ? (
+                  <LogOut className="h-5 w-5" />
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar Overlay - Shows when sidebar is open */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
+      <div className={cn(
+        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+              Categories
+            </h2>
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(false);
+              }}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-1">
+            <div
+              className={cn(
+                "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "bg-indigo-50 border border-indigo-200 shadow-sm"
+              )}
+              onClick={() => setLocation("/")}
+            >
+              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                All Products
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 max-w-full px-1 py-3 overflow-x-hidden">
         <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-6`}>My Orders</h1>
         <div className="space-y-6 w-full overflow-x-hidden">
           {processedOrders.map((order) => (
@@ -623,6 +1006,6 @@ export default function OrdersPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

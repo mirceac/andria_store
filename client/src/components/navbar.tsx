@@ -66,7 +66,7 @@ export default function Navbar() {
     <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
       <div className="w-full px-0.5 sm:px-2 h-16 flex items-center overflow-x-hidden relative">
         {/* Left Side: Menu Button (on home page) + Gallery Logo */}
-        <div className="flex items-center gap-0.5 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-3 flex-shrink-0 flex-1 md:flex-none">
           {/* Menu Button - only shown on home page */}
           {window.location.pathname === "/" && (
             <Button
@@ -93,7 +93,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile - Absolutely positioned to always stay in same place */}
-        <div className="absolute right-0.5 sm:right-2 flex items-center gap-0.5 sm:gap-2 flex-shrink-0">
+        <div className="absolute right-0.5 sm:right-2 flex items-center justify-end gap-0.5 sm:gap-2 flex-shrink-0">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -117,6 +117,7 @@ export default function Navbar() {
           </Select>
 
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
+          {!user?.is_admin && <div className="h-10 w-10 opacity-0 flex-shrink-0" />}
           {user?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

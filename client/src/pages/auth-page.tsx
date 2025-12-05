@@ -22,9 +22,13 @@ import {
 import { useForm } from "react-hook-form";
 import { InsertUser } from "@db/schema";
 import { Redirect } from "wouter";
-import { Loader2, LockKeyhole, User, KeyRound } from "lucide-react";
+import { Loader2, LockKeyhole, User, KeyRound, ShoppingCart, Package, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useCart } from "@/hooks/use-cart";
+import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -33,6 +37,10 @@ export default function AuthPage() {
   const [resetStep, setResetStep] = useState<'request' | 'reset'>('request');
   const [resetToken, setResetToken] = useState('');
   const [resetUsername, setResetUsername] = useState('');
+  const isMobile = useIsMobile();
+  const { items: cartItems } = useCart();
+  const [, setLocation] = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const loginForm = useForm<InsertUser>();
   const registerForm = useForm<InsertUser>();
@@ -112,26 +120,116 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex md:grid md:grid-cols-2 w-full max-w-full overflow-hidden">
-      <div className="hidden md:flex relative w-full h-full">
-        <img
-          src="https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4"
-          alt="Shopping"
-          className="absolute inset-0 w-full h-full object-cover"
+    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(!sidebarOpen);
+              }}
+              className="h-10 w-10 p-0 flex-shrink-0"
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/cart")}
+                className="h-10 w-10 p-0 relative flex-shrink-0"
+                title="Cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/orders")}
+                className="h-10 w-10 p-0 flex-shrink-0"
+                title="Orders"
+              >
+                <Package className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-10 w-10 p-0 flex-shrink-0"
+                onClick={() => {
+                  if (user) {
+                    // Already on auth page, do nothing
+                  } else {
+                    // Already on auth page
+                  }
+                }}
+                title="Sign In"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar Overlay - Shows when sidebar is open */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarOpen(false)}
         />
-        <div className="absolute inset-0 bg-primary/60 flex items-center justify-center p-12">
-          <div className="max-w-md text-primary-foreground">
-            <h1 className="text-4xl font-bold mb-4">Welcome to our Store</h1>
-            <p className="text-lg opacity-90">
-              Sign in to access your account or create a new one to start shopping
-              our premium selection of products.
-            </p>
+      )}
+
+      {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
+      <div className={cn(
+        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+              Categories
+            </h2>
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSidebarOpen(false);
+              }}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-1">
+            <div
+              className={cn(
+                "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+                "hover:bg-gray-50 active:bg-gray-100",
+                "bg-indigo-50 border border-indigo-200 shadow-sm"
+              )}
+              onClick={() => setLocation("/")}
+            >
+              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                All Products
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center w-full h-full p-4 sm:p-6 md:p-8 overflow-hidden">
-        <Card className="w-full max-w-md p-5 sm:p-6 overflow-hidden">
+      {/* Main Content */}
+      <div className="flex-1 max-w-full px-1 py-3">
+        <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex items-center justify-center w-full p-4 sm:p-6 md:p-8 overflow-hidden">
+          <Card className="w-full max-w-md p-5 sm:p-6 overflow-hidden">
           <Tabs defaultValue="login">
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -251,6 +349,7 @@ export default function AuthPage() {
             </TabsContent>
           </Tabs>
         </Card>
+        </div>
       </div>
 
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
