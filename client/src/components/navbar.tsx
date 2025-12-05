@@ -156,14 +156,14 @@ export default function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 rounded-lg hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 flex-shrink-0">
-                  <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-slate-200 hover:ring-blue-300 transition-all">
+                <Button variant="ghost" className={`${buttonClasses} flex-shrink-0 h-10 w-10 p-0`}>
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.picture || undefined} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                </button>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-56 max-w-sm">
                 <div className="flex items-center gap-2 p-2">
