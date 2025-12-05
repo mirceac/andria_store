@@ -121,9 +121,13 @@ export default function Navbar() {
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
           {!user?.is_admin && <div className="h-10 w-10 opacity-0 flex-shrink-0" />}
           {user?.is_admin && (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={`${buttonClasses} h-10 w-10 p-0`}>
+                <Button 
+                  variant="ghost" 
+                  className={`${buttonClasses} h-10 w-10 p-0`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Box className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -157,9 +161,13 @@ export default function Navbar() {
           )}
 
           {user ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={`${buttonClasses} flex-shrink-0 h-10 w-10 p-0`}>
+                <Button 
+                  variant="ghost" 
+                  className={`${buttonClasses} flex-shrink-0 h-10 w-10 p-0`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.picture || undefined} />
                     <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">

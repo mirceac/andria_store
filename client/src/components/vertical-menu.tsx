@@ -40,9 +40,9 @@ type CategoryWithChildren = Category & {
 };
 
 export default function VerticalMenu() {
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { items } = useCart();
-  const isMobile = useIsMobile();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const [location, setLocation] = useLocation();
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
@@ -52,7 +52,7 @@ export default function VerticalMenu() {
   });
 
   // Hide vertical menu on mobile
-  if (isMobile) {
+  if (isMobile === true) {
     return null;
   }
 

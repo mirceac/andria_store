@@ -595,68 +595,6 @@ export default function HomePage() {
 
   return (
     <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3 min-h-[60px]">
-            <Button
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSidebarOpen(!sidebarOpen);
-              }}
-              className="h-10 w-10 p-0 flex-shrink-0"
-            >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-            
-            {/* Navigation buttons */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                variant="ghost"
-                onClick={() => setLocation("/cart")}
-                className="h-10 w-10 p-0 relative flex-shrink-0"
-                title="Cart"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center leading-none">
-                    {cartItems.length}
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setLocation("/orders")}
-                className="h-10 w-10 p-0 flex-shrink-0"
-                title="Orders"
-              >
-                <Package className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10 w-10 p-0 flex-shrink-0"
-                onClick={() => {
-                  if (user) {
-                    logoutMutation.mutate(undefined, {
-                      onSuccess: () => setLocation("/auth"),
-                    });
-                  } else {
-                    setLocation("/auth");
-                  }
-                }}
-                title={user ? "Sign Out" : "Sign In"}
-              >
-                {user ? (
-                  <LogOut className="h-5 w-5" />
-                ) : (
-                  <User className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
@@ -671,7 +609,7 @@ export default function HomePage() {
         "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className={cn("p-4", isMobile && "pt-20")}> {/* Add top padding on mobile for header */}
+        <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
               Categories
