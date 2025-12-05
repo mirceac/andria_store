@@ -38,12 +38,12 @@ import {
 import { useQuery } from "@tanstack/react-query";
 
 export default function Navbar() {
+  const isMobile = useIsMobile();
   const { user, logoutMutation } = useAuth();
   const { items } = useCart();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const { search, setSearch } = useSearch();
   const { sort, setSort } = useSort();
-  const isMobile = useIsMobile();
 
   // Fetch user profile for picture
   const { data: profile } = useQuery<{
@@ -63,12 +63,6 @@ export default function Navbar() {
   const userInitials = user
     ? `${profile?.first_name?.[0] || user.username[0]}${profile?.last_name?.[0] || ""}`.toUpperCase()
     : "U";
-
-  // Show navbar on mobile for admin pages
-  const isAdminRoute = window.location.pathname.startsWith('/admin');
-  if (isMobile && !isAdminRoute) {
-    return null;
-  }
 
   return (
     <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
@@ -204,12 +198,26 @@ export default function Navbar() {
                     <span>My Products</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="md:hidden">
                   <Link href="/orders" className="flex items-center cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     <span>My Orders</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <Link href="/cart" className="flex items-center cursor-pointer">
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    <span>Cart {itemCount > 0 && `(${itemCount})`}</span>
+                  </Link>
+                </DropdownMenuItem>
+                {!user.is_admin && (
+                  <DropdownMenuItem asChild className="hidden md:flex">
+                    <Link href="/orders" className="flex items-center cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-red-600 cursor-pointer"
