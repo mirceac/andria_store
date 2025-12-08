@@ -58,16 +58,16 @@ export default function AuthPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      setResetToken(data.resetToken);
+      setResetToken(data.resetToken || '');
       setResetUsername(data.username);
       setResetStep('reset');
       
       const description = data.emailSent 
-        ? "A reset token has been sent to your email. You can also find it on the next screen."
-        : "IMPORTANT: Copy the token from the blue box and paste it in the Reset Token field.";
+        ? "A reset token has been sent to your email address. Please check your email."
+        : "Reset token generated. Please check with your administrator for the token.";
       
       toast({
-        title: "Reset Token Generated",
+        title: "Reset Token Sent",
         description,
         duration: 8000,
       });
@@ -302,8 +302,8 @@ export default function AuthPage() {
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               {resetStep === 'request'
-                ? 'Enter your username below. A reset token will be generated and displayed on the next screen.'
-                : 'Copy the reset token from the blue box below and paste it into the Reset Token field, then enter your new password.'}
+                ? 'Enter your username below. A reset token will be sent to your email address.'
+                : 'Enter the reset token from your email, then set your new password.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -364,16 +364,6 @@ export default function AuthPage() {
                 })}
                 className="space-y-3 sm:space-y-4"
               >
-                <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs sm:text-sm font-semibold text-blue-900 mb-1">Your Reset Token (Copy This):</p>
-                  <p className="text-xs text-blue-700 mb-2">This token was generated for your username. Copy it and paste it in the field below.</p>
-                  <div className="bg-white p-2 rounded border border-blue-200">
-                    <p className="text-xs font-mono break-all text-slate-700 select-all">{resetToken}</p>
-                  </div>
-                  {!import.meta.env.PROD && (
-                    <p className="text-xs text-blue-600 mt-2">💡 In a real system, this would be sent to your email instead.</p>
-                  )}
-                </div>
                 <FormField
                   control={resetPasswordForm.control}
                   name="resetToken"
@@ -384,7 +374,7 @@ export default function AuthPage() {
                         <Input 
                           {...field} 
                           required 
-                          placeholder="Paste the reset token here"
+                          placeholder="Enter the token from your email"
                           className="font-mono text-sm"
                         />
                       </FormControl>

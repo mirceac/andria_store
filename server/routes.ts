@@ -2606,15 +2606,21 @@ export function registerRoutes(app: Express): Server {
         console.log(`User ${user.username} has no email address, skipping email send`);
       }
 
-      // Return the token in response (for development/users without email)
-      res.json({ 
+      // Return the token in response only in development mode
+      const response: any = { 
         message: user.email 
           ? "Reset token has been sent to your email address" 
-          : "Reset token generated",
-        resetToken, // In production with email, you might remove this
+          : "Reset token generated. Please contact your administrator.",
         username: user.username,
         emailSent: !!user.email
-      });
+      };
+      
+      // Only include reset token in development mode
+      if (process.env.NODE_ENV === "development") {
+        response.resetToken = resetToken;
+      }
+      
+      res.json(response);
     } catch (error) {
       console.error("Error requesting password reset:", error);
       res.status(500).json({ message: "Failed to request password reset" });
