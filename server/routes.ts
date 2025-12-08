@@ -2560,6 +2560,120 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin: Create new user
+  app.post("/api/admin/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { username, password, email, first_name, last_name, is_admin } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      // Check if username already exists
+      const [existing] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (existing) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          username,
+          password: hashedPassword,
+          email: email || null,
+          first_name: first_name || null,
+          last_name: last_name || null,
+          is_admin: is_admin || false,
+        })
+        .returning();
+
+      res.json({ message: "User created successfully", user: newUser });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  // Admin: Update user
+  app.put("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = parseInt(req.params.id);
+      const { password, email, first_name, last_name, is_admin } = req.body;
+
+      const updateData: any = {
+        email: email || null,
+        first_name: first_name || null,
+        last_name: last_name || null,
+        is_admin: is_admin || false,
+      };
+
+      // Only update password if provided
+      if (password) {
+        updateData.password = await hashPassword(password);
+      }
+
+      const [updatedUser] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "User updated successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Admin: Delete user
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.is_admin) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = parseInt(req.params.id);
+
+      // Prevent deleting yourself
+      if (req.user.id === userId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      const [deletedUser] = await db
+        .delete(users)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!deletedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // Request password reset
   app.post("/api/auth/reset-password-request", async (req, res) => {
     const { username } = req.body;
