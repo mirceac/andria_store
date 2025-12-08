@@ -8,7 +8,7 @@ import {
   Package,
   ClipboardList,
   Box,
-  Palette,
+  Ruler,
   Search,
   Settings,
   LogOut,
@@ -65,31 +65,18 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-gray-50 border-b border-slate-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
-      <div className="w-full px-0.5 sm:px-2 h-16 flex items-center overflow-x-hidden relative">
-        {/* Left Side: Menu Button (on home page) + Gallery Logo */}
-        <div className="flex items-center gap-0.5 sm:gap-3 flex-shrink-0 flex-1 md:flex-none">
-          {/* Menu Button - only shown on home page */}
-          {window.location.pathname === "/" && (
-            <Button
-              variant="ghost"
-              className={`h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0 ${buttonClasses}`}
-              onClick={() => {
-                // This will be handled by the home page component
-                window.dispatchEvent(new CustomEvent('toggleSidebar'));
-              }}
-            >
-              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          )}
-          
-          <Link href="/" className="flex items-center gap-1 sm:gap-2 group px-0.5 sm:px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex-shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
-              <Palette className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+    <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
+      <div className="w-full px-2 sm:px-4 h-16 flex items-center overflow-x-hidden relative">
+        {/* Left Side: Architectural Logo */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 flex-1 md:flex-none">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 py-2">
+            <div className="relative h-12 w-12 sm:h-14 sm:w-14 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-slate-600 transition-all duration-300 flex-shrink-0">
+              <Ruler className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600 group-hover:text-blue-50 transition-colors duration-300" style={{ transform: 'rotate(45deg)' }} />
+              <div className="absolute inset-0 border border-slate-400" style={{ margin: '4px' }}></div>
             </div>
-            <div className="hidden sm:flex flex-col">
-              <h1 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Gallery</h1>
-              <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors">Digital Products</p>
+            <div className="hidden sm:flex flex-col leading-tight">
+              <h1 className="text-xl sm:text-2xl font-light tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
+              <p className="text-xs tracking-widest text-gray-500 uppercase" style={{ fontFamily: 'Georgia, serif' }}>Gallery & Design</p>
             </div>
           </Link>
         </div>
