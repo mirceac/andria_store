@@ -23,7 +23,7 @@ import { useForm } from "react-hook-form";
 import { InsertUser } from "@db/schema";
 import { Redirect } from "wouter";
 import { Loader2, LockKeyhole, User, KeyRound, ShoppingCart, Package, LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCart } from "@/hooks/use-cart";
@@ -45,7 +45,39 @@ export default function AuthPage() {
   const loginForm = useForm<InsertUser>();
   const registerForm = useForm<InsertUser>();
   const resetRequestForm = useForm<{ username: string }>();
-  const resetPasswordForm = useForm<{ resetToken: string; newPassword: string; confirmPassword: string }>();
+  const resetPasswordForm = useForm<{ resetToken: string; newPassword: string; confirmPassword: string }>({
+    defaultValues: {
+      resetToken: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
+  });
+
+  // Reset the password form when moving to the reset step
+  useEffect(() => {
+    if (resetStep === 'reset') {
+      resetPasswordForm.reset({
+        resetToken: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    }
+  }, [resetStep, resetPasswordForm]);
+
+  // Reset dialog state when closed
+  useEffect(() => {
+    if (!resetDialogOpen) {
+      setResetStep('request');
+      setResetToken('');
+      setResetUsername('');
+      resetRequestForm.reset();
+      resetPasswordForm.reset({
+        resetToken: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    }
+  }, [resetDialogOpen, resetRequestForm, resetPasswordForm]);
 
   const resetRequestMutation = useMutation({
     mutationFn: async (data: { username: string }) => {
@@ -60,7 +92,18 @@ export default function AuthPage() {
     onSuccess: (data) => {
       setResetToken(data.resetToken || '');
       setResetUsername(data.username);
-      setResetStep('reset');
+      
+      // Clear the form before transitioning to reset step
+      resetPasswordForm.reset({
+        resetToken: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      // Small delay to ensure form is cleared before transition
+      setTimeout(() => {
+        setResetStep('reset');
+      }, 50);
       
       const description = data.emailSent 
         ? "A reset token has been sent to your email address. Please check your email."
@@ -308,7 +351,7 @@ export default function AuthPage() {
           </DialogHeader>
 
           {resetStep === 'request' ? (
-            <Form {...resetRequestForm}>
+            <Form {...resetRequestForm} key="request-form">
               <form
                 onSubmit={resetRequestForm.handleSubmit((data) =>
                   resetRequestMutation.mutate(data)
@@ -345,7 +388,7 @@ export default function AuthPage() {
               </form>
             </Form>
           ) : (
-            <Form {...resetPasswordForm}>
+            <Form {...resetPasswordForm} key="reset-form">
               <form
                 onSubmit={resetPasswordForm.handleSubmit((data) => {
                   if (data.newPassword !== data.confirmPassword) {
@@ -370,14 +413,18 @@ export default function AuthPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Reset Token</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          required 
-                          placeholder="Enter the token from your email"
-                          className="font-mono text-sm"
-                        />
-                      </FormControl>
+                      <Input 
+                        name={field.name}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        disabled={false}
+                        readOnly={false}
+                        required 
+                        placeholder="Enter the token from your email"
+                        className="font-mono text-sm"
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
