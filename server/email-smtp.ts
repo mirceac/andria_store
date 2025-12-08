@@ -250,6 +250,8 @@ Thank you for choosing Andria Store!
     console.log("From:", mailData.from);
     console.log("To:", mailData.to);
     console.log("Subject:", mailData.subject);
+    console.log("HTML content length:", mailData.html.length);
+    console.log("Text content length:", mailData.text.length);
 
     console.log("Sending email via Mailgun...");
     const result = await mg.messages.create(domain, mailData);
@@ -264,6 +266,7 @@ Thank you for choosing Andria Store!
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
     
+    // Log additional details for common email errors
     if (error instanceof Error) {
       if (error.message.includes('401')) {
         console.error('AUTHENTICATION ERROR: Check your MAILGUN_API_KEY');
@@ -277,6 +280,9 @@ Thank you for choosing Andria Store!
     console.error('MAILGUN_API_KEY configured:', !!process.env.MAILGUN_API_KEY);
     console.error('MAILGUN_FROM_EMAIL:', process.env.MAILGUN_FROM_EMAIL);
     console.error("=== END EMAIL SERVICE ERROR ===\n");
+    
+    // Don't throw the error to prevent breaking the order process
+    // Just log it and continue
   }
 }
 
@@ -347,14 +353,17 @@ Thank you for using Andria Store!
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
     
     if (error instanceof Error) {
-      if (error.message.includes('401')) {
-        console.error('AUTHENTICATION ERROR: Check your MAILGUN_API_KEY');
-      } else if (error.message.includes('domain')) {
-        console.error('DOMAIN ERROR: Check your MAILGUN_DOMAIN setting');
+      if (error.message.includes('EAUTH')) {
+        console.error('AUTHENTICATION ERROR: Check your SMTP_USER and SMTP_PASS credentials');
+      } else if (error.message.includes('ECONNREFUSED')) {
+        console.error('CONNECTION ERROR: Check your SMTP_HOST and SMTP_PORT settings');
+      } else if (error.message.includes('ETIMEDOUT')) {
+        console.error('TIMEOUT ERROR: SMTP server is not responding');
       }
     }
     
     console.error("=== END PASSWORD RESET EMAIL ERROR ===\n");
+    // Don't throw the error - just log it
   }
 }
 
