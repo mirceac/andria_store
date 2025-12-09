@@ -341,35 +341,37 @@ export default function CategoriesPage() {
 
       <div className="grid gap-4">
         {hierarchicalCategories.map((category) => (
-          <Card key={category.id} className={`${category.level > 0 ? 'ml-8' : ''}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg font-semibold flex items-center">
+          <Card key={category.id} className={`${category.level > 0 ? 'ml-4 sm:ml-8' : ''}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-2">
+              <CardTitle className="text-lg font-semibold flex items-center flex-1 min-w-0">
                 {category.level > 0 && (
-                  <span className="text-gray-400 mr-2">
+                  <span className="text-gray-400 mr-2 flex-shrink-0">
                     {'├─'.repeat(category.level)}
                   </span>
                 )}
                 <button
                   onClick={() => setLocation(`/admin/products?category=${category.id}`)}
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left truncate"
                 >
                   {category.name}
                 </button>
                 {category.level > 0 && (
-                  <span className="text-sm text-gray-500 ml-2">
+                  <span className="text-sm text-gray-500 ml-2 hidden sm:inline">
                     (Child of: {categories.find(c => c.id === category.parent_id)?.name})
                   </span>
                 )}
               </CardTitle>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => handleEdit(category)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => handleDelete(category.id)}
                   className="text-red-600 hover:text-red-700"
                 >

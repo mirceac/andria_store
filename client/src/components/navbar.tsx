@@ -58,7 +58,7 @@ export default function Navbar() {
     enabled: !!user,
   });
 
-  const buttonClasses = "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700";
+  const buttonClasses = "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors duration-300";
 
   // Get user initials for avatar fallback
   const userInitials = user
@@ -71,10 +71,10 @@ export default function Navbar() {
         {/* Left Side: Architectural Logo */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 flex-1 md:flex-none">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 py-2">
-            <div className="relative h-12 w-16 sm:h-14 sm:w-20 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-slate-600 transition-all duration-300 flex-shrink-0">
+            <div className="relative h-12 w-16 sm:h-14 sm:w-20 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-all duration-300 flex-shrink-0">
               <div className="absolute inset-0 flex items-center justify-center">
                 {/* T-Square horizontal with 75% inside cylinder - centered */}
-                <svg className="w-full h-full text-slate-600 group-hover:text-blue-50 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
+                <svg className="w-full h-full text-slate-600 group-hover:text-slate-700 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
                   <g transform="translate(12, 12) rotate(-15) scale(1.25)">
                     {/* Back ellipse of cylinder (left side) */}
                     <ellipse cx="-3" cy="0" rx="2" ry="5" fill="currentColor" opacity="0.2"/>
