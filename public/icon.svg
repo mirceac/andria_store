@@ -2,24 +2,41 @@
   <!-- Light blue background -->
   <rect width="512" height="512" fill="#eff6ff"/>
   
-  <!-- Outer border in slate-600 -->
-  <rect x="128" y="128" width="256" height="256" fill="#eff6ff" stroke="#475569" stroke-width="16"/>
+  <!-- Outer border in slate-600 - rectangular -->
+  <rect x="96" y="160" width="320" height="192" fill="#eff6ff" stroke="#475569" stroke-width="16"/>
   
-  <!-- Inner border in slate-400 -->
-  <rect x="148" y="148" width="216" height="216" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <!-- Inner border in slate-400 - rectangular -->
+  <rect x="116" y="180" width="280" height="152" fill="none" stroke="#94a3b8" stroke-width="2"/>
   
-  <!-- Ruler icon rotated 45 degrees, centered -->
-  <g transform="translate(256, 256) rotate(45)">
-    <!-- Ruler shape in slate-600 -->
-    <rect x="-80" y="-12" width="160" height="24" fill="#475569"/>
+  <!-- T-Square horizontal: I-| with cylinder - centered in rectangle -->
+  <g transform="translate(256, 256) rotate(-15) scale(1.1)">
+    <!-- Back ellipse of cylinder (left side) - darker for depth -->
+    <ellipse cx="-30" cy="0" rx="20" ry="50" fill="#475569" opacity="0.2"/>
     
-    <!-- Ruler markings -->
-    <line x1="-60" y1="-12" x2="-60" y2="0" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="-40" y1="-12" x2="-40" y2="0" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="-20" y1="-12" x2="-20" y2="0" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="0" y1="-12" x2="0" y2="12" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="20" y1="0" x2="20" y2="12" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="40" y1="0" x2="40" y2="12" stroke="#eff6ff" stroke-width="2"/>
-    <line x1="60" y1="0" x2="60" y2="12" stroke="#eff6ff" stroke-width="2"/>
+    <!-- Cylinder body - opaque, hides 75% of horizontal ruler -->
+    <rect x="-30" y="-50" width="110" height="100" fill="#475569" opacity="0.12"/>
+    
+    <!-- Cylinder walls (top and bottom edges) -->
+    <line x1="-30" y1="-50" x2="80" y2="-50" stroke="#475569" stroke-width="12"/>
+    <line x1="-30" y1="50" x2="80" y2="50" stroke="#475569" stroke-width="12"/>
+    
+    <!-- Front ellipse of cylinder (right side opening) -->
+    <ellipse cx="80" cy="0" rx="20" ry="50" fill="#475569" opacity="0.08" stroke="#475569" stroke-width="12"/>
+    
+    <!-- T-Square pulled out slightly: I-| (horizontal extending left into cylinder, vertical bar on right) -->
+    <g transform="translate(100, 0) rotate(180)">
+      <!-- Vertical bar of T (perpendicular at opening) -->
+      <rect x="-8" y="-40" width="16" height="80" fill="#475569" rx="3"/>
+      
+      <!-- Horizontal ruler extending right (which is left after 180° rotation) - more visible now -->
+      <rect x="0" y="-7" width="50" height="14" fill="#475569" rx="2"/>
+      
+      <!-- Graduation marks on visible horizontal part -->
+      <line x1="8" y1="-12" x2="8" y2="12" stroke="#eff6ff" stroke-width="2"/>
+      <line x1="18" y1="-12" x2="18" y2="12" stroke="#eff6ff" stroke-width="2"/>
+      <line x1="28" y1="-12" x2="28" y2="12" stroke="#eff6ff" stroke-width="2"/>
+      <line x1="38" y1="-12" x2="38" y2="12" stroke="#eff6ff" stroke-width="2"/>
+      <line x1="48" y1="-12" x2="48" y2="12" stroke="#eff6ff" stroke-width="2"/>
+    </g>
   </g>
 </svg>

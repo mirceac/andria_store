@@ -8,7 +8,8 @@ import {
   Package,
   ClipboardList,
   Box,
-  Ruler,
+  Pyramid,
+  Pencil,
   Search,
   Settings,
   LogOut,
@@ -70,8 +71,40 @@ export default function Navbar() {
         {/* Left Side: Architectural Logo */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 flex-1 md:flex-none">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 py-2">
-            <div className="relative h-12 w-12 sm:h-14 sm:w-14 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-slate-600 transition-all duration-300 flex-shrink-0">
-              <Ruler className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600 group-hover:text-blue-50 transition-colors duration-300" style={{ transform: 'rotate(45deg)' }} />
+            <div className="relative h-12 w-16 sm:h-14 sm:w-20 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-slate-600 transition-all duration-300 flex-shrink-0">
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* T-Square horizontal with 75% inside cylinder - centered */}
+                <svg className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 group-hover:text-blue-50 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
+                  <g transform="translate(12, 12) rotate(-15) scale(1.1)">
+                    {/* Back ellipse of cylinder (left side) */}
+                    <ellipse cx="-3" cy="0" rx="2" ry="5" fill="currentColor" opacity="0.2"/>
+                    
+                    {/* Cylinder body - opaque */}
+                    <rect x="-3" y="-5" width="11" height="10" fill="currentColor" opacity="0.12"/>
+                    
+                    {/* Cylinder walls (top and bottom) */}
+                    <line x1="-3" y1="-5" x2="8" y2="-5" stroke="currentColor" strokeWidth="1.5"/>
+                    <line x1="-3" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5"/>
+                    
+                    {/* Front ellipse of cylinder (right side opening) */}
+                    <ellipse cx="8" cy="0" rx="2" ry="5" fill="currentColor" opacity="0.08" stroke="currentColor" strokeWidth="1.5"/>
+                    
+                    {/* T-Square horizontal: I-|  (horizontal extending left, vertical bar on right) */}
+                    <g transform="translate(10, 0) rotate(180)">
+                      {/* Vertical bar of T (perpendicular) - visible outside */}
+                      <rect x="-1" y="-4" width="2" height="8" fill="currentColor" rx="0.3"/>
+                      
+                      {/* Horizontal ruler extending right - 25% visible */}
+                      <rect x="0" y="-0.7" width="3.5" height="1.4" fill="currentColor" rx="0.2"/>
+                      
+                      {/* Graduation marks on visible horizontal part */}
+                      <line x1="0.8" y1="-1.2" x2="0.8" y2="1.2" stroke="white" strokeWidth="0.2" opacity="0.8"/>
+                      <line x1="2" y1="-1.2" x2="2" y2="1.2" stroke="white" strokeWidth="0.2" opacity="0.8"/>
+                      <line x1="3.2" y1="-1.2" x2="3.2" y2="1.2" stroke="white" strokeWidth="0.2" opacity="0.8"/>
+                    </g>
+                  </g>
+                </svg>
+              </div>
               <div className="absolute inset-0 border border-slate-400" style={{ margin: '4px' }}></div>
             </div>
             <div className="hidden sm:flex flex-col leading-tight">
