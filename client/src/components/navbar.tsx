@@ -106,8 +106,8 @@ export default function Navbar() {
                 </svg>
               </div>
             </div>
-            <div className="hidden sm:flex flex-col leading-tight">
-              <h1 className="text-xl sm:text-2xl font-light tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
+            <div className="flex flex-col leading-tight">
+              <h1 className="text-base sm:text-xl md:text-2xl font-light tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
               <p className="text-xs tracking-widest text-gray-500 uppercase" style={{ fontFamily: 'Georgia, serif' }}>Gallery & Design</p>
             </div>
           </Link>
