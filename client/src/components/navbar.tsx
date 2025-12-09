@@ -74,8 +74,8 @@ export default function Navbar() {
             <div className="relative h-12 w-16 sm:h-14 sm:w-20 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-slate-600 transition-all duration-300 flex-shrink-0">
               <div className="absolute inset-0 flex items-center justify-center">
                 {/* T-Square horizontal with 75% inside cylinder - centered */}
-                <svg className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 group-hover:text-blue-50 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
-                  <g transform="translate(12, 12) rotate(-15) scale(1.1)">
+                <svg className="w-full h-full text-slate-600 group-hover:text-blue-50 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
+                  <g transform="translate(12, 12) rotate(-15) scale(1.25)">
                     {/* Back ellipse of cylinder (left side) */}
                     <ellipse cx="-3" cy="0" rx="2" ry="5" fill="currentColor" opacity="0.2"/>
                     
@@ -105,7 +105,6 @@ export default function Navbar() {
                   </g>
                 </svg>
               </div>
-              <div className="absolute inset-0 border border-slate-400" style={{ margin: '4px' }}></div>
             </div>
             <div className="hidden sm:flex flex-col leading-tight">
               <h1 className="text-xl sm:text-2xl font-light tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
