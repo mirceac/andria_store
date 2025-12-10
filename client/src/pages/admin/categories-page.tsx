@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, Edit, Plus } from 'lucide-react';
+import { Trash2, Pencil, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type Category = {
@@ -363,17 +363,15 @@ export default function CategoriesPage() {
               </CardTitle>
               <div className="flex gap-2 flex-shrink-0">
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
                   onClick={() => handleEdit(category)}
+                  className="h-8 w-8 p-0"
                 >
-                  <Edit className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => handleDelete(category.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="btn-danger h-8 w-8 p-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
