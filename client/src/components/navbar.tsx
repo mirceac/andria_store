@@ -107,8 +107,8 @@ export default function Navbar() {
               </div>
             </div>
             <div className="flex flex-col leading-tight">
-              <h1 className="text-base sm:text-xl md:text-2xl font-light tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
-              <p className="text-xs tracking-widest text-gray-500 uppercase" style={{ fontFamily: 'Georgia, serif' }}>Gallery & Design</p>
+              <h1 className="text-xs sm:text-xl md:text-2xl font-light tracking-wide sm:tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
+              <p className="text-[10px] sm:text-xs tracking-wide sm:tracking-widest text-gray-500 italic" style={{ fontFamily: 'Georgia, serif' }}>gallery & design</p>
             </div>
           </Link>
         </div>
@@ -138,6 +138,17 @@ export default function Navbar() {
           </Select>
 
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
+          
+          {/* Categories Filter Button - Mobile Only */}
+          <Button 
+            variant="ghost" 
+            className={`${buttonClasses} h-10 w-10 p-0 md:hidden`}
+            onClick={() => window.dispatchEvent(new Event('toggleSidebar'))}
+            title="Filter by category"
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </Button>
+          
           {!user?.is_admin && <div className="h-10 w-10 opacity-0 flex-shrink-0" />}
           {user?.is_admin && (
             <DropdownMenu modal={false}>
