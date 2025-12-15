@@ -67,13 +67,22 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
-      <div className="w-full px-2 sm:px-4 h-16 flex items-center overflow-x-hidden relative">
-        {/* Left Side: Architectural Logo */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 flex-1 md:flex-none">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0 py-2">
-            <div className="relative h-12 w-16 sm:h-14 sm:w-20 border-2 border-slate-600 bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-all duration-300 flex-shrink-0">
-              <div className="absolute inset-0 flex items-center justify-center">
-                {/* T-Square horizontal with 75% inside cylinder - centered */}
+      <div className="w-full h-16 flex items-center overflow-x-hidden relative">
+        {/* Left Side: Categories Filter Button (Mobile) + Architectural Logo */}
+        <div className="flex items-center flex-shrink-0 flex-1 md:flex-none">
+          {/* Categories Filter Button - Mobile Only - Absolute positioned */}
+          <Button 
+            variant="ghost" 
+            className={`${buttonClasses} h-10 w-10 p-0 md:hidden absolute left-2 z-20`}
+            onClick={() => window.dispatchEvent(new Event('toggleSidebar'))}
+            title="Filter by category"
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </Button>
+          <Link href="/" className="flex items-center group flex-shrink-0">
+            <div className="relative h-16 w-full sm:w-56 md:w-64 bg-gradient-to-r from-blue-100 via-blue-50 to-transparent flex items-center justify-center group-hover:from-blue-200 group-hover:via-blue-100 transition-all duration-300 pl-14 md:pl-4 pr-4">
+              {/* SVG Icon */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-30">
                 <svg className="w-full h-full text-slate-600 group-hover:text-slate-700 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
                   <g transform="translate(12, 12) rotate(-15) scale(1.25)">
                     {/* Back ellipse of cylinder (left side) */}
@@ -105,10 +114,11 @@ export default function Navbar() {
                   </g>
                 </svg>
               </div>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <h1 className="text-xs sm:text-xl md:text-2xl font-light tracking-wide sm:tracking-wider text-black group-hover:text-gray-700 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
-              <p className="text-[10px] sm:text-xs tracking-wide sm:tracking-widest text-gray-500 italic" style={{ fontFamily: 'Georgia, serif' }}>gallery & design</p>
+              {/* Text overlaid on icon */}
+              <div className="relative z-10 flex flex-col items-center justify-center leading-tight">
+                <h1 className="text-xs sm:text-xl md:text-2xl font-light tracking-tight sm:tracking-wider text-slate-700 group-hover:text-slate-900 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
+                <p className="text-[9px] sm:text-xs md:text-sm tracking-tight sm:tracking-widest text-slate-600 italic" style={{ fontFamily: 'Georgia, serif' }}>gallery & design</p>
+              </div>
             </div>
           </Link>
         </div>
@@ -138,17 +148,6 @@ export default function Navbar() {
           </Select>
 
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
-          
-          {/* Categories Filter Button - Mobile Only */}
-          <Button 
-            variant="ghost" 
-            className={`${buttonClasses} h-10 w-10 p-0 md:hidden`}
-            onClick={() => window.dispatchEvent(new Event('toggleSidebar'))}
-            title="Filter by category"
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </Button>
-          
           {!user?.is_admin && <div className="h-10 w-10 opacity-0 flex-shrink-0" />}
           {user?.is_admin && (
             <DropdownMenu modal={false}>
