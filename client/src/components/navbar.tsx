@@ -124,7 +124,7 @@ export default function Navbar() {
         </div>
 
         {/* Right Side: Search + Sort + Profile - Absolutely positioned to always stay in same place */}
-        <div className="absolute right-0.5 sm:right-2 flex items-center justify-end gap-0.5 sm:gap-2 flex-shrink-0">
+        <div className="absolute right-2 sm:right-2 flex items-center justify-end gap-0.5 sm:gap-2 flex-shrink-0">
           {/* Search Bar */}
           <div className="relative w-64 hidden md:block flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
