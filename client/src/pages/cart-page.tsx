@@ -112,7 +112,7 @@ export default function CartPage() {
       return (
         <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
           <PDFThumbnail
-            pdfUrl={`data:application/pdf;base64,${product.pdf_data}`}
+            pdfUrl={`/api/products/${product.id}/pdf`}
             showTryDirect={false}
             width={130}
             height={182}
