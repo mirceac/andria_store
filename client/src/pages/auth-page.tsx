@@ -23,6 +23,7 @@ import { useForm } from "react-hook-form";
 import { InsertUser } from "@db/schema";
 import { Redirect } from "wouter";
 import { Loader2, LockKeyhole, User, KeyRound, ShoppingCart, Package, LogOut, Menu, X } from "lucide-react";
+import { FaGoogle, FaFacebook } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -335,6 +336,36 @@ export default function AuthPage() {
               </Form>
             </TabsContent>
           </Tabs>
+
+          {/* OAuth divider */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          {/* OAuth buttons */}
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => { window.location.href = "/api/auth/google"; }}
+            >
+              <FaGoogle className="mr-2 h-4 w-4 text-red-500" />
+              Continue with Google
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => { window.location.href = "/api/auth/facebook"; }}
+            >
+              <FaFacebook className="mr-2 h-4 w-4 text-blue-600" />
+              Continue with Facebook
+            </Button>
+          </div>
         </Card>
         </div>
       </div>
