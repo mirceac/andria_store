@@ -60,9 +60,12 @@ import {
   Eye,
   EyeOff,
   FolderTree,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import {
   Tooltip,
@@ -116,16 +119,11 @@ export default function ProfilePage() {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
-
-  // Read category from URL query parameter on mount
-  useEffect(() => {
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
-    const categoryParam = params.get('category');
-    if (categoryParam) {
-      setSelectedCategoryFilter(categoryParam);
-    }
-  }, []);
+    return params.get('category') || 'all';
+  });
+  const [nameSortOrder, setNameSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
 
   // Redirect if not authenticated
   if (!user) {
@@ -1076,7 +1074,15 @@ export default function ProfilePage() {
                 <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
-                <TableHead className="text-center w-[250px]">Name & Category</TableHead>
+                <TableHead className="text-center w-[250px]">
+                  <button
+                    className="flex items-center justify-center gap-1 mx-auto cursor-pointer hover:text-foreground"
+                    onClick={() => setNameSortOrder(o => o === 'asc' ? 'desc' : o === 'desc' ? 'none' : 'asc')}
+                  >
+                    Name & Category
+                    {nameSortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : nameSortOrder === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                  </button>
+                </TableHead>
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
                 <TableHead className="text-center w-[140px]">Variants</TableHead>
@@ -1089,7 +1095,10 @@ export default function ProfilePage() {
                 const filteredProducts = products?.filter(p =>
                   selectedCategoryFilter === "all" || p.category_id === parseInt(selectedCategoryFilter)
                 );
-                return filteredProducts && filteredProducts.length === 0 ? (
+                const sortedProducts = nameSortOrder === 'none' ? filteredProducts : [...(filteredProducts ?? [])].sort((a, b) =>
+                  nameSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+                );
+                return sortedProducts && sortedProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     {selectedCategoryFilter === "all"
@@ -1098,7 +1107,7 @@ export default function ProfilePage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProducts?.map((product) => (
+                sortedProducts?.map((product) => (
                   <TableRow key={product.id}>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle w-[60px]">
