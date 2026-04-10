@@ -42,9 +42,10 @@ export function ExternalUrlThumbnail({
     console.log('Supabase URL detected:', { url, formattedSrc, isPdf, isSupabaseSignedUrl });
   }
   
-  // Use our custom hook for image loading - standard timeout since Supabase URLs are now direct
-  const { loading, error, retry, actualSrc } = useImageLoader(formattedSrc, { 
-    timeoutMs: 5000  // 5 seconds should be enough for direct URLs
+  // Use our custom hook for image loading with auto-retry before showing error
+  const { loading, error, retry, actualSrc } = useImageLoader(formattedSrc, {
+    timeoutMs: 15000,
+    maxAutoRetries: 2,
   });
   
   // Size presets similar to ImageThumbnail

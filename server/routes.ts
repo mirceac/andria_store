@@ -278,7 +278,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       const response = await fetch.default(finalUrl, {
-        headers: requestHeaders
+        headers: requestHeaders,
+        timeout: 15000,
       });
       
       if (!response.ok) {
