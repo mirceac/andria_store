@@ -1085,14 +1085,20 @@ export default function ProfilePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products && products.length === 0 ? (
+              {(() => {
+                const filteredProducts = products?.filter(p =>
+                  selectedCategoryFilter === "all" || p.category_id === parseInt(selectedCategoryFilter)
+                );
+                return filteredProducts && filteredProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                    No products yet. Click "Add Product" to create your first product!
+                    {selectedCategoryFilter === "all"
+                      ? 'No products yet. Click "Add Product" to create your first product!'
+                      : "No products in this category."}
                   </TableCell>
                 </TableRow>
               ) : (
-                products?.map((product) => (
+                filteredProducts?.map((product) => (
                   <TableRow key={product.id}>
                     {/* Image File column */}
                     <TableCell className="px-0 text-center align-middle w-[60px]">
@@ -1434,7 +1440,8 @@ export default function ProfilePage() {
                     </TableCell>
                   </TableRow>
                 ))
-              )}
+              );
+            })()}
             </TableBody>
           </Table>
         </div>
