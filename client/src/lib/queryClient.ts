@@ -41,7 +41,13 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      redirect: "manual",
     });
+
+    if (res.type === "opaqueredirect") {
+      window.location.reload();
+      return null;
+    }
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

@@ -70,7 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear();
+      window.location.href = "/auth";
     },
     onError: (error: Error) => {
       toast({
