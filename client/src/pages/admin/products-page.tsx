@@ -1540,7 +1540,7 @@ export default function AdminProductsPage() {
                 <TableHead className="px-0 text-center w-[60px]">PDF File</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">PDF DB</TableHead>
                 <TableHead className="px-0 text-center w-[60px]">Storage URL</TableHead>
-                <TableHead className="text-center w-[250px]">Name & Category</TableHead>
+                <SortHeader column="name" label="Name & Category" className="text-center w-[250px]" />
                 <TableHead className="text-center w-[180px]">Description</TableHead>
                 <TableHead className="text-center w-[80px]">Digital Price</TableHead>
                 <TableHead className="text-center w-[140px]">Variants</TableHead>
