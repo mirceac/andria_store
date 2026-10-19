@@ -56,21 +56,6 @@ export function ExternalUrlThumbnail({
 
   const activeSrc = imageSources[sourceIndex] ?? null;
 
-  useEffect(() => {
-    if (!activeSrc || failed || !loading) return;
-
-    const timeout = window.setTimeout(() => {
-      if (sourceIndex < imageSources.length - 1) {
-        setSourceIndex((currentIndex) => currentIndex + 1);
-      } else {
-        setLoading(false);
-        setFailed(true);
-      }
-    }, sourceIndex === 0 ? 4500 : 3000);
-
-    return () => window.clearTimeout(timeout);
-  }, [activeSrc, failed, imageSources.length, loading, sourceIndex]);
-
   const handleImageError = () => {
     if (sourceIndex < imageSources.length - 1) {
       setLoading(true);
