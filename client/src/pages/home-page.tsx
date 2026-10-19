@@ -19,6 +19,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 
+// Overrides the thumbnails' fixed pixel size so images fill the card instead of leaving side gutters
+const THUMB_FILL_CLASS =
+  "!h-full !w-full !rounded-none !border-0 !bg-transparent [&>img]:h-full [&>img]:w-full select-none hover:opacity-80 transition-opacity";
+
 type Category = {
   id: number;
   name: string;
@@ -239,7 +243,7 @@ export default function HomePage() {
               <span className={cn(
                 "truncate text-sm font-medium transition-colors duration-200",
                 isSelected ? "text-foreground" : "text-muted-foreground",
-                "group-hover:text-gray-900"
+                "group-hover:text-foreground"
               )}>
                 {category.name}
               </span>
@@ -248,7 +252,7 @@ export default function HomePage() {
         </div>
         {categoryHasChildren && isExpanded && (
           <div className="ml-1 relative">
-            <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200"></div>
+            <div className="absolute left-2 top-0 bottom-0 w-px bg-border"></div>
             <div className="ml-1">
               {category.children.map((child) => (
                 <CategoryTreeNode key={child.id} category={child} level={level + 1} />
@@ -448,7 +452,7 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
+            className={THUMB_FILL_CLASS}
             showTryDirect={false}
             onClick={() => handleImageClick(`${product.image_file}?v=${timestamp}`, shouldHideWatermark(product))}
           />
@@ -469,7 +473,7 @@ export default function HomePage() {
             alt={product.name}
             width={180}
             height={180}
-            className="max-w-full max-h-full object-contain select-none hover:opacity-80 transition-opacity"
+            className={THUMB_FILL_CLASS}
             showTryDirect={false}
             onClick={() => handleImageClick(`/api/products/${product.id}/img?v=${timestamp}`, shouldHideWatermark(product))}
           />
@@ -537,6 +541,7 @@ export default function HomePage() {
               url={product.storage_url}
               width={130}
               height={182}
+              className={THUMB_FILL_CLASS}
               showTryDirect={false}
             />
           </div>
@@ -599,21 +604,22 @@ export default function HomePage() {
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-x-0 bottom-0 top-16 z-40 bg-foreground/30 backdrop-blur-[1px] md:left-16"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
+      {/* Sidebar - slides out from the left rail on desktop, from the screen edge on mobile */}
       <div className={cn(
-        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed bottom-0 left-0 top-16 z-40 w-72 max-w-[85vw] overflow-y-auto border-r border-border bg-chrome shadow-xl transition-transform duration-300 md:left-16",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:-translate-x-[calc(100%+4rem)]"
       )}>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
-              Categories
-            </h2>
+        <div className="p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/80">Browse</p>
+              <h2 className="font-serif text-xl text-foreground">Categories</h2>
+            </div>
             <Button
               variant="ghost"
               onClick={(e) => {
@@ -640,12 +646,12 @@ export default function HomePage() {
               <span className={cn(
                 "text-sm font-medium transition-colors duration-200",
                 selectedCategoryId === null ? "text-foreground" : "text-muted-foreground",
-                "hover:text-gray-900"
+                "hover:text-foreground"
               )}>
                 All Products
               </span>
             </div>
-            <div className="h-px bg-gray-200 my-3"></div>
+            <div className="my-3 h-px bg-border"></div>
             <div className="space-y-0.5">
               {buildCategoryTree(categories || []).map((category) => (
                 <CategoryTreeNode key={category.id} category={category} />
@@ -658,9 +664,103 @@ export default function HomePage() {
       {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
         "flex-1 max-w-full",
-        isMobile ? "pt-20 px-1 py-3" : "p-4"
+        isMobile ? "pt-20 px-2 pb-4" : "p-4"
       )}>
         <div>
+          <section className="relative mb-6 flex min-h-[160px] items-center overflow-hidden rounded-2xl border border-primary/15 bg-chrome px-5 py-5 sm:px-8 sm:py-6">
+            <div className="pointer-events-none absolute -right-12 -top-20 hidden h-80 w-80 rounded-full border border-primary/10 md:block" />
+            <div className="pointer-events-none absolute -right-3 -top-11 hidden h-64 w-64 rounded-full border border-primary/10 md:block" />
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 right-0 hidden h-full w-[44%] text-primary/25 md:block"
+              viewBox="0 0 360 260"
+              fill="none"
+              preserveAspectRatio="xMidYMax meet"
+            >
+              <path d="M44 260V128a136 136 0 0 1 272 0v132" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M81 260V130a99 99 0 0 1 198 0v130" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M118 260V132a62 62 0 0 1 124 0v128" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M22 259.5h316M99 219h162M99 237h162" stroke="currentColor" strokeWidth="1" />
+              <path d="M180 65v195M144 260v-83h72v83" stroke="currentColor" strokeWidth="1" />
+            </svg>
+            <div className="relative z-10 w-full">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary sm:text-xs">
+                A considered collection
+              </p>
+              <p className="max-w-lg font-serif text-xl leading-snug text-foreground sm:text-2xl">
+                Browse by category to narrow the collection
+              </p>
+
+              {(() => {
+                const roots = buildCategoryTree(categories || []);
+                if (roots.length === 0) return null;
+
+                // Path from the top-level category down to the selected one
+                const path: CategoryWithChildren[] = [];
+                const findPath = (nodes: CategoryWithChildren[]): boolean =>
+                  nodes.some((node) => {
+                    path.push(node);
+                    if (node.id === selectedCategoryId || findPath(node.children)) return true;
+                    path.pop();
+                    return false;
+                  });
+                if (selectedCategoryId) findPath(roots);
+
+                const activeRoot = path[0];
+                const chip = (active: boolean) =>
+                  cn(
+                    "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-primary/20 bg-white/70 text-foreground hover:border-primary/50 hover:bg-white"
+                  );
+                const rowClass =
+                  "-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible md:max-w-[75%]";
+
+                return (
+                  <div className="mt-4 space-y-2">
+                    <div className={rowClass} role="tablist" aria-label="Categories">
+                      <button type="button" className={chip(selectedCategoryId === null)} onClick={() => handleCategorySelect(null)}>
+                        All
+                      </button>
+                      {roots.map((root) => (
+                        <button
+                          key={root.id}
+                          type="button"
+                          className={chip(activeRoot?.id === root.id)}
+                          onClick={() => handleCategorySelect(root.id)}
+                        >
+                          {root.name}
+                        </button>
+                      ))}
+                    </div>
+                    {activeRoot && activeRoot.children.length > 0 && (
+                      <div className={cn(rowClass, "border-t border-primary/10 pt-2")}>
+                        <button
+                          type="button"
+                          className={chip(selectedCategoryId === activeRoot.id)}
+                          onClick={() => handleCategorySelect(activeRoot.id)}
+                        >
+                          All {activeRoot.name}
+                        </button>
+                        {activeRoot.children.map((child) => (
+                          <button
+                            key={child.id}
+                            type="button"
+                            className={chip(path.some((p) => p.id === child.id))}
+                            onClick={() => handleCategorySelect(child.id)}
+                          >
+                            {child.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </section>
+
           {/* Breadcrumb Navigation */}
           {selectedCategoryId && categories && (
             <div className="mb-6 border-b border-gray-200 pb-3">
@@ -702,17 +802,24 @@ export default function HomePage() {
               </nav>
             </div>
           )}
-        
+
+        <section>
+          <div className="mb-3 flex justify-end">
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              {filteredProducts?.length ?? 0} {filteredProducts?.length === 1 ? "piece" : "pieces"}
+            </p>
+          </div>
+
         <div 
           className={cn(
-            "grid gap-2 w-full", 
+            "grid w-full gap-2.5 sm:gap-4",
             // Mobile-first responsive grid
             "grid-cols-2", // 2 columns on mobile
             "sm:grid-cols-3", // 3 columns on small screens
             "md:grid-cols-4", // 4 columns on medium screens
             "lg:grid-cols-5", // 5 columns on large screens
             "xl:grid-cols-6", // 6 columns on extra large screens
-            "2xl:grid-cols-8" // 8 columns on 2xl screens
+            "2xl:grid-cols-7" // 7 columns on 2xl screens
           )}
           style={{maxWidth: '100%', overflow: 'hidden'}}
           onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
@@ -721,9 +828,7 @@ export default function HomePage() {
           <div 
             key={`${product.id}-${timestamp}`}
             className={cn(
-              "flex flex-col rounded border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 bg-white overflow-hidden w-full",
-              // Mobile-optimized heights
-              isMobile ? "h-[260px]" : "h-[290px]",
+              "flex flex-col self-start rounded-xl border border-border/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg w-full overflow-hidden",
               product.stock > 0 
                 ? "border-border"
                 : "border-red-200 hover:border-red-300"
@@ -734,30 +839,29 @@ export default function HomePage() {
             {/* Content based on priority */}
             <div 
               className={cn(
-                "relative w-full flex items-center justify-center p-1 border-b overflow-hidden",
+                "relative w-full flex items-center justify-center overflow-hidden border-b border-border/60 bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8] p-2",
                 // Mobile-optimized image heights
-                isMobile ? "h-[180px]" : "h-[200px]"
+                isMobile ? "h-[165px]" : "h-[195px]"
               )}
               onContextMenu={(e) => e.preventDefault()} // Prevent right-click on thumbnails
             >
               {getContentByPriority(product)}
             </div>
             
-            {/* Product info section */}
+            {/* Product info section - sizes to its content so public and private cards stay compact */}
             <div className={cn(
-              "px-1 py-0.5 flex flex-col flex-shrink-0 flex-grow min-w-0 w-full overflow-hidden",
-              isMobile && "px-2 py-1", // Slightly more padding on mobile
-              product.is_public === false && "justify-center items-center py-2" // Center for private products
+              "flex w-full min-w-0 flex-col gap-1 px-3 py-2.5 overflow-hidden",
+              product.is_public === false && "items-center justify-center py-3" // Center for private products
             )}>
               <h3 className={cn(
-                "font-medium text-slate-900 line-clamp-1 truncate w-full",
+                "font-medium text-foreground line-clamp-1 truncate w-full",
                 isMobile ? "text-xs" : "text-sm", // Smaller text on mobile
                 product.is_public === false && "text-center font-serif italic text-base" // Elegant styling for private products
               )} style={{maxWidth: '100%'}}>{product.name}</h3>
               
               {/* Price display - hidden for private products */}
               {product.is_public !== false && (
-                <div className="mt-0.5">
+                <div>
                   {(() => {
                     const digitalPrice = Number(product.price || 0); // price field is digital price
                     const physicalPrice = product.physical_price ? Number(product.physical_price) : null;
@@ -782,7 +886,7 @@ export default function HomePage() {
               
               {/* Availability status - hidden for private products */}
               {product.is_public !== false && (
-                <div className="mt-0.5 mb-0.5">
+                <div className="flex">
                   {(() => {
                     const hasDigital = Number(product.price || 0) > 0; // price field is digital price
                     const hasPhysical = product.physical_price && Number(product.physical_price) > 0;
@@ -847,7 +951,7 @@ export default function HomePage() {
                     
                     return false;
                   })()}
-                  className={`mt-1 w-full ${isMobile ? 'h-6 text-xs' : 'h-7 text-xs'}`}
+                  className={`mt-0.5 w-full ${isMobile ? 'h-7 text-xs' : 'h-8 text-xs'}`}
                   variant="default"
                   style={{maxWidth: '100%', minWidth: 0, overflow: 'hidden'}}
                 >
@@ -870,6 +974,7 @@ export default function HomePage() {
           </div>
         ))}
         </div>
+        </section>
         </div> {/* Close main content inner div */}
       </div> {/* Close main content div */}
       

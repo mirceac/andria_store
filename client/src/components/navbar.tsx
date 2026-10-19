@@ -66,7 +66,7 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-white border-b border-border sticky top-0 z-50 w-full overflow-x-hidden">
+    <nav className="bg-chrome border-b border-border sticky top-0 z-50 w-full overflow-x-hidden">
       <div className="w-full h-16 flex items-center overflow-x-hidden relative">
         {/* Left Side: Categories Filter Button (Mobile) + Architectural Logo */}
         <div className="flex items-center flex-shrink-0 flex-1 md:flex-none">
@@ -80,7 +80,7 @@ export default function Navbar() {
             <LayoutGrid className="h-5 w-5" />
           </Button>
           <Link href="/" className="flex items-center group flex-shrink-0">
-              <div className="relative h-16 w-full sm:w-56 md:w-64 bg-white border-r border-border flex items-center justify-center group-hover:bg-muted/40 transition-colors duration-200 pl-14 md:pl-4 pr-4">
+              <div className="relative h-16 w-full sm:w-56 md:w-64 bg-chrome border-r border-border flex items-center justify-center group-hover:bg-black/[0.03] transition-colors duration-200 pl-14 md:pl-4 pr-4">
               {/* SVG Icon */}
               <div className="absolute inset-0 flex items-center justify-center opacity-30">
                 <svg className="w-full h-full text-foreground/70 group-hover:text-primary transition-colors duration-200" viewBox="0 0 24 24" fill="none">
