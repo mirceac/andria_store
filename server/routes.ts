@@ -18,9 +18,18 @@ import { dirname, join } from 'path';
 import multer from 'multer';
 import fs from 'fs';
 import { randomBytes } from 'crypto';
+import sharp from 'sharp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function safeUrlHost(value: string) {
+  try {
+    return new URL(value).host;
+  } catch {
+    return "invalid URL";
+  }
+}
 
 // Extend Express Request type to include rawBody
 declare global {
@@ -135,12 +144,13 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/proxy/image", async (req, res) => {
     try {
       const { url, thumbnail } = req.query;
+      const isThumbnail = thumbnail === '1' || thumbnail === 'true';
       
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ message: "URL parameter is required" });
       }
       
-      console.log(`Proxying image request for: ${url}, thumbnail: ${thumbnail ? 'yes' : 'no'}`);
+      console.log(`Proxying image from ${safeUrlHost(url)}; thumbnail: ${isThumbnail ? 'yes' : 'no'}`);
       
       // Validate URL format to prevent server-side request forgery
       try {
@@ -192,7 +202,7 @@ export function registerRoutes(app: Express): Server {
             
             // Get the actual URL after redirects
             const finalRedirectUrl = response.url;
-            console.log('Final redirect URL:', finalRedirectUrl);
+            console.log('Final redirect host:', safeUrlHost(finalRedirectUrl));
             
             // Try to extract photo ID from various patterns in the redirect URL
             const redirectAfMatches = finalRedirectUrl.match(/AF1Qip[A-Za-z0-9_-]{10,}/);
@@ -211,7 +221,7 @@ export function registerRoutes(app: Express): Server {
           // If we found a photo ID, use it to construct a direct URL with authentication params
           if (photoId) {
             finalUrl = `https://lh3.googleusercontent.com/d/${photoId}=w1200`;
-            console.log('Converted to direct Google Photos URL:', finalUrl);
+            console.log('Converted to direct Google Photos host:', safeUrlHost(finalUrl));
           } else {
             console.log('Could not extract Google Photos ID, using original URL');
           }
@@ -232,7 +242,7 @@ export function registerRoutes(app: Express): Server {
       if (url.includes('dropbox.com') && !url.includes('dl=1')) {
         // Convert shared Dropbox links to direct download links
         finalUrl = url.includes('?') ? `${url}&dl=1` : `${url}?dl=1`;
-        console.log('Converted Dropbox URL to direct download:', finalUrl);
+        console.log('Converted Dropbox URL to direct download');
       }
       
       // Handle OneDrive URLs
@@ -240,7 +250,7 @@ export function registerRoutes(app: Express): Server {
         // OneDrive sharing links might need to be modified for direct download
         if (!url.includes('download=1')) {
           finalUrl = url.includes('?') ? `${url}&download=1` : `${url}?download=1`;
-          console.log('Modified OneDrive URL for direct download:', finalUrl);
+          console.log('Modified OneDrive URL for direct download');
         }
       }
       
@@ -251,11 +261,11 @@ export function registerRoutes(app: Express): Server {
         if (matches && matches[1]) {
           const fileId = matches[1];
           finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-          console.log('Converted Google Drive URL to direct download:', finalUrl);
+          console.log('Converted Google Drive URL to direct download');
         }
       }
       
-      console.log('Fetching from URL:', finalUrl);
+      console.log('Fetching image from host:', safeUrlHost(finalUrl));
       
       // Prepare headers based on URL type
       const requestHeaders: Record<string, string> = {
@@ -279,11 +289,11 @@ export function registerRoutes(app: Express): Server {
       
       const response = await fetch.default(finalUrl, {
         headers: requestHeaders,
-        timeout: 15000,
+        timeout: isThumbnail ? 4000 : 15000,
       });
       
       if (!response.ok) {
-        console.error(`Failed to fetch image from ${finalUrl}, status: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch image from ${safeUrlHost(finalUrl)}, status: ${response.status} ${response.statusText}`);
         
         // If Google Photos URL and we failed, try an alternative approach
         if (finalUrl.includes('googleusercontent.com') && response.status === 400) {
@@ -291,7 +301,7 @@ export function registerRoutes(app: Express): Server {
           
           // Try a different size parameter or format
           const altSizeUrl = finalUrl.replace('=w1200', '=s0');
-          console.log('Trying alternative URL:', altSizeUrl);
+          console.log('Trying alternative Google Photos size on host:', safeUrlHost(altSizeUrl));
           
           try {
             const altResponse = await fetch.default(altSizeUrl, {
@@ -351,7 +361,7 @@ export function registerRoutes(app: Express): Server {
         if (!hasImageExtension) {
           console.log('Not recognized as an image by content type or extension:', {
             contentType,
-            url: finalUrl
+            host: safeUrlHost(finalUrl)
           });
           
           // For now, we'll try to process it as an image anyway
@@ -388,11 +398,28 @@ export function registerRoutes(app: Express): Server {
       
       // Add basic validation that we received something
       if (!buffer || buffer.length === 0) {
-        console.error('Received empty buffer from URL:', finalUrl);
+        console.error('Received empty image buffer from host:', safeUrlHost(finalUrl));
         return res.status(400).json({
-          message: 'Received empty response from image URL',
-          url: finalUrl
+          message: 'Received empty response from image URL'
         });
+      }
+
+      if (isThumbnail) {
+        try {
+          const thumbnailBuffer = await sharp(buffer)
+            .rotate()
+            .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 76 })
+            .toBuffer();
+
+          res.set({
+            'Content-Type': 'image/webp',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          return res.send(thumbnailBuffer);
+        } catch (error) {
+          console.warn('Unable to resize external image; returning the original image:', error);
+        }
       }
 
       // Check the buffer signature for HEIC/HEIF files
@@ -410,7 +437,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Send detailed info about what we're returning
-      console.log(`Successfully proxied image: ${finalUrl}, size: ${buffer.length} bytes, content-type: ${imageContentType}`);
+      console.log(`Successfully proxied image from ${safeUrlHost(finalUrl)}, size: ${buffer.length} bytes, content-type: ${imageContentType}`);
       
       res.set('Content-Type', imageContentType);
       res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
@@ -421,7 +448,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         message: "Failed to proxy image", 
         error: error instanceof Error ? error.message : String(error),
-        url: req.query.url
+        host: typeof req.query.url === 'string' ? safeUrlHost(req.query.url) : undefined
       });
     }
   });
@@ -1103,6 +1130,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/products/:id/img", async (req, res) => {
     try {
       const productId = parseInt(req.params.id);
+      const isThumbnail = req.query.thumbnail === '1' || req.query.thumbnail === 'true';
       const product = await db.query.products.findFirst({
         where: eq(products.id, productId)
       });
@@ -1110,6 +1138,33 @@ export function registerRoutes(app: Express): Server {
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
+
+      const sendProductImage = async (imageBuffer: Buffer, contentType: string) => {
+        if (isThumbnail) {
+          try {
+            const thumbnailBuffer = await sharp(imageBuffer)
+              .rotate()
+              .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
+              .webp({ quality: 76 })
+              .toBuffer();
+
+            res.set({
+              'Content-Type': 'image/webp',
+              'Cache-Control': 'public, max-age=86400',
+            });
+            return res.send(thumbnailBuffer);
+          } catch (error) {
+            console.warn('Unable to resize product image; returning the original image:', error);
+          }
+        }
+
+        res.set({
+          'Content-Type': contentType,
+          'Content-Length': imageBuffer.length,
+          'Cache-Control': 'public, max-age=31557600',
+        });
+        return res.send(imageBuffer);
+      };
 
       // Handle database-stored image
       if (product.image_data) {
@@ -1122,15 +1177,7 @@ export function registerRoutes(app: Express): Server {
           });
 
           const imageBuffer = Buffer.from(imageInfo.data, 'base64');
-
-          // Set proper headers using the stored content type
-          res.set({
-            'Content-Type': imageInfo.contentType,
-            'Content-Length': imageBuffer.length,
-            'Cache-Control': 'public, max-age=31557600'
-          });
-
-          return res.send(imageBuffer);
+          return sendProductImage(imageBuffer, imageInfo.contentType);
         } catch (error) {
           console.error('Error processing image data:', error);
           return res.status(500).json({ 
@@ -1152,10 +1199,16 @@ export function registerRoutes(app: Express): Server {
           // Get content type based on file extension
           const ext = path.extname(filePath).toLowerCase();
           const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
-          
-          res.set('Content-Type', contentType);
-          console.log('Serving image from file:', filePath, 'Content-Type:', contentType);
-          
+
+          if (isThumbnail) {
+            const imageBuffer = await fs.promises.readFile(filePath);
+            return sendProductImage(imageBuffer, contentType);
+          }
+
+          res.set({
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=31557600',
+          });
           return res.sendFile(filePath);
         } catch (error) {
           console.error('Error serving image file:', error);

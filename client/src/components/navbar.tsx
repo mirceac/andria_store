@@ -58,7 +58,7 @@ export default function Navbar() {
     enabled: !!user,
   });
 
-  const buttonClasses = "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors duration-300";
+  const buttonClasses = "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors duration-200";
 
   // Get user initials for avatar fallback
   const userInitials = user
@@ -66,7 +66,7 @@ export default function Navbar() {
     : "U";
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 w-full overflow-x-hidden">
+    <nav className="bg-white border-b border-border sticky top-0 z-50 w-full overflow-x-hidden">
       <div className="w-full h-16 flex items-center overflow-x-hidden relative">
         {/* Left Side: Categories Filter Button (Mobile) + Architectural Logo */}
         <div className="flex items-center flex-shrink-0 flex-1 md:flex-none">
@@ -80,10 +80,10 @@ export default function Navbar() {
             <LayoutGrid className="h-5 w-5" />
           </Button>
           <Link href="/" className="flex items-center group flex-shrink-0">
-            <div className="relative h-16 w-full sm:w-56 md:w-64 bg-gradient-to-r from-blue-100 via-blue-50 to-transparent flex items-center justify-center group-hover:from-blue-200 group-hover:via-blue-100 transition-all duration-300 pl-14 md:pl-4 pr-4">
+              <div className="relative h-16 w-full sm:w-56 md:w-64 bg-white border-r border-border flex items-center justify-center group-hover:bg-muted/40 transition-colors duration-200 pl-14 md:pl-4 pr-4">
               {/* SVG Icon */}
               <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                <svg className="w-full h-full text-slate-600 group-hover:text-slate-700 transition-colors duration-300" viewBox="0 0 24 24" fill="none">
+                <svg className="w-full h-full text-foreground/70 group-hover:text-primary transition-colors duration-200" viewBox="0 0 24 24" fill="none">
                   <g transform="translate(12, 12) rotate(-15) scale(1.25)">
                     {/* Back ellipse of cylinder (left side) */}
                     <ellipse cx="-3" cy="0" rx="2" ry="5" fill="currentColor" opacity="0.2"/>
@@ -116,8 +116,8 @@ export default function Navbar() {
               </div>
               {/* Text overlaid on icon */}
               <div className="relative z-10 flex flex-col items-center justify-center leading-tight">
-                <h1 className="text-xs sm:text-xl md:text-2xl font-light tracking-tight sm:tracking-wider text-slate-700 group-hover:text-slate-900 transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
-                <p className="text-[9px] sm:text-xs md:text-sm tracking-tight sm:tracking-widest text-slate-600 italic" style={{ fontFamily: 'Georgia, serif' }}>gallery & design</p>
+                <h1 className="text-xs sm:text-xl md:text-2xl font-light tracking-tight sm:tracking-wider text-foreground group-hover:text-primary transition-colors uppercase" style={{ fontFamily: 'Georgia, serif' }}>Architecture</h1>
+                <p className="text-[9px] sm:text-xs md:text-sm tracking-tight sm:tracking-widest text-muted-foreground italic" style={{ fontFamily: 'Georgia, serif' }}>gallery & design</p>
               </div>
             </div>
           </Link>
@@ -133,11 +133,11 @@ export default function Navbar() {
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 bg-white border-slate-200 focus:border-blue-500"
+              className="w-full pl-9 bg-white border-border focus:border-primary"
             />
           </div>
           <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-            <SelectTrigger className="w-[140px] bg-slate-50 hidden md:flex flex-shrink-0">
+            <SelectTrigger className="w-[140px] bg-transparent hidden md:flex flex-shrink-0">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -162,25 +162,25 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-56 max-w-sm">
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/products" className="flex items-center text-slate-600 hover:text-slate-700">
+                  <Link href="/admin/products" className="flex items-center text-foreground hover:text-primary">
                     <Box className="mr-2 h-4 w-4" />
                     <span>Products</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/categories" className="flex items-center text-slate-600 hover:text-slate-700">
+                  <Link href="/admin/categories" className="flex items-center text-foreground hover:text-primary">
                     <LayoutGrid className="mr-2 h-4 w-4" />
                     <span>Categories</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/users" className="flex items-center text-slate-600 hover:text-slate-700">
+                  <Link href="/admin/users" className="flex items-center text-foreground hover:text-primary">
                     <Users className="mr-2 h-4 w-4" />
                     <span>Users</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/orders" className="flex items-center text-slate-600 hover:text-slate-700">
+                  <Link href="/admin/orders" className="flex items-center text-foreground hover:text-primary">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     <span>Orders</span>
                   </Link>
@@ -199,7 +199,7 @@ export default function Navbar() {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.picture || undefined} />
-                    <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
+                    <AvatarFallback className="text-xs bg-primary text-primary-foreground font-semibold">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
@@ -209,7 +209,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-2 p-2">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={profile?.picture || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>

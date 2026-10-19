@@ -6,12 +6,16 @@ export function buttonVariants({ variant, className }: { variant?: string, class
   const hasCustomClass = className?.includes('btn-');
   
   return cn(
-    "inline-flex items-center justify-center rounded-lg text-base font-semibold transition-colors focus:outline-none focus:ring-4 focus:ring-offset-2 px-4 py-2",
+    "inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 px-4 py-2",
     !hasCustomClass && variant === "outline"
-      ? "border border-slate-300 text-slate-600 hover:bg-blue-50 hover:text-slate-700"
+      ? "border border-input bg-background text-foreground hover:bg-muted"
       : !hasCustomClass && variant === "ghost"
-      ? "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700"
-      : !hasCustomClass && "bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700",
+      ? "bg-transparent text-foreground hover:bg-muted"
+      : !hasCustomClass && variant === "secondary"
+      ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+      : !hasCustomClass && variant === "destructive"
+      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      : !hasCustomClass && "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
     "disabled:opacity-50 disabled:pointer-events-none",
     className
   );
@@ -19,12 +23,12 @@ export function buttonVariants({ variant, className }: { variant?: string, class
 
 export const colors = {
   primary: {
-    DEFAULT: "#eff6ff", // Light blue (blue-50)
-    foreground: "#475569", // Slate-600 text
+    DEFAULT: "#197a68",
+    foreground: "#ffffff",
   },
   secondary: {
-    DEFAULT: "#dbeafe", // Light blue (blue-100)
-    foreground: "#334155", // Slate-700 text
+    DEFAULT: "#fff0c2",
+    foreground: "#5e3c1c",
   },
 };
 

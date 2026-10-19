@@ -13,12 +13,39 @@ export default {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "#3B82F6", // blue-500 (lighter blue)
-          hover: "#2563EB", // blue-600
-          active: "#2563EB",
-          foreground: "#ffffff",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          hover: "hsl(var(--primary) / 0.9)",
+          active: "hsl(var(--primary) / 0.82)",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
       },
     },
   },
@@ -28,7 +55,7 @@ export default {
     function ({ addComponents }) {
       addComponents({
         ".btn-primary": {
-          "@apply rounded-md bg-blue-400 py-2 px-4 border border-transparent text-center text-sm text-gray-800 transition-all shadow-md hover:bg-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-500 disabled:pointer-events-none disabled:opacity-50":
+          "@apply rounded-md bg-primary py-2 px-4 border border-transparent text-center text-sm text-primary-foreground transition-all shadow-sm hover:bg-primary-hover focus:ring-2 focus:ring-primary focus:ring-offset-2 active:bg-primary-active disabled:pointer-events-none disabled:opacity-50":
             "",
         },
         ".btn-danger": {
@@ -44,7 +71,7 @@ export default {
             "",
         },
         ".table-container": {
-          "@apply relative flex flex-col w-full h-full text-gray-700 bg-white shadow-md rounded-lg bg-clip-border":
+          "@apply relative flex flex-col w-full h-full text-foreground bg-card shadow-sm rounded-lg bg-clip-border":
             "",
         },
         "table": {
@@ -52,35 +79,35 @@ export default {
             "",
         },
         "thead tr": {
-          "@apply border-b border-slate-300 bg-slate-50":
+          "@apply border-b border-border bg-muted":
             "",
         },
         "th": {
-          "@apply p-4 text-sm font-normal leading-none text-slate-500":
+          "@apply p-4 text-sm font-medium leading-none text-muted-foreground":
             "",
         },
         "tbody tr": {
-          "@apply hover:bg-slate-50":
+          "@apply hover:bg-muted/60":
             "",
         },
         "td": {
-          "@apply p-4 border-b border-slate-200 py-5":
+          "@apply p-4 border-b border-border py-5":
             "",
         },
         ".table-title": {
-          "@apply text-lg font-semibold text-slate-800":
+          "@apply text-lg font-semibold text-foreground":
             "",
         },
         ".table-subtitle": {
-          "@apply text-slate-500":
+          "@apply text-muted-foreground":
             "",
         },
         ".table-cell-text": {
-          "@apply block font-semibold text-sm text-slate-800":
+          "@apply block font-semibold text-sm text-foreground":
             "",
         },
         ".table-cell-subtext": {
-          "@apply text-sm text-slate-500":
+          "@apply text-sm text-muted-foreground":
             "",
         },
       });

@@ -192,8 +192,8 @@ export default function HomePage() {
           <div
             className={cn(
               "flex-1 flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-              "hover:bg-gray-50 active:bg-gray-100",
-              isSelected && "bg-indigo-50 border border-indigo-200 shadow-sm",
+              "hover:bg-muted active:bg-muted/80",
+              isSelected && "bg-accent border border-primary/20 shadow-sm",
               !isSelected && "border border-transparent"
             )}
             style={{ 
@@ -207,8 +207,8 @@ export default function HomePage() {
                 <button
                   className={cn(
                     "p-1 mr-2 rounded-sm flex items-center justify-center w-5 h-5 transition-all duration-200",
-                    "hover:bg-gray-200 active:bg-gray-300",
-                    isSelected && "hover:bg-indigo-200 active:bg-indigo-300"
+                    "hover:bg-muted active:bg-muted/80",
+                    isSelected && "hover:bg-accent active:bg-accent/80"
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -218,12 +218,12 @@ export default function HomePage() {
                   {isExpanded ? (
                     <ChevronDown className={cn(
                       "h-3.5 w-3.5 transition-colors duration-200",
-                      isSelected ? "text-indigo-700" : "text-gray-600"
+                      isSelected ? "text-primary" : "text-muted-foreground"
                     )} />
                   ) : (
                     <ChevronRight className={cn(
                       "h-3.5 w-3.5 transition-colors duration-200",
-                      isSelected ? "text-indigo-700" : "text-gray-600"
+                      isSelected ? "text-primary" : "text-muted-foreground"
                     )} />
                   )}
                 </button>
@@ -232,13 +232,13 @@ export default function HomePage() {
                 <div className="w-5 mr-2 flex justify-center">
                   <div className={cn(
                     "w-1.5 h-1.5 rounded-full transition-colors duration-200",
-                    isSelected ? "bg-indigo-500" : "bg-gray-400"
+                    isSelected ? "bg-primary" : "bg-muted-foreground/60"
                   )}></div>
                 </div>
               )}
               <span className={cn(
                 "truncate text-sm font-medium transition-colors duration-200",
-                isSelected ? "text-indigo-900" : "text-gray-700",
+                isSelected ? "text-foreground" : "text-muted-foreground",
                 "group-hover:text-gray-900"
               )}>
                 {category.name}
@@ -631,15 +631,15 @@ export default function HomePage() {
             <div
               className={cn(
                 "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                "hover:bg-gray-50 active:bg-gray-100",
-                selectedCategoryId === null && "bg-indigo-50 border border-indigo-200 shadow-sm",
+                "hover:bg-muted active:bg-muted/80",
+                selectedCategoryId === null && "bg-accent border border-primary/20 shadow-sm",
                 selectedCategoryId !== null && "border border-transparent"
               )}
               onClick={() => handleCategorySelect(null)}
             >
               <span className={cn(
                 "text-sm font-medium transition-colors duration-200",
-                selectedCategoryId === null ? "text-indigo-900" : "text-gray-700",
+                selectedCategoryId === null ? "text-foreground" : "text-muted-foreground",
                 "hover:text-gray-900"
               )}>
                 All Products
@@ -666,7 +666,7 @@ export default function HomePage() {
             <div className="mb-6 border-b border-gray-200 pb-3">
               <nav className="flex items-center space-x-1 text-sm">
                 <button
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  className="text-primary hover:text-primary/80 hover:underline transition-colors"
                   onClick={() => handleCategorySelect(null)}
                 >
                   All Products
@@ -690,7 +690,7 @@ export default function HomePage() {
                         <span className="font-medium text-gray-900">{category.name}</span>
                       ) : (
                         <button
-                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                          className="text-primary hover:text-primary/80 hover:underline transition-colors"
                           onClick={() => handleCategorySelect(category.id)}
                         >
                           {category.name}
@@ -721,11 +721,11 @@ export default function HomePage() {
           <div 
             key={`${product.id}-${timestamp}`}
             className={cn(
-              "flex flex-col rounded border hover:shadow-sm transition-shadow bg-gray-50 overflow-hidden w-full",
+              "flex flex-col rounded border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 bg-white overflow-hidden w-full",
               // Mobile-optimized heights
               isMobile ? "h-[260px]" : "h-[290px]",
               product.stock > 0 
-                ? "border-slate-200 hover:border-blue-200" 
+                ? "border-border"
                 : "border-red-200 hover:border-red-300"
             )}
             style={{maxWidth: '100%', minWidth: 0}}
@@ -791,19 +791,19 @@ export default function HomePage() {
                     
                     if (hasDigital && physicalAvailable) {
                       return (
-                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-secondary text-secondary-foreground hover:bg-secondary/80">
                           Physical
                         </Badge>
                       );
                     } else if (hasDigital) {
                       return (
-                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-accent text-accent-foreground hover:bg-accent/80">
                           Digital
                         </Badge>
                       );
                     } else if (physicalAvailable) {
                       return (
-                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100">
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-secondary text-secondary-foreground hover:bg-secondary/80">
                           Physical ({physicalStock} left)
                         </Badge>
                       );

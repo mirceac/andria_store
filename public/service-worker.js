@@ -1,5 +1,5 @@
-const CACHE_NAME = 'gallery-v1';
-const RUNTIME_CACHE = 'gallery-runtime-v1';
+const CACHE_NAME = 'gallery-v3';
+const RUNTIME_CACHE = 'gallery-runtime-v3';
 
 // Assets to cache on install
 const PRECACHE_URLS = [
@@ -42,6 +42,26 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Always check the network for the app shell so installed clients see new builds.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(event.request, response.clone());
+            });
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(event.request);
+          return cachedResponse || caches.match('/index.html');
+        })
+    );
     return;
   }
 

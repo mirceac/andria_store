@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2, FileImage, RefreshCw, ExternalLink } from "lucide-react";
-import { useStorageCache } from "@/hooks/use-storage-cache";
+import { FileImage, ExternalLink } from "lucide-react";
 
 interface ImageThumbnailProps {
   productId: number;
@@ -28,135 +27,46 @@ export function ImageThumbnail({
 }: ImageThumbnailProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const { markAsLoaded, hasBeenLoaded, clearCache } = useStorageCache(imageUrl);
+  const isProductImageEndpoint = imageUrl?.startsWith(`/api/products/${productId}/img`);
+  const isUploadedImage = imageUrl?.startsWith('/uploads/');
+  const imageSrc = productId && (isProductImageEndpoint || isUploadedImage || !imageUrl)
+    ? `/api/products/${productId}/img?thumbnail=1`
+    : imageUrl;
 
   useEffect(() => {
-    console.log('ImageThumbnail useEffect:', { 
-      productId, 
-      imageUrl, 
-      imageData: !!imageData,
-      imageDataType: typeof imageData,
-      imageDataLength: imageData?.length 
-    });
     setLoading(true);
     setError(false);
-    setErrorMessage(null);
-
-    if (imageUrl) {
-      // If we have a direct URL, use it
-      console.log('Using imageUrl:', imageUrl);
-      setImageSrc(imageUrl);
-    } else if (imageData) {
-      // For database-stored images, always use the API endpoint to avoid issues
-      // This is safer and more reliable than trying to parse the data client-side
-      if (productId) {
-        const apiUrl = `/api/products/${productId}/img?v=${Date.now()}`;
-        console.log('Using API endpoint for imageData:', apiUrl, 'productId:', productId);
-        setImageSrc(apiUrl);
-      } else {
-        console.error('No productId provided for imageData');
-        setError(true);
-        setLoading(false);
-      }
-    } else if (productId) {
-      // If we have neither URL nor data, use the API endpoint
-      const apiUrl = `/api/products/${productId}/img?v=${Date.now()}`;
-      console.log('Using API endpoint (no data):', apiUrl);
-      setImageSrc(apiUrl);
-    } else {
-      console.error('No productId, imageUrl, or imageData provided');
-      setError(true);
-      setLoading(false);
-    }
-  }, [productId, imageUrl, imageData]);
-
-  const handleLoad = () => {
-    setLoading(false);
-    if (imageUrl) {
-      markAsLoaded(); // Mark as successfully loaded
-    }
-  };
-
-  const handleError = () => {
-    console.error('Failed to load image:', { 
-      imageUrl, 
-      imageData: !!imageData, 
-      imageSrc,
-      productId 
-    });
-    setLoading(false);
-    
-    // Check if this is a file not found error
-    if (imageSrc) {
-      console.log('Testing image URL with HEAD request:', imageSrc);
-      fetch(imageSrc, { method: 'HEAD' })
-        .then(response => {
-          console.log('Image fetch response:', {
-            status: response.status,
-            statusText: response.statusText,
-            contentType: response.headers.get('content-type'),
-            url: imageSrc,
-            productId
-          });
-          
-          // Check if it's a 404 OR if we got HTML/JSON instead of an image (fallback responses)
-          const contentType = response.headers.get('content-type') || '';
-          const isHtml = contentType.includes('text/html');
-          const isJson = contentType.includes('application/json');
-          
-          if (response.status === 404 || isHtml || isJson) {
-            setErrorMessage("File not found");
-          } else {
-            setErrorMessage(null);
-          }
-          setError(true);
-        })
-        .catch((err) => {
-          console.log('Image fetch error:', err, imageSrc);
-          setErrorMessage("File not found"); // Assume network errors mean file not found
-          setError(true);
-        });
-    } else {
-      setError(true);
-      setErrorMessage(null);
-    }
-  };
+  }, [imageSrc]);
 
   return (
     <div
       className={cn(
-        "relative rounded overflow-hidden border bg-white flex items-center justify-center cursor-pointer group",
+        "relative rounded overflow-hidden border border-border bg-white flex items-center justify-center cursor-pointer group",
         className
       )}
       style={{ width: `${width}px`, height: `${height}px` }}
       onClick={onClick}
     >
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/60 animate-pulse">
+          <FileImage className="h-7 w-7 text-muted-foreground/50" />
         </div>
       )}
 
       {error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-2 text-center">
-          <FileImage className="h-8 w-8 mb-1 text-gray-400" />
-          <span className="text-xs">
-            {errorMessage === "File not found" ? "File not found" : "Image unavailable"}
-          </span>
-          {showTryDirect && errorMessage !== "File not found" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/50 text-muted-foreground p-2 text-center">
+          <FileImage className="h-7 w-7 opacity-60" />
+          <span className="text-xs">Preview unavailable</span>
+          {showTryDirect && (imageUrl || imageSrc) && (
             <button
-              className="mt-2 flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (productId) {
-                  window.open(`/api/products/${productId}/img?v=${Date.now()}`, '_blank');
-                }
+              className="flex items-center gap-1 text-primary hover:underline text-xs"
+              onClick={(event) => {
+                event.stopPropagation();
+                window.open(imageUrl || imageSrc || '', '_blank', 'noopener,noreferrer');
               }}
             >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Try Direct
+              <ExternalLink className="h-3 w-3" />
+              Open original
             </button>
           )}
         </div>
@@ -165,10 +75,15 @@ export function ImageThumbnail({
           <img
             src={imageSrc}
             alt={alt}
+            loading="lazy"
+            decoding="async"
             className="max-h-full max-w-full object-contain"
             style={{ opacity: loading ? 0 : 1 }}
-            onLoad={handleLoad}
-            onError={handleError}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setError(true);
+            }}
           />
         )
       )}
