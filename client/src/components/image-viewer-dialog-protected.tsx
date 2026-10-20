@@ -291,7 +291,7 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
             )}
             
             <div
-              className="relative pointer-events-none"
+              className="relative flex h-full w-full items-center justify-center pointer-events-none"
               onContextMenu={(e) => e.preventDefault()}
               style={{
                 userSelect: 'none',

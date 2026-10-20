@@ -608,7 +608,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+    <div className={`flex relative overflow-x-hidden`}>
 
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
@@ -673,7 +673,7 @@ export default function HomePage() {
       {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
         "flex-1 max-w-full",
-        isMobile ? "pt-3 px-2 pb-4" : "p-4"
+        "px-3 py-3 md:p-4"
       )}>
         <div>
           {/* Breadcrumb Navigation */}

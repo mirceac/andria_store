@@ -36,6 +36,7 @@ function Router() {
     <div className={`overflow-x-clip w-full max-w-[100vw] min-h-screen ${isMobile ? "pb-16" : ""}`}>
       <Navbar />
       <VerticalMenu />
+      <div className="md:pl-16">
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/product/:id" component={ProductPage} />
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/checkout" component={CheckoutPage} />
         <Route component={NotFound} />
       </Switch>
+      </div>
     </div>
   );
 }

@@ -201,7 +201,7 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+      <div className={`flex relative overflow-x-hidden`}>
 
         {/* Sidebar Overlay - Shows when sidebar is open */}
         {sidebarOpen && (
@@ -252,7 +252,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 max-w-full px-1 py-3">
+        <div className="flex-1 max-w-full px-3 py-3">
           <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -263,7 +263,7 @@ export default function OrdersPage() {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+      <div className={`flex relative overflow-x-hidden`}>
 
         {/* Sidebar Overlay - Shows when sidebar is open */}
         {sidebarOpen && (
@@ -314,7 +314,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 max-w-full px-1 py-3">
+        <div className="flex-1 max-w-full px-3 py-3">
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
@@ -508,7 +508,7 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+    <div className={`flex relative overflow-x-hidden`}>
 
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
@@ -559,7 +559,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 max-w-full px-1 py-3 overflow-x-hidden">
+      <div className="flex-1 max-w-full px-3 py-3 overflow-x-hidden">
         <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-6`}>My Orders</h1>
         <div className="space-y-6 w-full overflow-x-hidden">
           {processedOrders.map((order) => (

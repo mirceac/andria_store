@@ -191,7 +191,7 @@ export default function CartPage() {
 
   return (
     <div 
-      className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-8'}`}
+      className={`container mx-auto ${isMobile ? 'px-3 py-3' : 'py-8'}`}
       onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
     >
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-6`}>
@@ -213,7 +213,7 @@ export default function CartPage() {
           <p className={`mt-2 text-muted-foreground ${isMobile ? 'text-sm px-4' : ''}`}>
             Looks like you haven't added anything to your cart yet.
           </p>
-          <Button className={`mt-6 ${isMobile ? 'w-full mx-4' : ''}`} onClick={navigateToHome}>
+          <Button className={`mt-6 ${isMobile ? 'w-full' : ''}`} onClick={navigateToHome}>
             Browse Products
           </Button>
         </div>

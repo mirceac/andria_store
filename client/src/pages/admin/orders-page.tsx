@@ -204,7 +204,7 @@ export default function AdminOrdersPage() {
 
   if (!user?.is_admin) {
     return (
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'px-4 py-8'}`}>
         <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Unauthorized Access</h1>
         <p className="text-muted-foreground mt-2">
           You do not have permission to view this page.
@@ -215,7 +215,7 @@ export default function AdminOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className={`flex items-center justify-center min-h-screen ${isMobile ? '' : 'ml-16'}`}>
+      <div className={`flex items-center justify-center min-h-screen`}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -223,7 +223,7 @@ export default function AdminOrdersPage() {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'px-4 py-8'}`}>
         <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold mb-8`}>Manage Orders</h1>
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -404,7 +404,7 @@ export default function AdminOrdersPage() {
 
   return (
     <>
-      <div className={`container mx-auto ${isMobile ? 'px-1 py-3 max-w-full' : 'ml-16 px-4 py-8'} overflow-x-hidden w-full`}>
+      <div className={`container mx-auto ${isMobile ? 'px-3 py-3 max-w-full' : 'px-4 py-8'} overflow-x-hidden w-full`}>
         <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-8`}>Manage Orders</h1>
 
         <div className="space-y-6 w-full overflow-x-hidden">

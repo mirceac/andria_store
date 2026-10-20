@@ -164,7 +164,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className={`flex relative overflow-x-hidden ${isMobile ? '' : 'ml-16'}`} style={{ width: isMobile ? '100vw' : 'calc(100vw - 64px)' }}>
+    <div className={`flex relative overflow-x-hidden`}>
 
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
@@ -215,7 +215,7 @@ export default function AuthPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 max-w-full px-1 py-3">
+      <div className="flex-1 max-w-full px-3 py-3">
         <div className="min-h-screen md:min-h-[calc(100vh-4rem)] flex items-center justify-center w-full p-4 sm:p-6 md:p-8 overflow-hidden">
           <Card className="w-full max-w-md p-5 sm:p-6 overflow-hidden">
           <Tabs defaultValue="login">

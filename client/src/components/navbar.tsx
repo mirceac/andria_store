@@ -270,6 +270,31 @@ export default function Navbar() {
       </div>
     </nav>
     {location === "/" && !isMobile && <CategoryStrip />}
+    {location === "/" && isMobile && (
+      <div className="flex items-center gap-2 border-b border-border bg-chrome/60 px-3 py-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search products..."
+            aria-label="Search products"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full border-border bg-white pl-9 focus:border-primary"
+          />
+        </div>
+        <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
+          <SelectTrigger aria-label="Sort by" className="h-10 w-[128px] flex-shrink-0 bg-white">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name (A-Z)</SelectItem>
+            <SelectItem value="price_asc">Price (Low-High)</SelectItem>
+            <SelectItem value="price_desc">Price (High-Low)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    )}
     </>
   );
 }

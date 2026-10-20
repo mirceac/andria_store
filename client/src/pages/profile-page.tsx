@@ -597,7 +597,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-10'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-3 py-3' : 'py-10'}`}>
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
         <div>
           <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold flex items-center gap-2`}>

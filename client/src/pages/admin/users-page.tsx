@@ -225,7 +225,7 @@ export default function AdminUsersPage() {
 
   if (!user?.is_admin) {
     return (
-      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'ml-16 px-4 py-8'}`}>
+      <div className={`container mx-auto ${isMobile ? 'px-2 py-4' : 'px-4 py-8'}`}>
         <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Unauthorized Access</h1>
         <p className="text-muted-foreground mt-2">
           You do not have permission to view this page.
@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
 
   if (isLoading) {
     return (
-      <div className={`flex items-center justify-center min-h-screen ${isMobile ? '' : 'ml-16'}`}>
+      <div className={`flex items-center justify-center min-h-screen`}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'px-1 py-3' : 'ml-16 py-8 px-4'}`}>
+    <div className={`container mx-auto ${isMobile ? 'px-3 py-3' : 'py-8 px-4'}`}>
       <div className={`flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-center'} mb-8`}>
         <div>
           <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold flex items-center gap-2`}>
