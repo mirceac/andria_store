@@ -77,7 +77,7 @@ export function InstallPWAPrompt() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-20 left-4 right-4 md:bottom-4 z-50 animate-in slide-in-from-bottom duration-300">
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-2xl p-4 max-w-md mx-auto">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">

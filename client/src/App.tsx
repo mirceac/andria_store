@@ -21,6 +21,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "./components/navbar";
 import VerticalMenu from "./components/vertical-menu";
 import { InstallPWAPrompt } from "./components/install-pwa-prompt";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { initPdfWorker } from '@/lib/pdf-worker';
 import { SearchProvider } from '@/contexts/search-context';
 import { SortProvider } from '@/contexts/sort-context';
@@ -30,8 +31,9 @@ import CheckoutPage from "@/pages/checkout-page";
 initPdfWorker();
 
 function Router() {
+  const isMobile = useIsMobile();
   return (
-    <div className="overflow-x-hidden w-full max-w-[100vw] min-h-screen">
+    <div className={`overflow-x-clip w-full max-w-[100vw] min-h-screen ${isMobile ? "pb-16" : ""}`}>
       <Navbar />
       <VerticalMenu />
       <Switch>

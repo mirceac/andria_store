@@ -27,11 +27,6 @@ export default function VerticalMenu() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const [location, setLocation] = useLocation();
 
-  // Hide vertical menu on mobile
-  if (isMobile === true) {
-    return null;
-  }
-
   // Opens the same category drawer used by the "Browse categories" button on the home page
   const handleBrowseCategories = () => {
     if (location !== "/") {
@@ -59,6 +54,54 @@ export default function VerticalMenu() {
       badge: itemCount,
     },
   ];
+
+  if (isMobile === true) {
+    const tabClasses = (active: boolean) =>
+      cn(
+        "relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] transition-colors",
+        active ? "text-primary" : "text-muted-foreground active:bg-black/5"
+      );
+
+    return (
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-14 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] box-content"
+      >
+        <button
+          type="button"
+          aria-label="Browse categories"
+          onClick={handleBrowseCategories}
+          className={tabClasses(location === "/")}
+        >
+          <LayoutGrid className="h-5 w-5" />
+          <span>Categories</span>
+        </button>
+        {menuItems
+          .filter((item) => item.show)
+          .map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                className={tabClasses(location.startsWith(item.href))}
+              >
+                <span className="relative">
+                  <Icon className="h-5 w-5" />
+                  {item.badge > 0 && (
+                    <span className="absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
+                      {item.badge}
+                    </span>
+                  )}
+                </span>
+                <span>{item.label === "My Orders" ? "Orders" : item.label}</span>
+              </Link>
+            );
+          })}
+      </nav>
+    );
+  }
 
   return (
     <TooltipProvider delayDuration={150}>

@@ -103,6 +103,15 @@ export default function HomePage() {
     return () => window.removeEventListener('selectCategory', handleSelectCategory as EventListener);
   }, []);
 
+  // Keep the navbar category strip in sync with the current selection
+  useEffect(() => {
+    const broadcast = () =>
+      window.dispatchEvent(new CustomEvent('categorySelected', { detail: { categoryId: selectedCategoryId } }));
+    broadcast();
+    window.addEventListener('requestCategorySelection', broadcast);
+    return () => window.removeEventListener('requestCategorySelection', broadcast);
+  }, [selectedCategoryId]);
+
   // Close sidebar on mobile when screen size changes
   useEffect(() => {
     if (isMobile && sidebarOpen) {
@@ -195,7 +204,7 @@ export default function HomePage() {
         <div className="flex items-center group">
           <div
             className={cn(
-              "flex-1 flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
+              "flex-1 flex items-center min-h-9 py-1.5 px-2 rounded-md cursor-pointer transition-all duration-200",
               "hover:bg-muted active:bg-muted/80",
               isSelected && "bg-accent border border-primary/20 shadow-sm",
               !isSelected && "border border-transparent"
@@ -210,7 +219,7 @@ export default function HomePage() {
               {categoryHasChildren && (
                 <button
                   className={cn(
-                    "p-1 mr-2 rounded-sm flex items-center justify-center w-5 h-5 transition-all duration-200",
+                    "p-1 mr-2 rounded-sm flex shrink-0 items-center justify-center w-5 h-5 transition-all duration-200",
                     "hover:bg-muted active:bg-muted/80",
                     isSelected && "hover:bg-accent active:bg-accent/80"
                   )}
@@ -233,7 +242,7 @@ export default function HomePage() {
                 </button>
               )}
               {!categoryHasChildren && (
-                <div className="w-5 mr-2 flex justify-center">
+                <div className="w-5 mr-2 flex shrink-0 justify-center">
                   <div className={cn(
                     "w-1.5 h-1.5 rounded-full transition-colors duration-200",
                     isSelected ? "bg-primary" : "bg-muted-foreground/60"
@@ -241,7 +250,7 @@ export default function HomePage() {
                 </div>
               )}
               <span className={cn(
-                "truncate text-sm font-medium transition-colors duration-200",
+                "min-w-0 break-words text-sm font-medium leading-snug transition-colors duration-200",
                 isSelected ? "text-foreground" : "text-muted-foreground",
                 "group-hover:text-foreground"
               )}>
@@ -604,14 +613,14 @@ export default function HomePage() {
       {/* Sidebar Overlay - Shows when sidebar is open */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-x-0 bottom-0 top-16 z-40 bg-foreground/30 backdrop-blur-[1px] md:left-16"
+          className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] top-16 z-[55] md:bottom-0 bg-foreground/30 backdrop-blur-[1px] md:left-16"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar - slides out from the left rail on desktop, from the screen edge on mobile */}
       <div className={cn(
-        "fixed bottom-0 left-0 top-16 z-40 w-72 max-w-[85vw] overflow-y-auto border-r border-border bg-chrome shadow-xl transition-transform duration-300 md:left-16",
+        "fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 top-16 z-[60] w-80 max-w-[88vw] overflow-y-auto overflow-x-hidden md:bottom-0 border-r border-border bg-chrome shadow-xl transition-transform duration-300 md:left-16",
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:-translate-x-[calc(100%+4rem)]"
       )}>
         <div className="p-5">
@@ -664,103 +673,9 @@ export default function HomePage() {
       {/* Main Content - Full width since sidebar is fixed overlay */}
       <div className={cn(
         "flex-1 max-w-full",
-        isMobile ? "pt-20 px-2 pb-4" : "p-4"
+        isMobile ? "pt-3 px-2 pb-4" : "p-4"
       )}>
         <div>
-          <section className="relative mb-6 flex min-h-[160px] items-center overflow-hidden rounded-2xl border border-primary/15 bg-chrome px-5 py-5 sm:px-8 sm:py-6">
-            <div className="pointer-events-none absolute -right-12 -top-20 hidden h-80 w-80 rounded-full border border-primary/10 md:block" />
-            <div className="pointer-events-none absolute -right-3 -top-11 hidden h-64 w-64 rounded-full border border-primary/10 md:block" />
-            <svg
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 hidden h-full w-[44%] text-primary/25 md:block"
-              viewBox="0 0 360 260"
-              fill="none"
-              preserveAspectRatio="xMidYMax meet"
-            >
-              <path d="M44 260V128a136 136 0 0 1 272 0v132" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M81 260V130a99 99 0 0 1 198 0v130" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M118 260V132a62 62 0 0 1 124 0v128" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M22 259.5h316M99 219h162M99 237h162" stroke="currentColor" strokeWidth="1" />
-              <path d="M180 65v195M144 260v-83h72v83" stroke="currentColor" strokeWidth="1" />
-            </svg>
-            <div className="relative z-10 w-full">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary sm:text-xs">
-                A considered collection
-              </p>
-              <p className="max-w-lg font-serif text-xl leading-snug text-foreground sm:text-2xl">
-                Browse by category to narrow the collection
-              </p>
-
-              {(() => {
-                const roots = buildCategoryTree(categories || []);
-                if (roots.length === 0) return null;
-
-                // Path from the top-level category down to the selected one
-                const path: CategoryWithChildren[] = [];
-                const findPath = (nodes: CategoryWithChildren[]): boolean =>
-                  nodes.some((node) => {
-                    path.push(node);
-                    if (node.id === selectedCategoryId || findPath(node.children)) return true;
-                    path.pop();
-                    return false;
-                  });
-                if (selectedCategoryId) findPath(roots);
-
-                const activeRoot = path[0];
-                const chip = (active: boolean) =>
-                  cn(
-                    "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-primary/20 bg-white/70 text-foreground hover:border-primary/50 hover:bg-white"
-                  );
-                const rowClass =
-                  "-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible md:max-w-[75%]";
-
-                return (
-                  <div className="mt-4 space-y-2">
-                    <div className={rowClass} role="tablist" aria-label="Categories">
-                      <button type="button" className={chip(selectedCategoryId === null)} onClick={() => handleCategorySelect(null)}>
-                        All
-                      </button>
-                      {roots.map((root) => (
-                        <button
-                          key={root.id}
-                          type="button"
-                          className={chip(activeRoot?.id === root.id)}
-                          onClick={() => handleCategorySelect(root.id)}
-                        >
-                          {root.name}
-                        </button>
-                      ))}
-                    </div>
-                    {activeRoot && activeRoot.children.length > 0 && (
-                      <div className={cn(rowClass, "border-t border-primary/10 pt-2")}>
-                        <button
-                          type="button"
-                          className={chip(selectedCategoryId === activeRoot.id)}
-                          onClick={() => handleCategorySelect(activeRoot.id)}
-                        >
-                          All {activeRoot.name}
-                        </button>
-                        {activeRoot.children.map((child) => (
-                          <button
-                            key={child.id}
-                            type="button"
-                            className={chip(path.some((p) => p.id === child.id))}
-                            onClick={() => handleCategorySelect(child.id)}
-                          >
-                            {child.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </section>
-
           {/* Breadcrumb Navigation */}
           {selectedCategoryId && categories && (
             <div className="mb-6 border-b border-gray-200 pb-3">
