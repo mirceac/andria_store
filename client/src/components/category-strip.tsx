@@ -72,7 +72,7 @@ export default function CategoryStrip() {
   const activeRoot = path[0];
 
   return (
-    <div className="border-b border-border bg-chrome/60 px-3 py-2 md:ml-16 md:px-4">
+    <div className="border-b border-border bg-chrome px-3 py-2 md:ml-16 md:px-4">
       <div className="flex items-center gap-4">
         <p className="hidden shrink-0 font-serif text-sm italic text-muted-foreground lg:block">
           A considered collection

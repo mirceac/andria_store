@@ -285,7 +285,7 @@ export default function Navbar() {
     </nav>
     {location === "/" && !isMobile && <CategoryStrip />}
     {location === "/" && isMobile && (
-      <div className="flex items-center gap-2 border-b border-border bg-chrome/60 px-3 py-2">
+      <div className="flex items-center gap-2 border-b border-border bg-chrome px-3 py-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
