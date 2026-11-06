@@ -1310,7 +1310,7 @@ export default function AdminProductsPage() {
                       <Label>External URL</Label>
                       <Input
                         {...form.register("storage_url")}
-                        placeholder="Enter public image/PDF URL (e.g., https://example.com/image.jpg)"
+                        placeholder="Public image, PDF, or video URL (MP4/WebM)"
                       />
                     </div>
 

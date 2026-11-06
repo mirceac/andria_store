@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import CategoryStrip from "@/components/category-strip";
 import { useAuth } from "@/hooks/use-auth";
@@ -47,6 +48,18 @@ export default function Navbar() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const { search, setSearch } = useSearch();
   const { sort, setSort } = useSort();
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Lets sticky page content sit directly below the header, whatever its height
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const publish = () => document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // Fetch user profile for picture
   const { data: profile } = useQuery<{
@@ -68,8 +81,8 @@ export default function Navbar() {
     : "U";
 
   return (
-    <>
-    <nav className="bg-chrome border-b border-border sticky top-0 z-50 w-full overflow-x-clip">
+    <header ref={headerRef} className="sticky top-0 z-50 w-full">
+    <nav className="bg-chrome border-b border-border w-full overflow-x-clip">
       <div className="w-full h-16 flex items-center overflow-x-hidden relative">
         {/* Left Side: Categories Filter Button (Mobile) + Architectural Logo */}
         <div className="flex items-center flex-shrink-0 flex-1 md:flex-none">
@@ -124,7 +137,7 @@ export default function Navbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search products..."
+              placeholder="Search the gallery..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 bg-white border-border focus:border-primary"
@@ -136,6 +149,7 @@ export default function Navbar() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="newest">Newest first</SelectItem>
               <SelectItem value="price_asc">Price (Low-High)</SelectItem>
               <SelectItem value="price_desc">Price (High-Low)</SelectItem>
             </SelectContent>
@@ -276,8 +290,8 @@ export default function Navbar() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search products..."
-            aria-label="Search products"
+            placeholder="Search the gallery..."
+            aria-label="Search the gallery"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10 w-full border-border bg-white pl-9 focus:border-primary"
@@ -289,12 +303,13 @@ export default function Navbar() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">Name (A-Z)</SelectItem>
+            <SelectItem value="newest">Newest first</SelectItem>
             <SelectItem value="price_asc">Price (Low-High)</SelectItem>
             <SelectItem value="price_desc">Price (High-Low)</SelectItem>
           </SelectContent>
         </Select>
       </div>
     )}
-    </>
+    </header>
   );
 }

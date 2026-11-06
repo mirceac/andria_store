@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-type SortType = "price_asc" | "price_desc" | "name";
+type SortType = "price_asc" | "price_desc" | "name" | "newest";
 
 interface SortContextType {
   sort: SortType;
