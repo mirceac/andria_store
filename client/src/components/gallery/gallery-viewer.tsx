@@ -37,6 +37,8 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
   const [failed, setFailed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const gesture = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; zoom: number } | null>(null);
   const filmstrip = useRef<HTMLDivElement>(null);
 
   const go = useCallback(
@@ -87,18 +89,46 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
   }, [index]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    gesture.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
+    if (pointers.current.size === 2) {
+      const [a, b] = Array.from(pointers.current.values());
+      pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom };
+      gesture.current = null;
+      setDragging(false);
+      return;
+    }
+    gesture.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
     setDragging(zoom > 1);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pinch.current && pointers.current.size >= 2) {
+      const [a, b] = Array.from(pointers.current.values());
+      setZoomLevel(pinch.current.zoom * (Math.hypot(a.x - b.x, a.y - b.y) / pinch.current.dist));
+      return;
+    }
+
     const start = gesture.current;
     if (!start || zoom === 1) return;
     setPan({ x: start.panX + e.clientX - start.x, y: start.panY + e.clientY - start.y });
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(e.pointerId);
+
+    if (pinch.current) {
+      // Fingers lifting after a pinch must not count as a swipe; a remaining finger resumes panning
+      if (pointers.current.size < 2) pinch.current = null;
+      const [remaining] = Array.from(pointers.current.values());
+      gesture.current = remaining && zoom > 1 ? { x: remaining.x, y: remaining.y, panX: pan.x, panY: pan.y } : null;
+      setDragging(gesture.current !== null);
+      return;
+    }
+
     const start = gesture.current;
     gesture.current = null;
     setDragging(false);
