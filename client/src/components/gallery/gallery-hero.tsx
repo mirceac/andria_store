@@ -19,7 +19,7 @@ export function GalleryHero({ item, onOpen, onNavigate, canNavigate }: GalleryHe
   }, [item]);
 
   return (
-    <section ref={heroRef} className="sticky top-[var(--header-h,4rem)] z-40 h-[46vh] max-h-[520px] min-h-[280px] w-full overflow-hidden rounded-xl bg-muted shadow-sm">
+    <section ref={heroRef} className="relative order-first -mx-3 -mt-3 h-[calc(100svh-var(--header-h,6.5rem))] min-h-[320px] overflow-hidden bg-muted md:order-none md:mx-0 md:mt-0 md:h-[46vh] md:max-h-[520px] md:min-h-[280px] md:rounded-xl md:shadow-sm">
       {item.kind === "image" && (
         <img
           key={item.product.id}

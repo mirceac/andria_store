@@ -210,7 +210,7 @@ export default function HomePage() {
         onSelect={handleCategorySelect}
       />
 
-      <div className="space-y-5 px-3 py-3 md:p-4" onContextMenu={(e) => e.preventDefault()}>
+      <div className="flex flex-col gap-5 px-3 py-3 md:p-4" onContextMenu={(e) => e.preventDefault()}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
             <button type="button" className="text-primary hover:underline" onClick={() => handleCategorySelect(null)}>

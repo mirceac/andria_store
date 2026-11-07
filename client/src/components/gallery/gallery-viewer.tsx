@@ -121,9 +121,9 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
         >
           <DialogPrimitive.Title className="sr-only">{item?.product.name ?? "Viewer"}</DialogPrimitive.Title>
 
-          <header className="relative z-20 flex items-center gap-3 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+          <header className="relative z-20 flex items-center gap-1 bg-gradient-to-b from-black/80 to-transparent px-3 py-3 sm:gap-3 sm:px-4">
             <div className="min-w-0 flex-1">
-              <p className="truncate font-serif text-base sm:text-lg">{item?.product.name}</p>
+              <p className="line-clamp-2 break-words font-serif text-base leading-snug sm:truncate sm:text-lg">{item?.product.name}</p>
               {items.length > 1 && index !== null && (
                 <p className="text-xs text-white/60">
                   {index + 1} / {items.length}
@@ -132,7 +132,7 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
             </div>
             {item?.kind === "image" && (
               <>
-                <ViewerButton label="Zoom out" onClick={() => setZoomLevel(zoom - 0.5)} disabled={zoom <= 1} className="hidden sm:flex">
+                <ViewerButton label="Zoom out" onClick={() => setZoomLevel(zoom - 0.5)} disabled={zoom <= 1}>
                   <ZoomOut className="h-5 w-5" />
                 </ViewerButton>
                 <ViewerButton label="Zoom in" onClick={() => setZoomLevel(zoom + 0.5)} disabled={zoom >= MAX_ZOOM}>
@@ -148,15 +148,15 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
                 label={detailsOpen ? "Hide details" : "Show details"}
                 aria-pressed={detailsOpen}
                 onClick={() => setDetailsOpen((open) => !open)}
-                className={cn("flex w-auto gap-2 px-3", detailsOpen && "bg-white/15")}
+                className={cn("flex sm:w-auto sm:gap-2 sm:px-3", detailsOpen && "bg-white/15")}
               >
                 <Info className="h-5 w-5" />
-                <span className="text-sm">Details</span>
+                <span className="hidden text-sm sm:inline">Details</span>
               </ViewerButton>
             )}
             <DialogPrimitive.Close
               aria-label="Close"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <X className="h-6 w-6" />
             </DialogPrimitive.Close>
@@ -285,7 +285,7 @@ function ViewerButton({
       aria-label={label}
       title={label}
       className={cn(
-        "h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent",
+        "h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 sm:h-10 sm:w-10 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent",
         className ?? "flex"
       )}
       {...props}
