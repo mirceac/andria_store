@@ -1126,11 +1126,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Thumbnails are re-encoded with sharp on every request, so keep recent ones in memory.
+  // The client's `v` param changes whenever the product is updated, which invalidates the entry.
+  const THUMBNAIL_CACHE_MAX_BYTES = 64 * 1024 * 1024;
+  const thumbnailCache = new Map<string, Buffer>();
+  let thumbnailCacheBytes = 0;
+  const cacheThumbnail = (key: string, buffer: Buffer) => {
+    if (buffer.length > THUMBNAIL_CACHE_MAX_BYTES / 8) return;
+    const existing = thumbnailCache.get(key);
+    if (existing) {
+      thumbnailCacheBytes -= existing.length;
+      thumbnailCache.delete(key);
+    }
+    thumbnailCache.set(key, buffer);
+    thumbnailCacheBytes += buffer.length;
+    // Maps iterate in insertion order, so the first key is the oldest entry
+    for (const oldestKey of thumbnailCache.keys()) {
+      if (thumbnailCacheBytes <= THUMBNAIL_CACHE_MAX_BYTES) break;
+      thumbnailCacheBytes -= thumbnailCache.get(oldestKey)!.length;
+      thumbnailCache.delete(oldestKey);
+    }
+  };
+
   // Add this new route after the PDF route
   app.get("/api/products/:id/img", async (req, res) => {
     try {
       const productId = parseInt(req.params.id);
       const isThumbnail = req.query.thumbnail === '1' || req.query.thumbnail === 'true';
+      const thumbnailKey = `${productId}:${String(req.query.v ?? '')}`;
+
+      const cachedThumbnail = isThumbnail && req.query.v !== undefined ? thumbnailCache.get(thumbnailKey) : undefined;
+      if (cachedThumbnail) {
+        res.set({
+          'Content-Type': 'image/webp',
+          'Cache-Control': 'public, max-age=86400',
+        });
+        return res.send(cachedThumbnail);
+      }
+
       const product = await db.query.products.findFirst({
         where: eq(products.id, productId)
       });
@@ -1148,6 +1181,7 @@ export function registerRoutes(app: Express): Server {
               .webp({ quality: 76 })
               .toBuffer();
 
+            if (req.query.v !== undefined) cacheThumbnail(thumbnailKey, thumbnailBuffer);
             res.set({
               'Content-Type': 'image/webp',
               'Cache-Control': 'public, max-age=86400',

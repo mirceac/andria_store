@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Link } from "wouter";
 import { Eye, FileImage, FileText, Info, Play } from "lucide-react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
@@ -15,16 +15,49 @@ interface GalleryTileProps {
   style?: CSSProperties;
 }
 
+// Thumbnails are generated on demand, so a burst of requests can fail transiently.
+// Retry the thumbnail a couple of times, then fall back to the full image before giving up.
+const THUMB_RETRIES = 2;
+const RETRY_DELAY_MS = 700;
+
 export function GalleryTile({ item, onOpen, onHover, natural = false, className, style }: GalleryTileProps) {
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const { product } = item;
+
+  const hasFallback = item.fullUrl !== item.thumbUrl;
+  const failed = attempt > THUMB_RETRIES + (hasFallback ? 1 : 0);
+  const imageSrc =
+    attempt === 0
+      ? item.thumbUrl
+      : attempt <= THUMB_RETRIES
+        ? `${item.thumbUrl}${item.thumbUrl.includes("?") ? "&" : "?"}retry=${attempt}`
+        : item.fullUrl;
   const useNaturalRatio = natural && item.kind === "image" && loaded && !failed;
+
+  useEffect(() => {
+    setLoaded(false);
+    setAttempt(0);
+  }, [item.thumbUrl]);
+
+  const handleImageError = () => {
+    setTimeout(() => setAttempt((current) => (current === attempt ? current + 1 : current)), attempt < THUMB_RETRIES ? RETRY_DELAY_MS * (attempt + 1) : 0);
+  };
+
+  const retryIfFailed = () => {
+    if (item.kind === "image" && failed) {
+      setLoaded(false);
+      setAttempt(0);
+    }
+  };
 
   return (
     <div
       style={style}
-      onMouseEnter={() => onHover?.(item)}
+      onMouseEnter={() => {
+        retryIfFailed();
+        onHover?.(item);
+      }}
       onFocus={() => onHover?.(item)}
       className={cn(
         "group relative w-full overflow-hidden rounded-lg bg-muted text-left shadow-sm ring-1 ring-black/5 transition duration-300",
@@ -44,13 +77,13 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
       >
       {item.kind === "image" && !failed && (
         <img
-          src={item.thumbUrl}
+          src={imageSrc}
           alt={product.name}
           loading="lazy"
           decoding="async"
           draggable={false}
           onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onError={handleImageError}
           className={cn(
             "block w-full select-none transition-opacity duration-300",
             useNaturalRatio ? "h-auto" : "h-full object-cover",
@@ -62,9 +95,9 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
       {item.kind === "image" && !loaded && !failed && <div className="absolute inset-0 animate-pulse bg-muted" />}
 
       {item.kind === "image" && failed && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground">
-          <FileImage className="h-7 w-7 opacity-60" />
-          <span className="text-xs">Preview unavailable</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8] p-3 text-muted-foreground">
+          <FileImage className="h-8 w-8 opacity-50" />
+          <span className="line-clamp-2 text-center text-xs font-medium opacity-70">{product.name}</span>
         </div>
       )}
 
