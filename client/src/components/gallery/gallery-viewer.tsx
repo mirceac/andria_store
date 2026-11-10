@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { ChevronLeft, ChevronRight, Info, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Info, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/gallery-media";
+import { enableHorizontalScroll } from "@/lib/horizontal-scroll";
 
 interface GalleryViewerProps {
   items: GalleryItem[];
@@ -39,7 +40,12 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
   const gesture = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; zoom: number } | null>(null);
-  const filmstrip = useRef<HTMLDivElement>(null);
+  const filmstrip = useRef<HTMLDivElement | null>(null);
+  const [filmstripEl, setFilmstripEl] = useState<HTMLDivElement | null>(null);
+  const filmstripRef = useCallback((el: HTMLDivElement | null) => {
+    filmstrip.current = el;
+    setFilmstripEl(el);
+  }, []);
 
   const go = useCallback(
     (delta: number) => {
@@ -87,6 +93,10 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
       ?.querySelector<HTMLElement>("[data-active='true']")
       ?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [index]);
+
+  useEffect(() => {
+    return filmstripEl ? enableHorizontalScroll(filmstripEl) : undefined;
+  }, [filmstripEl]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -247,8 +257,6 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
               <div className="pointer-events-none absolute inset-0 z-10" style={{ backgroundImage: watermarkBackground }} />
             )}
 
-            {index !== null && index > 0 && <NavArrow direction="prev" onClick={() => go(-1)} />}
-            {index !== null && index < items.length - 1 && <NavArrow direction="next" onClick={() => go(1)} />}
           </div>
           {detailsOpen && item && (
             <aside className="absolute inset-x-0 bottom-0 z-30 max-h-[45vh] overflow-y-auto border-t border-white/10 bg-black/95 p-4 pb-6 backdrop-blur sm:relative sm:inset-auto sm:max-h-none sm:w-80 sm:shrink-0 sm:border-l sm:border-t-0 sm:p-5">
@@ -275,7 +283,10 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
           </div>
 
           {filmstripItems.length > 0 && (
-            <div ref={filmstrip} className="scrollbar-hide z-20 hidden gap-2 overflow-x-auto bg-gradient-to-t from-black/80 to-transparent px-4 py-3 sm:flex">
+            <div
+              ref={filmstripRef}
+              className="scrollbar-hide z-20 flex gap-2 overflow-x-auto bg-gradient-to-t from-black/80 to-transparent px-3 py-3 sm:px-4"
+            >
               {filmstripItems.map((candidate, i) => (
                 <button
                   key={candidate.product.id}
@@ -321,24 +332,6 @@ function ViewerButton({
       {...props}
     >
       {children}
-    </button>
-  );
-}
-
-function NavArrow({ direction, onClick }: { direction: "prev" | "next"; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={direction === "prev" ? "Previous" : "Next"}
-      onPointerDown={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
-      onClick={onClick}
-      className={cn(
-        "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-colors hover:bg-black/80 sm:flex",
-        direction === "prev" ? "left-4" : "right-4"
-      )}
-    >
-      {direction === "prev" ? <ChevronLeft className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
     </button>
   );
 }

@@ -161,13 +161,6 @@ export default function HomePage() {
   }, [sections]);
   const featuredItem = bannerItems.find((item) => item.product.id === featuredItemId) ?? bannerItems[0] ?? items[0] ?? null;
 
-  const navigateBanner = (direction: -1 | 1) => {
-    if (bannerItems.length < 2 || !featuredItem) return;
-    const currentIndex = bannerItems.findIndex((item) => item.product.id === featuredItem.product.id);
-    const nextIndex = (currentIndex + direction + bannerItems.length) % bannerItems.length;
-    setFeaturedItemId(bannerItems[nextIndex].product.id);
-  };
-
   const breadcrumbs = useMemo(() => {
     const trail: Category[] = [];
     let current: Category | undefined = categories.find((c) => c.id === selectedCategoryId);
@@ -238,9 +231,9 @@ export default function HomePage() {
         {featuredItem && (
           <GalleryHero
             item={featuredItem}
+            items={bannerItems}
             onOpen={(item) => openItem(item, items)}
-            onNavigate={navigateBanner}
-            canNavigate={bannerItems.length > 1}
+            onSelect={(item) => setFeaturedItemId(item.product.id)}
           />
         )}
 
