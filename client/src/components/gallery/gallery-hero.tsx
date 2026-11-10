@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { Eye, FileText, Info, Play } from "lucide-react";
+import { Eye, FileImage, FileText, Info, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGalleryThumbnail } from "@/hooks/use-gallery-thumbnail";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/gallery-media";
 import { enableHorizontalScroll } from "@/lib/horizontal-scroll";
@@ -109,7 +110,7 @@ export function GalleryHero({ item, items, onOpen, onSelect }: GalleryHeroProps)
                   )}
                 >
                   {candidate.kind === "image" ? (
-                    <img src={candidate.thumbUrl} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" />
+                    <FeaturedThumbnail item={candidate} />
                   ) : candidate.kind === "video" ? (
                     <Play className="h-5 w-5 fill-white text-white" />
                   ) : (
@@ -122,5 +123,34 @@ export function GalleryHero({ item, items, onOpen, onSelect }: GalleryHeroProps)
         )}
       </div>
     </section>
+  );
+}
+
+function FeaturedThumbnail({ item }: { item: GalleryItem }) {
+  const thumbnail = useGalleryThumbnail(item.thumbUrl, item.fullUrl);
+
+  return (
+    <span
+      onMouseEnter={thumbnail.retry}
+      className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-[#d6e0dc] to-[#354c46]"
+    >
+      {!thumbnail.failed && (
+        <img
+          src={thumbnail.src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onLoad={thumbnail.onLoad}
+          onError={thumbnail.onError}
+          className={cn("h-full w-full object-cover transition-opacity duration-300", thumbnail.loaded ? "opacity-100" : "opacity-0")}
+        />
+      )}
+      {!thumbnail.loaded && (
+        <span className={cn("absolute inset-0 flex items-center justify-center text-white/70", !thumbnail.failed && "animate-pulse")}>
+          <FileImage className="h-5 w-5" />
+        </span>
+      )}
+    </span>
   );
 }
