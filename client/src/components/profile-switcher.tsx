@@ -48,7 +48,7 @@ export function ProfileSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="bg-blue-50 text-slate-600 hover:bg-blue-100 hover:text-slate-700 font-medium">
+        <Button variant="ghost" className="bg-blue-50 dark:bg-blue-950/60 text-slate-600 dark:text-muted-foreground hover:bg-blue-100 dark:hover:bg-muted hover:text-slate-700 dark:hover:text-foreground font-medium">
           {viewMode === 'public' ? (
             <>
               <Globe className="mr-2 h-4 w-4" />

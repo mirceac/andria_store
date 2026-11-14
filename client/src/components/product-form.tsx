@@ -62,7 +62,7 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
 
       <div className="space-y-4 border rounded-lg p-4">
         <h3 className="font-semibold">Digital Product (Required)</h3>
-        <p className="text-sm text-gray-600">Digital products have unlimited availability</p>
+        <p className="text-sm text-gray-600 dark:text-muted-foreground">Digital products have unlimited availability</p>
         <div className="grid grid-cols-2 gap-4">
           <Input
             name="price"
@@ -73,7 +73,7 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
             defaultValue={initialData?.price}
             required
           />
-          <div className="flex items-center text-sm text-gray-500">
+          <div className="flex items-center text-sm text-gray-500 dark:text-muted-foreground">
             <span>Stock: ∞ (Unlimited)</span>
           </div>
         </div>
@@ -123,7 +123,7 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
             accept="image/*"
           />
           {initialData?.image_file && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-muted-foreground">
               Current image: {initialData.image_file}
             </div>
           )}
@@ -137,7 +137,7 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
             accept=".pdf"
           />
           {initialData?.pdf_file && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-muted-foreground">
               Current PDF: {initialData.pdf_file}
             </div>
           )}

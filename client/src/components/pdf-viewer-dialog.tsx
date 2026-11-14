@@ -24,7 +24,7 @@ export function PDFViewer({ url, scale = 1.0 }: { url: string; scale?: number })
   };
 
   return (
-    <div className="w-full h-40 flex items-center justify-center bg-white">
+    <div className="w-full h-40 flex items-center justify-center bg-white dark:bg-card">
       <Document
         file={url}
         loading={<Loader2 className="h-8 w-8 animate-spin" />}
@@ -264,7 +264,7 @@ export function PDFViewerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col"} style={isFullscreen ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' } : {}}>
         {/* Title and controls row */}
-        <div className="flex items-center justify-between py-2 px-2 border-b bg-white z-50 relative">
+        <div className="flex items-center justify-between py-2 px-2 border-b bg-white dark:bg-card z-50 relative">
           {/* Left: Controls */}
           <div className="flex items-center gap-2 md:gap-4">
             <Button
@@ -340,12 +340,12 @@ export function PDFViewerDialog({
         >
           <div className="w-full h-full flex items-center justify-center bg-black/10">
             {isLoading && !error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
+              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 dark:bg-amber-950/60 p-4">
                 <div className="text-center max-w-md p-4">
                   <div className="w-16 h-16 mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
@@ -357,9 +357,9 @@ export function PDFViewerDialog({
                       <line x1="3" y1="21" x2="21" y2="3" className="text-red-500" strokeWidth="1.5"></line>
                     </svg>
                   </div>
-                  <p className="font-semibold text-lg text-amber-700 mb-2">Failed to load PDF</p>
-                  <p className="text-sm text-amber-600 mb-4">{error}</p>
-                  <div className="text-xs text-gray-500 text-left bg-white p-3 rounded-md shadow-sm">
+                  <p className="font-semibold text-lg text-amber-700 dark:text-amber-300 mb-2">Failed to load PDF</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-300 mb-4">{error}</p>
+                  <div className="text-xs text-gray-500 dark:text-muted-foreground text-left bg-white dark:bg-card p-3 rounded-md shadow-sm">
                     <p className="mb-2">Possible solutions:</p>
                     <ul className="list-disc pl-4 space-y-1">
                       <li>Check if the PDF file exists and is accessible</li>

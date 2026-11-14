@@ -176,12 +176,12 @@ export default function AuthPage() {
 
       {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
       <div className={cn(
-        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white dark:bg-card border-r border-gray-200 dark:border-border shadow-lg transform transition-transform duration-300",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-4"> {/* Add top padding on mobile for header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+            <h2 className="font-semibold text-gray-800 dark:text-foreground text-sm uppercase tracking-wide">
               Categories
             </h2>
             <Button
@@ -201,12 +201,12 @@ export default function AuthPage() {
             <div
               className={cn(
                 "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                "hover:bg-gray-50 active:bg-gray-100",
-                "bg-indigo-50 border border-indigo-200 shadow-sm"
+                "hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100",
+                "bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shadow-sm"
               )}
               onClick={() => setLocation("/")}
             >
-              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 dark:text-indigo-300 hover:text-gray-900 dark:hover:text-foreground">
                 All Products
               </span>
             </div>
@@ -343,7 +343,7 @@ export default function AuthPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-white dark:bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -362,7 +362,7 @@ export default function AuthPage() {
               className="w-full"
               onClick={() => { window.location.href = "/api/auth/facebook"; }}
             >
-              <FaFacebook className="mr-2 h-4 w-4 text-blue-600" />
+              <FaFacebook className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-300" />
               Continue with Facebook
             </Button>
           </div>

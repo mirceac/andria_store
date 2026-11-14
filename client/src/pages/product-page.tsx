@@ -152,7 +152,7 @@ export default function ProductPage() {
               )}
 
               {isForSale && (
-                <div className="space-y-4 rounded-xl border border-border bg-white/80 p-4 backdrop-blur">
+                <div className="space-y-4 rounded-xl border border-border bg-white/80 p-4 backdrop-blur dark:bg-card/80">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-2xl font-semibold text-foreground">
                       ${minPrice.toFixed(2)}

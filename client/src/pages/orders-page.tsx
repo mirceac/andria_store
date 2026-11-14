@@ -213,12 +213,12 @@ export default function OrdersPage() {
 
         {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
         <div className={cn(
-          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white dark:bg-card border-r border-gray-200 dark:border-border shadow-lg transform transition-transform duration-300",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="p-4"> {/* Add top padding on mobile for header */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+              <h2 className="font-semibold text-gray-800 dark:text-foreground text-sm uppercase tracking-wide">
                 Categories
               </h2>
               <Button
@@ -238,12 +238,12 @@ export default function OrdersPage() {
               <div
                 className={cn(
                   "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                  "hover:bg-gray-50 active:bg-gray-100",
-                  "bg-indigo-50 border border-indigo-200 shadow-sm"
+                  "hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100",
+                  "bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shadow-sm"
                 )}
                 onClick={() => setLocation("/")}
               >
-                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 dark:text-indigo-300 hover:text-gray-900 dark:hover:text-foreground">
                   All Products
                 </span>
               </div>
@@ -275,12 +275,12 @@ export default function OrdersPage() {
 
         {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
         <div className={cn(
-          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+          "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white dark:bg-card border-r border-gray-200 dark:border-border shadow-lg transform transition-transform duration-300",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="p-4"> {/* Add top padding on mobile for header */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+              <h2 className="font-semibold text-gray-800 dark:text-foreground text-sm uppercase tracking-wide">
                 Categories
               </h2>
               <Button
@@ -300,12 +300,12 @@ export default function OrdersPage() {
               <div
                 className={cn(
                   "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                  "hover:bg-gray-50 active:bg-gray-100",
-                  "bg-indigo-50 border border-indigo-200 shadow-sm"
+                  "hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100",
+                  "bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shadow-sm"
                 )}
                 onClick={() => setLocation("/")}
               >
-                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+                <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 dark:text-indigo-300 hover:text-gray-900 dark:hover:text-foreground">
                   All Products
                 </span>
               </div>
@@ -364,7 +364,7 @@ export default function OrdersPage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${timestamp}`}
@@ -383,7 +383,7 @@ export default function OrdersPage() {
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
@@ -402,7 +402,7 @@ export default function OrdersPage() {
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${timestamp}`}
             onClick={() => {
@@ -418,7 +418,7 @@ export default function OrdersPage() {
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf?v=${timestamp}`}
             onClick={() => {
@@ -467,7 +467,7 @@ export default function OrdersPage() {
       } else if (isPdfUrl) {
         // External PDF URL
         return (
-          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
             <PDFThumbnail
               pdfUrl={product.storage_url}
               onClick={() => {
@@ -483,7 +483,7 @@ export default function OrdersPage() {
       } else {
         // External URL that doesn't match specific patterns - default to image treatment
         return (
-          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 relative">
+          <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted relative">
             <ExternalUrlThumbnail
               url={product.storage_url}
               onClick={() => {
@@ -500,8 +500,8 @@ export default function OrdersPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 flex items-center justify-center">
-          <XCircle className="h-6 w-6 text-gray-300" />
+        <div className="w-[130px] h-[182px] flex-shrink-0 overflow-hidden rounded border bg-gray-50 dark:bg-muted flex items-center justify-center">
+          <XCircle className="h-6 w-6 text-gray-300 dark:text-muted-foreground" />
         </div>
       );
     }
@@ -520,12 +520,12 @@ export default function OrdersPage() {
 
       {/* Sidebar - Fixed position, slides in from left on both mobile and desktop */}
       <div className={cn(
-        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300",
+        "fixed left-0 top-0 bottom-0 z-50 w-64 bg-white dark:bg-card border-r border-gray-200 dark:border-border shadow-lg transform transition-transform duration-300",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-4"> {/* Add top padding on mobile for header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">
+            <h2 className="font-semibold text-gray-800 dark:text-foreground text-sm uppercase tracking-wide">
               Categories
             </h2>
             <Button
@@ -545,12 +545,12 @@ export default function OrdersPage() {
             <div
               className={cn(
                 "flex items-center h-9 px-2 rounded-md cursor-pointer transition-all duration-200",
-                "hover:bg-gray-50 active:bg-gray-100",
-                "bg-indigo-50 border border-indigo-200 shadow-sm"
+                "hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100",
+                "bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shadow-sm"
               )}
               onClick={() => setLocation("/")}
             >
-              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 hover:text-gray-900">
+              <span className="text-sm font-medium transition-colors duration-200 text-indigo-900 dark:text-indigo-300 hover:text-gray-900 dark:hover:text-foreground">
                 All Products
               </span>
             </div>
@@ -585,8 +585,8 @@ export default function OrdersPage() {
                   <p
                     className={`text-sm ${
                       order.status === "completed"
-                        ? "text-green-600"
-                        : "text-orange-600"
+                        ? "text-green-600 dark:text-green-300"
+                        : "text-orange-600 dark:text-orange-300"
                     }`}
                   >
                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -598,7 +598,7 @@ export default function OrdersPage() {
               {isMobile ? (
                 <div className="space-y-3 w-full overflow-x-hidden">
                   {order.items && order.items.map((item) => (
-                    <div key={`${order.id}-${item.id}`} className="border rounded-lg p-3 bg-gray-50 w-full overflow-hidden">
+                    <div key={`${order.id}-${item.id}`} className="border rounded-lg p-3 bg-gray-50 dark:bg-muted w-full overflow-hidden">
                       <div className="space-y-3 w-full">
                         {/* Top Row: Media and Product Name */}
                         <div className="flex gap-3 w-full">
@@ -667,7 +667,7 @@ export default function OrdersPage() {
                             {renderProductMedia(item.product)}
                             <div className="flex flex-col">
                               <span className="font-medium">{item.product.name}</span>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-gray-500 dark:text-muted-foreground">
                                 ${(item.price / item.quantity).toFixed(2)} per unit
                               </span>
                             </div>

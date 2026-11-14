@@ -98,7 +98,7 @@ export function ExternalUrlThumbnail({
         style={{ width: `${finalWidth}px`, height: `${finalHeight}px` }}
         onClick={onClick}
       >
-        <div className="flex flex-col items-center justify-center text-xs text-gray-600">
+        <div className="flex flex-col items-center justify-center text-xs text-gray-600 dark:text-muted-foreground">
           <FileText className="h-6 w-6 text-primary" />
           <span className="mt-1 text-foreground">PDF</span>
         </div>
@@ -124,7 +124,7 @@ export function ExternalUrlThumbnail({
   return (
     <div
       className={cn(
-        "relative rounded overflow-hidden border border-border bg-white flex items-center justify-center cursor-pointer group",
+        "relative rounded overflow-hidden border border-border bg-white dark:bg-card flex items-center justify-center cursor-pointer group",
         className
       )}
       style={{ width: `${finalWidth}px`, height: `${finalHeight}px` }}

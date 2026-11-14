@@ -210,7 +210,7 @@ export function MultiPagePDFViewerDialog({
           
           {/* Right: Title */}
           <div className="w-24">
-            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
+            {title && <h2 className="text-lg font-medium text-gray-700 dark:text-foreground truncate max-w-[200px]">{title}</h2>}
           </div>
         </div>
 
@@ -225,14 +225,14 @@ export function MultiPagePDFViewerDialog({
         >
           <div className="w-full h-full flex items-center justify-center bg-black/10">
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500 p-4 text-center">
-                <FileText className="h-16 w-16 mb-2 text-gray-400" />
-                <p className="mb-4 text-gray-600">{error}</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground p-4 text-center">
+                <FileText className="h-16 w-16 mb-2 text-gray-400 dark:text-muted-foreground" />
+                <p className="mb-4 text-gray-600 dark:text-muted-foreground">{error}</p>
                 <button
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
                   onClick={handleRetry}

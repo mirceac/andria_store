@@ -5,6 +5,7 @@ A modern, feature-rich e-commerce platform built with React and Express.js, deli
 ## Features
 
 - 🛍️ Product browsing with search and sorting
+- 🌗 Light and dark themes, selectable in Display settings
 - 🛒 Shopping cart management
 - 👤 User authentication
 - 💳 Secure payments with Stripe

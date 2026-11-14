@@ -30,7 +30,7 @@ const segment = (active: boolean) =>
 export function GalleryToolbar({ layout, onLayoutChange, size, onSizeChange }: GalleryToolbarProps) {
   return (
     <div className="flex items-center gap-3">
-      <div role="radiogroup" aria-label="Layout" className="flex gap-0.5 rounded-lg border border-border bg-white p-0.5">
+      <div role="radiogroup" aria-label="Layout" className="flex gap-0.5 rounded-lg border border-border bg-card p-0.5">
         {LAYOUTS.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
@@ -46,7 +46,7 @@ export function GalleryToolbar({ layout, onLayoutChange, size, onSizeChange }: G
           </button>
         ))}
       </div>
-      <div role="radiogroup" aria-label="Tile size" className="flex gap-0.5 rounded-lg border border-border bg-white p-0.5">
+      <div role="radiogroup" aria-label="Tile size" className="flex gap-0.5 rounded-lg border border-border bg-card p-0.5">
         {SIZES.map(({ value, label, text }) => (
           <button
             key={value}

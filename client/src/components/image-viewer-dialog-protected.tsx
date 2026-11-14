@@ -273,16 +273,16 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
             className="w-full h-full flex items-center justify-center bg-black/10 relative cursor-grab active:cursor-grabbing"
           >
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-                <div className="h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
+                <div className="h-8 w-8 border-4 border-t-blue-500 border-gray-200 dark:border-border rounded-full animate-spin"></div>
               </div>
             )}
             
             {imageError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
+              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 dark:bg-amber-950/60 p-4">
                 <div className="text-center max-w-md p-4">
                   {typeof imageError === 'string' ? (
-                    <p className="text-amber-800">{imageError}</p>
+                    <p className="text-amber-800 dark:text-amber-300">{imageError}</p>
                   ) : (
                     imageError
                   )}
@@ -324,8 +324,8 @@ export function ImageViewerDialogProtected({ open, onOpenChange, url, isPrivateP
                   setIsLoading(false);
                   setImageError(
                     <div>
-                      <p className="text-red-600 font-medium mb-2">Failed to load image</p>
-                      <p className="text-sm text-gray-600 mb-3">The image could not be displayed.</p>
+                      <p className="text-red-600 dark:text-red-300 font-medium mb-2">Failed to load image</p>
+                      <p className="text-sm text-gray-600 dark:text-muted-foreground mb-3">The image could not be displayed.</p>
                     </div>
                   );
                 }}

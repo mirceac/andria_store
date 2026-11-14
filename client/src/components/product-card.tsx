@@ -106,7 +106,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="overflow-hidden">
       <Link href={`/product/${product.id}`}>
-        <div className="aspect-square overflow-hidden bg-gray-50 flex items-center justify-center">
+        <div className="aspect-square overflow-hidden bg-gray-50 dark:bg-muted flex items-center justify-center">
           {hasMedia ? (
             mediaInfo.type === 'image' ? (
               <img
@@ -124,11 +124,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                     <path d="M9 18H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span className="text-sm text-blue-600">PDF Document</span>
+                <span className="text-sm text-blue-600 dark:text-blue-300">PDF Document</span>
               </div>
             )
           ) : (
-            <XCircle className="h-10 w-10 text-gray-300 m-8" />
+            <XCircle className="h-10 w-10 text-gray-300 dark:text-muted-foreground m-8" />
           )}
         </div>
       </Link>
@@ -151,8 +151,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 }}
                 className={`px-3 py-1 text-xs rounded-full border ${
                   selectedVariant === 'digital'
-                    ? 'bg-blue-100 border-blue-300 text-blue-700'
-                    : 'bg-gray-100 border-gray-300 text-gray-600'
+                    ? 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                    : 'bg-gray-100 dark:bg-muted border-gray-300 dark:border-border text-gray-600 dark:text-muted-foreground'
                 }`}
               >
                 Digital
@@ -164,8 +164,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                 }}
                 className={`px-3 py-1 text-xs rounded-full border ${
                   selectedVariant === 'physical'
-                    ? 'bg-green-100 border-green-300 text-green-700'
-                    : 'bg-gray-100 border-gray-300 text-gray-600'
+                    ? 'bg-green-100 dark:bg-green-950/60 border-green-300 dark:border-green-800 text-green-700 dark:text-green-300'
+                    : 'bg-gray-100 dark:bg-muted border-gray-300 dark:border-border text-gray-600 dark:text-muted-foreground'
                 }`}
               >
                 Physical
@@ -178,11 +178,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="mt-2">
           <p className="text-xl font-bold">${getPrice().toFixed(2)}</p>
           {product.has_physical_variant && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">
               {selectedVariant === 'digital' ? 'Digital version' : 'Physical version'}
             </p>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-muted-foreground">
             {getStockDisplay()}
           </p>
         </div>

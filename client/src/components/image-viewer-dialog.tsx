@@ -124,7 +124,7 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isFullscreen ? "max-w-full w-screen h-screen flex flex-col p-0 m-0" : "max-w-screen-lg h-[80vh] flex flex-col"} style={isFullscreen ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' } : {}}>
-        <div className="flex items-center justify-between py-2 px-2 border-b bg-white z-50 relative">
+        <div className="flex items-center justify-between py-2 px-2 border-b bg-white dark:bg-card z-50 relative">
           <div className="flex items-center gap-2 md:gap-4">
             <Button
               variant="secondary"
@@ -197,16 +197,16 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
             className="w-full h-full flex items-center justify-center bg-black/10 cursor-grab active:cursor-grabbing"
           >
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-                <div className="h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
+                <div className="h-8 w-8 border-4 border-t-blue-500 border-gray-200 dark:border-border rounded-full animate-spin"></div>
               </div>
             )}
             
             {imageError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
+              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 dark:bg-amber-950/60 p-4">
                 <div className="text-center max-w-md p-4">
                   {typeof imageError === 'string' ? (
-                    <p className="text-amber-800">{imageError}</p>
+                    <p className="text-amber-800 dark:text-amber-300">{imageError}</p>
                   ) : (
                     imageError
                   )}
@@ -235,9 +235,9 @@ export function ImageViewerDialog({ open, onOpenChange, url }: ImageViewerDialog
                 setIsLoading(false);
                 setImageError(
                   <div>
-                    <p className="text-red-600 font-medium mb-2">Failed to load image</p>
-                    <p className="text-sm text-gray-600 mb-3">The image could not be displayed. This might be due to:</p>
-                    <ul className="text-xs text-gray-500 text-left space-y-1">
+                    <p className="text-red-600 dark:text-red-300 font-medium mb-2">Failed to load image</p>
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground mb-3">The image could not be displayed. This might be due to:</p>
+                    <ul className="text-xs text-gray-500 dark:text-muted-foreground text-left space-y-1">
                       <li>• Network connectivity issues</li>
                       <li>• File access restrictions</li>
                       <li>• Unsupported file format</li>

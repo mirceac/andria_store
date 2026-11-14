@@ -606,7 +606,7 @@ export default function ProfilePage() {
             {selectedCategoryFilter !== "all" && categories && (() => {
               const selectedCat = categories.find(c => c.id === parseInt(selectedCategoryFilter));
               return selectedCat ? (
-                <span className="text-blue-600 text-2xl">
+                <span className="text-blue-600 dark:text-blue-300 text-2xl">
                   / {selectedCat.name}
                 </span>
               ) : null;
@@ -644,7 +644,7 @@ export default function ProfilePage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Product Type Section at Top */}
-                <div className="space-y-3 border rounded-lg p-4 bg-blue-50">
+                <div className="space-y-3 border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/60">
                   <h4 className="font-semibold text-sm">Product Type</h4>
                   
                   {/* Public Checkbox */}
@@ -667,7 +667,7 @@ export default function ProfilePage() {
                             <FormLabel className="text-sm font-medium">
                               Public Product (For Sale)
                             </FormLabel>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">
                               {!selectedProduct && !user.is_admin
                                 ? "Only admins can create public products. New products are private."
                                 : field.value
@@ -699,7 +699,7 @@ export default function ProfilePage() {
                             <FormLabel className="text-sm font-medium">
                               Hidden from Gallery
                             </FormLabel>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground mt-1">
                               Hide this product from all public views (only visible in your profile panel)
                             </p>
                           </div>
@@ -950,7 +950,7 @@ export default function ProfilePage() {
                   {/* Right Column - Help Text and Physical Variant */}
                   <div className="space-y-4">
                     {/* Help Text */}
-                    <div className="text-xs text-muted-foreground space-y-2 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-muted-foreground space-y-2 p-4 bg-gray-50 dark:bg-muted rounded-lg">
                       <div>
                         <span className="font-medium">Storage Options:</span>
                         <ul className="list-disc pl-4 mt-1">
@@ -960,7 +960,7 @@ export default function ProfilePage() {
                       </div>
                       
                       <div>
-                        <span className="font-medium text-amber-600">For External URLs:</span>
+                        <span className="font-medium text-amber-600 dark:text-amber-300">For External URLs:</span>
                         <ul className="list-disc pl-4 mt-1">
                           <li>Use JPEG/PNG formats (HEIC may not display correctly)</li>
                           <li>URL must be publicly accessible</li>
@@ -1131,7 +1131,7 @@ export default function ProfilePage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50 dark:bg-red-950/60"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleRemoveStorage(product.id, 'image_file');
@@ -1147,7 +1147,7 @@ export default function ProfilePage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300 dark:text-muted-foreground" />
                       )}
                     </TableCell>
 
@@ -1170,7 +1170,7 @@ export default function ProfilePage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50 dark:bg-red-950/60"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleRemoveStorage(product.id, 'image_data');
@@ -1186,7 +1186,7 @@ export default function ProfilePage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300 dark:text-muted-foreground" />
                       )}
                     </TableCell>
 
@@ -1206,7 +1206,7 @@ export default function ProfilePage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50 dark:bg-red-950/60"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleRemoveStorage(product.id, 'pdf_file');
@@ -1222,7 +1222,7 @@ export default function ProfilePage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300 dark:text-muted-foreground" />
                       )}
                     </TableCell>
 
@@ -1242,7 +1242,7 @@ export default function ProfilePage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
-                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 bg-red-50 dark:bg-red-950/60"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleRemoveStorage(product.id, 'pdf_data');
@@ -1258,7 +1258,7 @@ export default function ProfilePage() {
                           </TooltipProvider>
                         </div>
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300 dark:text-muted-foreground" />
                       )}
                     </TableCell>
 
@@ -1280,15 +1280,15 @@ export default function ProfilePage() {
                           }}
                         />
                       ) : (
-                        <XCircle className="h-4 w-4 mx-auto text-gray-300" />
+                        <XCircle className="h-4 w-4 mx-auto text-gray-300 dark:text-muted-foreground" />
                       )}
                     </TableCell>
 
                     {/* Name & Category column */}
                     <TableCell className="text-center w-[250px]">
                       <div className="flex flex-col items-center gap-1">
-                        <p className="text-sm text-gray-700 font-medium">{product.name}</p>
-                        <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full max-w-full truncate">
+                        <p className="text-sm text-gray-700 dark:text-foreground font-medium">{product.name}</p>
+                        <span className="text-xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full max-w-full truncate">
                           {categories?.find(c => c.id === product.category_id)?.name || 'No category'}
                         </span>
                       </div>
@@ -1296,7 +1296,7 @@ export default function ProfilePage() {
 
                     {/* Description column */}
                     <TableCell className="text-center w-[180px] max-w-[180px] overflow-hidden">
-                      <p className="text-sm text-gray-700 truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                      <p className="text-sm text-gray-700 dark:text-foreground truncate" style={{maxWidth: '170px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                         {product.description}
                       </p>
                     </TableCell>
@@ -1312,7 +1312,7 @@ export default function ProfilePage() {
                     <TableCell className="text-center w-[140px]">
                       {product.has_physical_variant ? (
                         <div className="space-y-1">
-                          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 text-green-700 border-green-200">
+                          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
                             Physical
                           </div>
                           <div className="text-xs">
@@ -1322,8 +1322,8 @@ export default function ProfilePage() {
                               className={cn(
                                 "font-bold text-sm",
                                 (product.stock || 0) === 0
-                                  ? "text-red-600"
-                                  : "text-green-600"
+                                  ? "text-red-600 dark:text-red-300"
+                                  : "text-green-600 dark:text-green-300"
                               )}
                             >
                               {product.stock || 0} in stock
@@ -1331,7 +1331,7 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                           Digital Only
                         </div>
                       )}
@@ -1347,8 +1347,8 @@ export default function ProfilePage() {
                               <div className={cn(
                                 "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
                                 product.hidden 
-                                  ? "bg-red-100 text-red-700 border border-red-300" 
-                                  : "bg-green-100 text-green-700 border border-green-300"
+                                  ? "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800"
+                                  : "bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800"
                               )}>
                                 {product.hidden ? (
                                   <>
@@ -1377,8 +1377,8 @@ export default function ProfilePage() {
                                 <div className={cn(
                                   "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
                                   product.is_public !== false
-                                    ? "bg-blue-100 text-blue-700 border border-blue-300" 
-                                    : "bg-amber-100 text-amber-700 border border-amber-300"
+                                    ? "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                                    : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                                 )}>
                                   {product.is_public !== false ? (
                                     <>

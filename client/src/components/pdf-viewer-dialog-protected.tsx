@@ -408,7 +408,7 @@ export function PDFViewerDialogProtected({
           
           {/* Right: Title */}
           <div className="w-24">
-            {title && <h2 className="text-lg font-medium text-gray-700 truncate max-w-[200px]">{title}</h2>}
+            {title && <h2 className="text-lg font-medium text-gray-700 dark:text-foreground truncate max-w-[200px]">{title}</h2>}
           </div>
         </div>        {/* PDF Container - flex-grow to take up available space */}
         <div 
@@ -425,12 +425,12 @@ export function PDFViewerDialogProtected({
         >
           <div className="w-full h-full flex items-center justify-center bg-black/10 relative">
             {isLoading && !error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 p-4">
+              <div className="absolute inset-0 flex items-center justify-center bg-amber-50 dark:bg-amber-950/60 p-4">
                 <div className="text-center max-w-md p-4">
                   <div className="w-16 h-16 mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
@@ -442,9 +442,9 @@ export function PDFViewerDialogProtected({
                       <line x1="3" y1="21" x2="21" y2="3" className="text-red-500" strokeWidth="1.5"></line>
                     </svg>
                   </div>
-                  <p className="font-semibold text-lg text-amber-700 mb-2">Failed to load PDF</p>
-                  <p className="text-sm text-amber-600 mb-4">{error}</p>
-                  <div className="text-xs text-gray-500 text-left bg-white p-3 rounded-md shadow-sm">
+                  <p className="font-semibold text-lg text-amber-700 dark:text-amber-300 mb-2">Failed to load PDF</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-300 mb-4">{error}</p>
+                  <div className="text-xs text-gray-500 dark:text-muted-foreground text-left bg-white dark:bg-card p-3 rounded-md shadow-sm">
                     <p className="mb-2">Possible solutions:</p>
                     <ul className="list-disc pl-4 space-y-1">
                       <li>Check if the PDF file exists and is accessible</li>

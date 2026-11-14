@@ -281,7 +281,7 @@ export default function AdminUsersPage() {
         <div className="space-y-4">
           {users && users.length > 0 ? (
             users.map((user) => (
-              <div key={user.id} className="border rounded-lg p-4 bg-white">
+              <div key={user.id} className="border rounded-lg p-4 bg-white dark:bg-card">
                 <div className="flex items-start gap-3 mb-3">
                   <Avatar className="h-12 w-12 flex-shrink-0">
                     <AvatarImage src={user.picture || undefined} />
@@ -317,7 +317,7 @@ export default function AdminUsersPage() {
                     {formatDate(user.created_at)}
                   </div>
                   {user.is_admin ? (
-                    <Badge className="bg-red-100 text-red-700 hover:bg-red-200">
+                    <Badge className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-muted">
                       <Shield className="h-3 w-3 mr-1" />
                       Admin
                     </Badge>
@@ -410,7 +410,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {user.is_admin ? (
-                        <Badge className="bg-red-100 text-red-700 hover:bg-red-200">
+                        <Badge className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-muted">
                           <Shield className="h-3 w-3 mr-1" />
                           Admin
                         </Badge>

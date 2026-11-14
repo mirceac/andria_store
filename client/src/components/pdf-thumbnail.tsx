@@ -104,25 +104,25 @@ export function PDFThumbnail({
   return (
     <div 
       className={cn(
-        "relative bg-white border border-gray-200 rounded overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center group",
+        "relative bg-white dark:bg-card border border-gray-200 dark:border-border rounded overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center group",
         className
       )}
       style={{ width: `${width}px`, height: `${height}px` }}
       onClick={onClick}
     >
       {isLoading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-muted">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       )}
       {error && (
         <div className={cn(
           "absolute inset-0 flex flex-col items-center justify-center p-2 text-center",
-          isExternalUrl ? "bg-blue-50 text-gray-600" : "bg-gray-50 text-gray-500"
+          isExternalUrl ? "bg-blue-50 dark:bg-blue-950/60 text-gray-600 dark:text-muted-foreground" : "bg-gray-50 dark:bg-muted text-gray-500 dark:text-muted-foreground"
         )}>
           <FileText className={cn(
             "h-8 w-8 mb-1",
-            isExternalUrl ? "text-blue-500" : "text-gray-400"
+            isExternalUrl ? "text-blue-500" : "text-gray-400 dark:text-muted-foreground"
           )} />
           <span className="text-xs font-medium">
             {error === "External PDF - Click to view" ? "PDF" : 
@@ -132,7 +132,7 @@ export function PDFThumbnail({
              "PDF unavailable"}
           </span>
           {(isExternalUrl || error === "External PDF - Click to view") && (
-            <span className="text-xs text-gray-500 mt-1">
+            <span className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
               {error === "External PDF - Click to view" ? "Click to view" : "External"}
             </span>
           )}

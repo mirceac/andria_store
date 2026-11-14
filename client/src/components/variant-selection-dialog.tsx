@@ -75,9 +75,9 @@ export function VariantSelectionDialog({
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {availableVariant === 'digital' ? (
-                    <Download className="h-4 w-4 text-blue-600" />
+                    <Download className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                   ) : (
-                    <Package className="h-4 w-4 text-green-600" />
+                    <Package className="h-4 w-4 text-green-600 dark:text-green-300" />
                   )}
                   <span className="font-medium">
                     {availableVariant === 'digital' ? 'Digital Version' : 'Physical Version'}
@@ -91,8 +91,8 @@ export function VariantSelectionDialog({
                 className={cn(
                   "text-xs",
                   availableVariant === 'digital' 
-                    ? "bg-blue-50 text-blue-700 border-blue-200" 
-                    : "bg-green-50 text-green-700 border-green-200"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                    : "bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
                 )}
               >
                 {availableVariant === 'digital' ? 'Always Available' : `${physicalStock} left in stock`}
@@ -131,26 +131,26 @@ export function VariantSelectionDialog({
               className={cn(
                 "border rounded-lg p-4 cursor-pointer transition-all",
                 selectedVariant === 'digital' 
-                  ? "border-blue-500 bg-blue-50" 
-                  : "border-gray-200 hover:border-blue-300"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/60"
+                  : "border-gray-200 dark:border-border hover:border-blue-300"
               )}
               onClick={() => setSelectedVariant('digital')}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Download className="h-4 w-4 text-blue-600" />
+                  <Download className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                   <span className="font-medium">Digital Version</span>
                 </div>
                 <span className="text-lg font-bold">${Number(product.price).toFixed(2)}</span>
               </div>
               
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2">
                 Instant download, unlimited access
               </p>
               
               <Badge 
                 variant="outline" 
-                className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                className="text-xs bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
               >
                 Always Available
               </Badge>
@@ -162,26 +162,26 @@ export function VariantSelectionDialog({
               className={cn(
                 "border rounded-lg p-4 cursor-pointer transition-all",
                 selectedVariant === 'physical' 
-                  ? "border-green-500 bg-green-50" 
-                  : "border-gray-200 hover:border-green-300"
+                  ? "border-green-500 bg-green-50 dark:bg-green-950/60"
+                  : "border-gray-200 dark:border-border hover:border-green-300"
               )}
               onClick={() => setSelectedVariant('physical')}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-green-600" />
+                  <Package className="h-4 w-4 text-green-600 dark:text-green-300" />
                   <span className="font-medium">Physical Version</span>
                 </div>
                 <span className="text-lg font-bold">${Number(product.physical_price).toFixed(2)}</span>
               </div>
               
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2">
                 Shipped to your address + includes digital access
               </p>
               
               <Badge 
                 variant="outline" 
-                className="text-xs bg-green-50 text-green-700 border-green-200"
+                className="text-xs bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
               >
                 {physicalStock} left in stock
               </Badge>
@@ -192,15 +192,15 @@ export function VariantSelectionDialog({
             <div className="border rounded-lg p-4 opacity-50">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium text-gray-500">Physical Version</span>
+                  <Package className="h-4 w-4 text-gray-400 dark:text-muted-foreground" />
+                  <span className="font-medium text-gray-500 dark:text-muted-foreground">Physical Version</span>
                 </div>
-                <span className="text-lg font-bold text-gray-500">
+                <span className="text-lg font-bold text-gray-500 dark:text-muted-foreground">
                   ${Number(product.physical_price || 0).toFixed(2)}
                 </span>
               </div>
               
-              <p className="text-sm text-gray-500 mb-2">
+              <p className="text-sm text-gray-500 dark:text-muted-foreground mb-2">
                 Shipped to your address
               </p>
               

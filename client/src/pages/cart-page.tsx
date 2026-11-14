@@ -68,7 +68,7 @@ export default function CartPage() {
     if (product.image_file) {
       // 1. Image File (highest priority)
       return (
-        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
           <ImageThumbnail
             productId={product.id}
             imageUrl={`${product.image_file}?v=${refreshTimestamp}`}
@@ -83,7 +83,7 @@ export default function CartPage() {
     } else if (product.image_data) {
       // 2. Image DB
       return (
-        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
           <ImageThumbnail
             productId={product.id}
             imageUrl={null}
@@ -98,7 +98,7 @@ export default function CartPage() {
     } else if (product.pdf_file) {
       // 3. PDF File
       return (
-        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
           <PDFThumbnail
             pdfUrl={`${product.pdf_file}?v=${refreshTimestamp}`}
             showTryDirect={false}
@@ -110,7 +110,7 @@ export default function CartPage() {
     } else if (product.pdf_data) {
       // 4. PDF DB
       return (
-        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+        <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
           <PDFThumbnail
             pdfUrl={`/api/products/${product.id}/pdf`}
             showTryDirect={false}
@@ -140,7 +140,7 @@ export default function CartPage() {
       if (isImageUrl) {
         // External Image URL
         return (
-          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
             <ExternalUrlThumbnail
               url={product.storage_url}
               showTryDirect={false}
@@ -152,7 +152,7 @@ export default function CartPage() {
       } else if (isPdfUrl) {
         // External PDF URL
         return (
-          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
             <PDFThumbnail
               pdfUrl={product.storage_url}
               showTryDirect={false}
@@ -164,7 +164,7 @@ export default function CartPage() {
       } else {
         // External URL that doesn't match image or PDF patterns - treat as generic external content
         return (
-          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50">
+          <div className="relative w-[130px] h-[182px] pointer-events-none select-none overflow-hidden rounded border bg-gray-50 dark:bg-muted">
             <ExternalUrlThumbnail
               url={product.storage_url}
               showTryDirect={false}
@@ -177,8 +177,8 @@ export default function CartPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="w-[130px] h-[182px] flex items-center justify-center rounded border bg-gray-50">
-          <XCircle className="h-6 w-6 text-gray-300" />
+        <div className="w-[130px] h-[182px] flex items-center justify-center rounded border bg-gray-50 dark:bg-muted">
+          <XCircle className="h-6 w-6 text-gray-300 dark:text-muted-foreground" />
         </div>
       );
     }
@@ -207,8 +207,8 @@ export default function CartPage() {
       </div>
 
       {cart.length === 0 ? (
-        <div className={`text-center ${isMobile ? 'py-8' : 'py-12'} border rounded-md bg-white`}>
-          <ShoppingBag className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} mx-auto text-gray-300`} />
+        <div className={`text-center ${isMobile ? 'py-8' : 'py-12'} border rounded-md bg-white dark:bg-card`}>
+          <ShoppingBag className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} mx-auto text-gray-300 dark:text-muted-foreground`} />
           <h2 className={`mt-4 ${isMobile ? 'text-lg' : 'text-xl'} font-semibold`}>Your cart is empty</h2>
           <p className={`mt-2 text-muted-foreground ${isMobile ? 'text-sm px-4' : ''}`}>
             Looks like you haven't added anything to your cart yet.
@@ -240,7 +240,7 @@ export default function CartPage() {
           {isMobile ? (
             <div className="space-y-4">
               {cart.map((item, index) => (
-                <div key={`${item.product.id}-${item.variant_type}`} className="border rounded-lg p-4 bg-white">
+                <div key={`${item.product.id}-${item.variant_type}`} className="border rounded-lg p-4 bg-white dark:bg-card">
                   <div className="flex gap-3">
                     {/* Product Media */}
                     <div className="flex-shrink-0 w-[130px] h-[182px]">
@@ -271,8 +271,8 @@ export default function CartPage() {
                           className={cn(
                             "text-xs",
                             item.variant_type === 'digital' || item.product.stock > 0
-                              ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" 
-                              : "bg-red-50 text-red-700 hover:bg-red-100"
+                              ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-muted border-blue-200 dark:border-blue-800"
+                              : "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-muted"
                           )}
                         >
                           {item.variant_type === 'digital' 
@@ -318,7 +318,7 @@ export default function CartPage() {
                           {/* Remove Button */}
                           <Button
                             variant="ghost"
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 dark:hover:text-foreground"
                             onClick={() => removeFromCart(item.product.id, item.variant_type)}
                           >
                             <X className="h-3 w-3" />
@@ -335,7 +335,7 @@ export default function CartPage() {
             <div className="border rounded-md">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
+                  <TableRow className="bg-gray-50 dark:bg-muted">
                     <TableHead className="text-center w-[35px]">Item</TableHead>
                     <TableHead className="px-0 text-center w-[150px]">Product Image</TableHead>
                     <TableHead className="px-3">Details</TableHead>
@@ -386,8 +386,8 @@ export default function CartPage() {
                               className={cn(
                                 "text-xs",
                                 item.variant_type === 'digital' || item.product.stock > 0
-                                  ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" 
-                                  : "bg-red-50 text-red-700 hover:bg-red-100"
+                                  ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-muted border-blue-200 dark:border-blue-800"
+                                  : "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-muted"
                               )}
                             >
                               {item.variant_type === 'digital' 
@@ -479,7 +479,7 @@ export default function CartPage() {
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
-                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700 dark:hover:text-foreground"
                                 onClick={() => removeFromCart(item.product.id, item.variant_type)}
                               >
                                 <X className="h-3 w-3" />
@@ -500,7 +500,7 @@ export default function CartPage() {
 
           {/* Cart Summary Section */}
           <div className={`border rounded-md ${isMobile ? 'mt-6' : ''}`}>
-            <div className={`${isMobile ? 'p-4' : 'border-t p-4'} bg-gray-50`}>
+            <div className={`${isMobile ? 'p-4' : 'border-t p-4'} bg-gray-50 dark:bg-muted`}>
               <div className={`${isMobile ? '' : 'max-w-md ml-auto'}`}>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Subtotal:</span>

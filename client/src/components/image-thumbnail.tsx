@@ -41,7 +41,7 @@ export function ImageThumbnail({
   return (
     <div
       className={cn(
-        "relative rounded overflow-hidden border border-border bg-white flex items-center justify-center cursor-pointer group",
+        "relative rounded overflow-hidden border border-border bg-white dark:bg-card flex items-center justify-center cursor-pointer group",
         className
       )}
       style={{ width: `${width}px`, height: `${height}px` }}

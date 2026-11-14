@@ -395,8 +395,8 @@ export default function AdminOrdersPage() {
     } else {
       // 6. No content available - show X icon
       return (
-        <div className="w-[130px] h-[182px] flex items-center justify-center border rounded bg-slate-50 shrink-0">
-          <XCircle className="h-6 w-6 text-gray-300" />
+        <div className="w-[130px] h-[182px] flex items-center justify-center border rounded bg-slate-50 dark:bg-muted shrink-0">
+          <XCircle className="h-6 w-6 text-gray-300 dark:text-muted-foreground" />
         </div>
       );
     }
@@ -459,7 +459,7 @@ export default function AdminOrdersPage() {
               {isMobile ? (
                 <div className="space-y-3 w-full overflow-x-hidden">
                   {order.items && order.items.map((item) => (
-                    <div key={`${order.id}-${item.id}`} className="border rounded-lg p-3 bg-gray-50 w-full overflow-hidden">
+                    <div key={`${order.id}-${item.id}`} className="border rounded-lg p-3 bg-gray-50 dark:bg-muted w-full overflow-hidden">
                       <div className="space-y-3 w-full">
                         {/* Top Row: Media and Product Name */}
                         <div className="flex gap-3 w-full">
@@ -471,7 +471,7 @@ export default function AdminOrdersPage() {
                           {/* Product Name */}
                           <div className="flex-1 min-w-0 overflow-hidden pr-2">
                             <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-muted-foreground">
                               ${(item.price / item.quantity).toFixed(2)} per unit
                             </p>
                           </div>
@@ -531,7 +531,7 @@ export default function AdminOrdersPage() {
                             {renderProductMedia(item.product)}
                             <div className="flex flex-col">
                               <span className="font-medium">{item.product.name}</span>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-gray-500 dark:text-muted-foreground">
                                 ${(item.price / item.quantity).toFixed(2)} per unit
                               </span>
                             </div>

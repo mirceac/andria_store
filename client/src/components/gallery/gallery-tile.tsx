@@ -84,14 +84,14 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
       {item.kind === "image" && !thumbnail.loaded && !thumbnail.failed && <div className="absolute inset-0 animate-pulse bg-muted" />}
 
       {item.kind === "image" && thumbnail.failed && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8] p-3 text-muted-foreground">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8] p-3 text-muted-foreground dark:from-[#26332f] dark:to-[#19211e]">
           <FileImage className="h-8 w-8 opacity-50" />
           <span className="line-clamp-2 text-center text-xs font-medium opacity-70">{product.name}</span>
         </div>
       )}
 
       {item.kind === "pdf" && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8]">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f6f4ee] to-[#e9eee8] dark:from-[#26332f] dark:to-[#19211e]">
           <PDFThumbnail pdfUrl={item.thumbUrl} width={130} height={182} showTryDirect={false} />
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
             <FileText className="h-3 w-3" /> PDF
@@ -112,7 +112,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         onClick={onOpen}
         aria-label={`View ${product.name}`}
         title="View"
-        className={cn("absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
+        className={cn("absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-black opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
       >
         <Eye className="h-4 w-4" />
       </button>
@@ -120,7 +120,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         href={`/product/${product.id}`}
         aria-label={`Details for ${product.name}`}
         title="Details"
-        className={cn("absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
+        className={cn("absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-black opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
       >
         <Info className="h-4 w-4" />
       </Link>

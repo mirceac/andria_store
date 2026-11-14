@@ -345,18 +345,18 @@ export default function CategoriesPage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-2">
               <CardTitle className="text-lg font-semibold flex items-center flex-1 min-w-0">
                 {category.level > 0 && (
-                  <span className="text-gray-400 mr-2 flex-shrink-0">
+                  <span className="text-gray-400 dark:text-muted-foreground mr-2 flex-shrink-0">
                     {'├─'.repeat(category.level)}
                   </span>
                 )}
                 <button
                   onClick={() => setLocation(`/admin/products?category=${category.id}`)}
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left truncate"
+                  className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-foreground hover:underline transition-colors text-left truncate"
                 >
                   {category.name}
                 </button>
                 {category.level > 0 && (
-                  <span className="text-sm text-gray-500 ml-2 hidden sm:inline">
+                  <span className="text-sm text-gray-500 dark:text-muted-foreground ml-2 hidden sm:inline">
                     (Child of: {categories.find(c => c.id === category.parent_id)?.name})
                   </span>
                 )}
@@ -395,9 +395,9 @@ export default function CategoriesPage() {
                 )}
               </div>
               {category.description && (
-                <p className="text-gray-600 mb-2">{category.description}</p>
+                <p className="text-gray-600 dark:text-muted-foreground mb-2">{category.description}</p>
               )}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
                 Created: {new Date(category.created_at).toLocaleDateString()}
               </p>
             </CardContent>
@@ -407,7 +407,7 @@ export default function CategoriesPage() {
         {categories.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-gray-500">No categories found. Create your first category to get started.</p>
+              <p className="text-gray-500 dark:text-muted-foreground">No categories found. Create your first category to get started.</p>
             </CardContent>
           </Card>
         )}

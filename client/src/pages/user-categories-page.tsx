@@ -334,7 +334,7 @@ export default function UserCategoriesPage() {
                         <Label htmlFor="is_public" className="font-normal cursor-pointer">
                           Public Category
                         </Label>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-muted-foreground mt-1">
                           Public categories are visible to all users including guests
                         </p>
                       </div>
@@ -353,7 +353,7 @@ export default function UserCategoriesPage() {
                         <Label htmlFor="hidden" className="font-normal cursor-pointer">
                           Hidden
                         </Label>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-muted-foreground mt-1">
                           Hidden categories are not visible to anyone in the gallery (only in admin/your management page)
                         </p>
                       </div>
@@ -384,18 +384,18 @@ export default function UserCategoriesPage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="text-lg font-semibold flex items-center">
                 {category.level > 0 && (
-                  <span className="text-gray-400 mr-2">
+                  <span className="text-gray-400 dark:text-muted-foreground mr-2">
                     {'├─'.repeat(category.level)}
                   </span>
                 )}
                 <button
                   onClick={() => setLocation(`/profile?category=${category.id}`)}
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                  className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-foreground hover:underline transition-colors text-left"
                 >
                   {category.name}
                 </button>
                 {category.level > 0 && (
-                  <span className="text-sm text-gray-500 ml-2">
+                  <span className="text-sm text-gray-500 dark:text-muted-foreground ml-2">
                     (Child of: {categories.find(c => c.id === category.parent_id)?.name})
                   </span>
                 )}
@@ -410,7 +410,7 @@ export default function UserCategoriesPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleDelete(category.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-foreground"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -437,9 +437,9 @@ export default function UserCategoriesPage() {
                 )}
               </div>
               {category.description && (
-                <p className="text-gray-600 mb-2">{category.description}</p>
+                <p className="text-gray-600 dark:text-muted-foreground mb-2">{category.description}</p>
               )}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-muted-foreground">
                 Created: {new Date(category.created_at).toLocaleDateString()}
               </p>
             </CardContent>
@@ -449,7 +449,7 @@ export default function UserCategoriesPage() {
         {categories.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-gray-500">No categories found. Create your first category to organize your products.</p>
+              <p className="text-gray-500 dark:text-muted-foreground">No categories found. Create your first category to organize your products.</p>
             </CardContent>
           </Card>
         )}

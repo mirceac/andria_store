@@ -32,17 +32,17 @@ export default function CheckoutSuccessPage() {
 
   return (
     <div className="container mx-auto py-10 max-w-3xl">
-      <Card className="border-green-200 shadow-md">
-        <CardHeader className="pb-4 text-center border-b bg-green-50 text-green-800">
+      <Card className="border-green-200 dark:border-green-800 shadow-md">
+        <CardHeader className="pb-4 text-center border-b bg-green-50 dark:bg-green-950/60 text-green-800 dark:text-green-300">
           <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-2" />
           <CardTitle className="text-2xl">Order Confirmed!</CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-green-700 dark:text-green-300">
             Thank you for your purchase. Your order has been successfully placed.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-4">
           {orderNumber && (
-            <div className="flex justify-between text-sm bg-slate-50 p-4 rounded-md">
+            <div className="flex justify-between text-sm bg-slate-50 dark:bg-muted p-4 rounded-md">
               <span className="font-medium">Order Reference:</span>
               <span className="font-mono">{orderNumber}</span>
             </div>

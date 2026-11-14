@@ -27,7 +27,7 @@ const chip = (active: boolean) =>
     "shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
     active
       ? "border-primary bg-primary text-primary-foreground"
-      : "border-primary/20 bg-white/70 text-foreground hover:border-primary/50 hover:bg-white"
+      : "border-primary/20 bg-white/70 text-foreground hover:border-primary/50 hover:bg-white dark:bg-card/70 dark:hover:bg-card"
   );
 
 const rowClass = "flex gap-2 overflow-x-auto scrollbar-hide";

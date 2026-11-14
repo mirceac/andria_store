@@ -17,7 +17,7 @@ const itemClasses = (active: boolean) =>
     "relative h-11 w-11 rounded-xl p-0 transition-colors",
     active
       ? "bg-primary/10 text-primary hover:bg-primary/15"
-      : "text-muted-foreground hover:bg-black/5 hover:text-foreground"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground"
   );
 
 export default function VerticalMenu() {
@@ -59,7 +59,7 @@ export default function VerticalMenu() {
     const tabClasses = (active: boolean) =>
       cn(
         "relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] transition-colors",
-        active ? "text-primary" : "text-muted-foreground active:bg-black/5"
+        active ? "text-primary" : "text-muted-foreground active:bg-muted"
       );
 
     return (

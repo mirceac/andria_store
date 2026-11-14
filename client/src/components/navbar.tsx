@@ -19,10 +19,13 @@ import {
   LayoutGrid,
   Users,
   SlidersHorizontal,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { GalleryToolbar } from "@/components/gallery/gallery-toolbar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { useGalleryPrefs } from "@/hooks/use-gallery-prefs";
+import type { Theme } from "@/lib/theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +47,11 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 
-export default function Navbar({ galleryPrefs }: { galleryPrefs: ReturnType<typeof useGalleryPrefs> }) {
+export default function Navbar({ galleryPrefs, theme, onThemeChange }: {
+  galleryPrefs: ReturnType<typeof useGalleryPrefs>;
+  theme: Theme;
+  onThemeChange: (theme: Theme) => void;
+}) {
   const isMobile = useIsMobile();
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
@@ -144,7 +151,7 @@ export default function Navbar({ galleryPrefs }: { galleryPrefs: ReturnType<type
               placeholder="Search the gallery..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 bg-white border-border focus:border-primary"
+              className="w-full pl-9 bg-card border-border focus:border-primary"
             />
           </div>
           <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
@@ -159,21 +166,34 @@ export default function Navbar({ galleryPrefs }: { galleryPrefs: ReturnType<type
             </SelectContent>
           </Select>
 
-          <div className="h-6 w-px bg-slate-200 hidden md:block" />
-          {location === "/" && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" aria-label="Gallery display settings" className={`${buttonClasses} h-10 w-10 p-0`}>
-                  <SlidersHorizontal className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-auto max-w-[calc(100vw-1.5rem)] p-3">
-                <p className="mb-2 text-sm font-medium">Gallery display</p>
-                <GalleryToolbar layout={galleryPrefs.layout} onLayoutChange={galleryPrefs.setLayout} size={galleryPrefs.size} onSizeChange={galleryPrefs.setSize} />
-              </PopoverContent>
-            </Popover>
-          )}
-          {!user?.is_admin && location !== "/" && <div className="hidden h-10 w-10 opacity-0 flex-shrink-0 md:block" />}
+          <div className="h-6 w-px bg-border hidden md:block" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" aria-label="Display settings" className={`${buttonClasses} h-10 w-10 p-0`}>
+                <SlidersHorizontal className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto max-w-[calc(100vw-1.5rem)] p-3">
+              <p className="mb-2 text-sm font-medium">Display settings</p>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={theme === "dark"}
+                onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
+                className="flex h-10 w-full items-center gap-2 rounded-md px-2 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                Dark theme
+                <span aria-hidden="true" className="ml-auto text-xs text-muted-foreground">{theme === "dark" ? "On" : "Off"}</span>
+              </button>
+              {location === "/" && (
+                <div className="mt-2 border-t pt-3">
+                  <p className="mb-2 text-sm font-medium">Gallery layout and size</p>
+                  <GalleryToolbar layout={galleryPrefs.layout} onLayoutChange={galleryPrefs.setLayout} size={galleryPrefs.size} onSizeChange={galleryPrefs.setSize} />
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
           {user?.is_admin && (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
@@ -311,11 +331,11 @@ export default function Navbar({ galleryPrefs }: { galleryPrefs: ReturnType<type
             aria-label="Search the gallery"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full border-border bg-white pl-9 focus:border-primary"
+            className="h-10 w-full border-border bg-card pl-9 focus:border-primary"
           />
         </div>
         <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-          <SelectTrigger aria-label="Sort by" className="h-10 w-[128px] flex-shrink-0 bg-white">
+          <SelectTrigger aria-label="Sort by" className="h-10 w-[128px] flex-shrink-0 bg-card">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
