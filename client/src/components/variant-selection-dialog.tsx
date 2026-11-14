@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/use-cart";
 import { cn } from "@/lib/utils";
+import { hasPhysicalVariant as isPhysicalVariantAvailable } from "@/lib/product-variants";
 
 interface VariantSelectionDialogProps {
   open: boolean;
@@ -28,7 +29,7 @@ export function VariantSelectionDialog({
   const [selectedVariant, setSelectedVariant] = useState<'digital' | 'physical' | null>(null);
 
   const hasDigitalVariant = Number(product.price || 0) > 0; // price field is digital price
-  const hasPhysicalVariant = product.physical_price && Number(product.physical_price) > 0;
+  const hasPhysicalVariant = isPhysicalVariantAvailable(product);
   const physicalStock = product.stock || 0;
   const isPhysicalOutOfStock = physicalStock <= 0;
 

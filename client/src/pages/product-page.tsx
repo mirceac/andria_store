@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import type { Category } from "@/lib/category-tree";
 import { canViewInGallery, getGalleryItem, type GalleryItem } from "@/lib/gallery-media";
+import { hasPhysicalVariant } from "@/lib/product-variants";
 
 export default function ProductPage() {
   const [, params] = useRoute("/product/:id");
@@ -57,7 +58,7 @@ export default function ProductPage() {
   const categoryName = categories?.find((c) => c.id === product.category_id)?.name;
   const isForSale = product.is_public !== false;
   const hasDigital = Number(product.price || 0) > 0;
-  const hasPhysical = Number(product.physical_price || 0) > 0;
+  const hasPhysical = hasPhysicalVariant(product);
   const physicalAvailable = hasPhysical && (product.stock ?? 0) > 0;
   const prices = [hasDigital ? Number(product.price) : 0, hasPhysical ? Number(product.physical_price) : 0].filter((p) => p > 0);
   const minPrice = prices.length ? Math.min(...prices) : 0;
@@ -157,19 +158,21 @@ export default function ProductPage() {
                       ${minPrice.toFixed(2)}
                       {maxPrice !== minPrice && ` – $${maxPrice.toFixed(2)}`}
                     </p>
-                    {hasDigital && <Badge variant="secondary">Digital</Badge>}
+                    {hasDigital && <Badge variant="secondary">{hasPhysical ? "Digital" : "Digital only"}</Badge>}
                     {hasPhysical && (
                       <Badge variant={physicalAvailable ? "secondary" : "destructive"}>
                         {physicalAvailable ? `Physical (${product.stock} left)` : "Physical out of stock"}
                       </Badge>
                     )}
                   </div>
+                  {!hasDigital && !hasPhysical && <p className="text-sm text-muted-foreground">Not currently available for purchase</p>}
                   <Button className="w-full gap-2 sm:w-auto" onClick={handleAdd} disabled={addDisabled}>
                     <ShoppingCart className="h-4 w-4" />
                     {atStockLimit ? "Max stock in cart" : "Add to Cart"}
                   </Button>
                 </div>
               )}
+              {!isForSale && <p className="text-sm text-muted-foreground">Private portfolio item</p>}
             </div>
           </div>
         </div>

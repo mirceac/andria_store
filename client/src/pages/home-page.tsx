@@ -16,13 +16,14 @@ import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
 import { buildCategoryTree, getDescendantCategoryIds, type Category } from "@/lib/category-tree";
 import { canViewInGallery, getGalleryItem, type GalleryItem } from "@/lib/gallery-media";
+import { hasPhysicalVariant } from "@/lib/product-variants";
 
 type Section = { key: string; title: string; items: GalleryItem[]; categoryId?: number };
 
 const createdAt = (item: GalleryItem) => (item.product.created_at ? new Date(item.product.created_at).getTime() : 0);
 
 const startingPrice = (p: SelectProduct, pick: typeof Math.min | typeof Math.max) => {
-  const prices = [Number(p.price || 0), p.physical_price ? Number(p.physical_price) : 0].filter((price) => price > 0);
+  const prices = [Number(p.price || 0), hasPhysicalVariant(p) ? Number(p.physical_price) : 0].filter((price) => price > 0);
   return prices.length ? pick(...prices) : 0;
 };
 

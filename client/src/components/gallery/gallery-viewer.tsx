@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Info, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Link } from "wouter";
+import { VideoThumbnail } from "@/components/gallery/video-thumbnail";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/gallery-media";
 import { enableHorizontalScroll } from "@/lib/horizontal-scroll";
+import { hasPhysicalVariant } from "@/lib/product-variants";
 
 interface GalleryViewerProps {
   items: GalleryItem[];
@@ -84,7 +86,7 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
   useEffect(() => {
     if (index === null) return;
     [index - 1, index + 1].forEach((i) => {
-      if (items[i]) new Image().src = items[i].fullUrl;
+      if (items[i]?.kind === "image") new Image().src = items[i].fullUrl;
     });
   }, [index, items]);
 
@@ -265,12 +267,17 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
               {item.product.description && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/70">{item.product.description}</p>}
               {item.product.is_public !== false && (
                 <div className="mt-4 border-t border-white/10 pt-3 text-sm text-white/70">
-                  <p>Digital: ${Number(item.product.price || 0).toFixed(2)}</p>
-                  {Number(item.product.physical_price || 0) > 0 && (
-                    <p className="mt-1">Physical: ${Number(item.product.physical_price).toFixed(2)} · {item.product.stock ?? 0} in stock</p>
+                  {Number(item.product.price || 0) > 0 && (
+                    <p>Digital: ${Number(item.product.price).toFixed(2)}</p>
                   )}
+                  {hasPhysicalVariant(item.product) && (
+                    <p className="mt-1">Physical: ${Number(item.product.physical_price).toFixed(2)} · {(item.product.stock ?? 0) > 0 ? `${item.product.stock} in stock` : "Out of stock"}</p>
+                  )}
+                  {Number(item.product.price || 0) > 0 && !hasPhysicalVariant(item.product) && <p className="mt-1">Digital only</p>}
+                  {Number(item.product.price || 0) <= 0 && !hasPhysicalVariant(item.product) && <p>Not currently available for purchase</p>}
                 </div>
               )}
+              {item.product.is_public === false && <p className="mt-4 border-t border-white/10 pt-3 text-sm text-white/70">Private portfolio item</p>}
               <Link
                 href={`/product/${item.product.id}`}
                 onClick={onClose}
@@ -292,15 +299,15 @@ export function GalleryViewer({ items, index, onIndexChange, onClose, showDetail
                   key={candidate.product.id}
                   type="button"
                   data-active={i === index}
-                  aria-label={`Show ${candidate.product.name}`}
+                  aria-label={`Show ${candidate.product.name}${candidate.kind === "video" ? " video" : ""}`}
                   onClick={() => onIndexChange(i)}
                   className={cn(
-                    "h-14 w-14 shrink-0 overflow-hidden rounded-md ring-2 transition",
+                    "relative h-14 w-14 shrink-0 overflow-hidden rounded-md ring-2 transition",
                     i === index ? "opacity-100 ring-white" : "opacity-50 ring-transparent hover:opacity-90"
                   )}
                 >
                   {candidate.kind === "video" ? (
-                    <video src={candidate.fullUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    <VideoThumbnail key={candidate.fullUrl} src={candidate.fullUrl} />
                   ) : (
                     <img src={candidate.thumbUrl} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" />
                   )}

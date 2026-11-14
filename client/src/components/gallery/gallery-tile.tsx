@@ -1,7 +1,8 @@
 import { type CSSProperties } from "react";
 import { Link } from "wouter";
-import { Eye, FileImage, FileText, Info, Play } from "lucide-react";
+import { Eye, FileImage, FileText, Info } from "lucide-react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
+import { VideoThumbnail } from "@/components/gallery/video-thumbnail";
 import { useGalleryThumbnail } from "@/hooks/use-gallery-thumbnail";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/gallery-media";
@@ -39,7 +40,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         type="button"
         onClick={onOpen}
         onContextMenu={(e) => e.preventDefault()}
-        aria-label={`View ${product.name}`}
+        aria-label={`View ${product.name}${item.kind === "video" ? " video" : ""}`}
         className={cn(
           "relative block w-full overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
           !useNaturalRatio && "aspect-[4/5]"
@@ -81,12 +82,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
       )}
 
       {item.kind === "video" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#46665e] via-[#273d39] to-[#172724] text-white">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/20 backdrop-blur transition-transform group-hover:scale-110">
-            <Play className="ml-1 h-5 w-5 fill-current" />
-          </div>
-          <span className="rounded-full bg-black/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">Video</span>
-        </div>
+        <VideoThumbnail key={item.fullUrl} src={item.fullUrl} />
       )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pb-12 pt-10 text-left opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100">

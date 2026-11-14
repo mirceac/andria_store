@@ -276,7 +276,7 @@ export default function ProfilePage() {
       storage_url: "",
       has_physical_variant: false,
       physical_price: 0,
-      is_public: true,
+      is_public: Boolean(user.is_admin),
       hidden: false,
     },
   });
@@ -297,7 +297,7 @@ export default function ProfilePage() {
         storage_url: "",
         has_physical_variant: false,
         physical_price: 0,
-        is_public: true,
+        is_public: Boolean(user.is_admin),
         hidden: false,
       });
     }
@@ -335,9 +335,6 @@ export default function ProfilePage() {
 
   const createProductMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      // Add is_public=false for user products
-      formData.append("is_public", "false");
-      
       const res = await apiRequest("POST", "/api/products", formData);
       if (!res.ok) {
         const error = await res.json();
@@ -347,6 +344,7 @@ export default function ProfilePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/products`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
         title: "Product created",
         description: "Your product has been created successfully.",
@@ -381,8 +379,10 @@ export default function ProfilePage() {
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (product) => {
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/products`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/products/${product.id}`] });
       setRefreshTimestamp(Date.now());
       toast({
         title: "Product updated",
@@ -659,6 +659,7 @@ export default function ProfilePage() {
                               type="checkbox"
                               checked={field.value}
                               onChange={field.onChange}
+                              disabled={!selectedProduct && !user.is_admin}
                               className="h-4 w-4 mt-1"
                             />
                           </FormControl>
@@ -667,7 +668,9 @@ export default function ProfilePage() {
                               Public Product (For Sale)
                             </FormLabel>
                             <p className="text-xs text-gray-600 mt-1">
-                              {field.value 
+                              {!selectedProduct && !user.is_admin
+                                ? "Only admins can create public products. New products are private."
+                                : field.value
                                 ? "This product will be available for purchase with price, stock, and shopping cart functionality."
                                 : "This is a private portfolio/gallery item. Price, stock, and purchase options will be hidden from customers."}
                             </p>
