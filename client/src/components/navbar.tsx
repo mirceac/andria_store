@@ -18,7 +18,11 @@ import {
   Menu,
   LayoutGrid,
   Users,
+  SlidersHorizontal,
 } from "lucide-react";
+import { GalleryToolbar } from "@/components/gallery/gallery-toolbar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { useGalleryPrefs } from "@/hooks/use-gallery-prefs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +44,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 
-export default function Navbar() {
+export default function Navbar({ galleryPrefs }: { galleryPrefs: ReturnType<typeof useGalleryPrefs> }) {
   const isMobile = useIsMobile();
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
@@ -133,7 +137,7 @@ export default function Navbar() {
         {/* Right Side: Search + Sort + Profile - Absolutely positioned to always stay in same place */}
         <div className="absolute right-2 sm:right-2 flex items-center justify-end gap-0.5 sm:gap-2 flex-shrink-0">
           {/* Search Bar */}
-          <div className="relative w-64 hidden md:block flex-shrink-0">
+          <div className="relative hidden w-28 flex-shrink-0 md:block lg:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -144,7 +148,7 @@ export default function Navbar() {
             />
           </div>
           <Select value={sort} onValueChange={(value: typeof sort) => setSort(value)}>
-            <SelectTrigger className="w-[140px] bg-transparent hidden md:flex flex-shrink-0">
+            <SelectTrigger className="hidden w-[120px] flex-shrink-0 bg-transparent md:flex lg:w-[140px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -156,7 +160,20 @@ export default function Navbar() {
           </Select>
 
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
-          {!user?.is_admin && <div className="h-10 w-10 opacity-0 flex-shrink-0" />}
+          {location === "/" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" aria-label="Gallery display settings" className={`${buttonClasses} h-10 w-10 p-0`}>
+                  <SlidersHorizontal className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto max-w-[calc(100vw-1.5rem)] p-3">
+                <p className="mb-2 text-sm font-medium">Gallery display</p>
+                <GalleryToolbar layout={galleryPrefs.layout} onLayoutChange={galleryPrefs.setLayout} size={galleryPrefs.size} onSizeChange={galleryPrefs.setSize} />
+              </PopoverContent>
+            </Popover>
+          )}
+          {!user?.is_admin && location !== "/" && <div className="hidden h-10 w-10 opacity-0 flex-shrink-0 md:block" />}
           {user?.is_admin && (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>

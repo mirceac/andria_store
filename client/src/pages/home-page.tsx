@@ -7,10 +7,9 @@ import { CategorySidebar } from "@/components/gallery/category-sidebar";
 import { GalleryHero } from "@/components/gallery/gallery-hero";
 import { GalleryRow } from "@/components/gallery/gallery-row";
 import { GalleryTile } from "@/components/gallery/gallery-tile";
-import { GalleryToolbar } from "@/components/gallery/gallery-toolbar";
 import { GalleryViewer } from "@/components/gallery/gallery-viewer";
 import { useAuth } from "@/hooks/use-auth";
-import { GALLERY_SIZE_PX, useGalleryPrefs } from "@/hooks/use-gallery-prefs";
+import { GALLERY_SIZE_PX, type useGalleryPrefs } from "@/hooks/use-gallery-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSearch } from "@/contexts/search-context";
 import { useSort } from "@/contexts/sort-context";
@@ -27,12 +26,12 @@ const startingPrice = (p: SelectProduct, pick: typeof Math.min | typeof Math.max
   return prices.length ? pick(...prices) : 0;
 };
 
-export default function HomePage() {
+export default function HomePage({ galleryPrefs }: { galleryPrefs: ReturnType<typeof useGalleryPrefs> }) {
   const { search } = useSearch();
   const { sort } = useSort();
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const { layout, size, setLayout, setSize } = useGalleryPrefs();
+  const { layout, size } = galleryPrefs;
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -226,7 +225,6 @@ export default function HomePage() {
               · {items.length} {items.length === 1 ? "item" : "items"}
             </span>
           </nav>
-          <GalleryToolbar layout={layout} onLayoutChange={setLayout} size={size} onSizeChange={setSize} />
         </div>
 
         {featuredItem && (

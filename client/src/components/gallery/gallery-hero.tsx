@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { Eye, FileImage, FileText, Info, Play } from "lucide-react";
+import { Eye, FileImage, FileText, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VideoThumbnail } from "@/components/gallery/video-thumbnail";
 import { useGalleryThumbnail } from "@/hooks/use-gallery-thumbnail";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/gallery-media";
@@ -102,17 +103,17 @@ export function GalleryHero({ item, items, onOpen, onSelect }: GalleryHeroProps)
                   key={candidate.product.id}
                   type="button"
                   data-active={active}
-                  aria-label={`Feature ${candidate.product.name}`}
+                  aria-label={`Feature ${candidate.product.name}${candidate.kind === "video" ? " video" : ""}`}
                   onClick={() => onSelect(candidate)}
                   className={cn(
-                    "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-black/40 ring-2 transition",
+                    "relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-black/40 ring-2 transition",
                     active ? "opacity-100 ring-white" : "opacity-60 ring-transparent hover:opacity-100"
                   )}
                 >
                   {candidate.kind === "image" ? (
                     <FeaturedThumbnail item={candidate} />
                   ) : candidate.kind === "video" ? (
-                    <Play className="h-5 w-5 fill-white text-white" />
+                    <VideoThumbnail key={candidate.fullUrl} src={candidate.fullUrl} />
                   ) : (
                     <FileText className="h-5 w-5 text-white" />
                   )}

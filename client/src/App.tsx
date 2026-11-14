@@ -26,19 +26,21 @@ import { initPdfWorker } from '@/lib/pdf-worker';
 import { SearchProvider } from '@/contexts/search-context';
 import { SortProvider } from '@/contexts/sort-context';
 import CheckoutPage from "@/pages/checkout-page";
+import { useGalleryPrefs } from "@/hooks/use-gallery-prefs";
 
 // Initialize PDF worker
 initPdfWorker();
 
 function Router() {
   const isMobile = useIsMobile();
+  const galleryPrefs = useGalleryPrefs();
   return (
     <div className={`overflow-x-clip w-full max-w-[100vw] min-h-screen ${isMobile ? "pb-16" : ""}`}>
-      <Navbar />
+      <Navbar galleryPrefs={galleryPrefs} />
       <VerticalMenu />
       <div className="md:pl-16">
       <Switch>
-        <Route path="/" component={HomePage} />
+        <Route path="/"><HomePage galleryPrefs={galleryPrefs} /></Route>
         <Route path="/product/:id" component={ProductPage} />
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute path="/cart" component={CartPage} />

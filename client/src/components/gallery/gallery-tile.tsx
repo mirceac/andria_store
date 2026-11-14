@@ -1,4 +1,4 @@
-import { type CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Eye, FileImage, FileText, Info } from "lucide-react";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
@@ -18,12 +18,24 @@ interface GalleryTileProps {
 }
 
 export function GalleryTile({ item, onOpen, onHover, natural = false, className, style }: GalleryTileProps) {
+  const [touchActive, setTouchActive] = useState(false);
+  const tileRef = useRef<HTMLDivElement>(null);
   const thumbnail = useGalleryThumbnail(item.thumbUrl, item.fullUrl);
   const { product } = item;
   const useNaturalRatio = natural && item.kind === "image" && thumbnail.loaded && !thumbnail.failed;
 
+  useEffect(() => {
+    if (!touchActive) return;
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !tileRef.current?.contains(event.target)) setTouchActive(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [touchActive]);
+
   return (
     <div
+      ref={tileRef}
       style={style}
       onMouseEnter={() => {
         if (item.kind === "image") thumbnail.retry();
@@ -32,13 +44,19 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
       onFocus={() => onHover?.(item)}
       className={cn(
         "group relative w-full overflow-hidden rounded-lg bg-muted text-left shadow-sm ring-1 ring-black/5 transition duration-300",
-        "hover:z-10 hover:scale-[1.03] hover:shadow-xl",
+        "[@media(hover:hover)]:hover:z-10 [@media(hover:hover)]:hover:scale-[1.03] [@media(hover:hover)]:hover:shadow-xl",
         className
       )}
     >
       <button
         type="button"
-        onClick={onOpen}
+        onClick={(event) => {
+          if (event.detail !== 0 && window.matchMedia("(hover: none)").matches && !touchActive) {
+            setTouchActive(true);
+          } else {
+            onOpen();
+          }
+        }}
         onContextMenu={(e) => e.preventDefault()}
         aria-label={`View ${product.name}${item.kind === "video" ? " video" : ""}`}
         className={cn(
@@ -85,7 +103,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         <VideoThumbnail key={item.fullUrl} src={item.fullUrl} />
       )}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pb-12 pt-10 text-left opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100">
+        <div className={cn("pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pb-12 pt-10 text-left opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100", touchActive && "opacity-100")}>
           <p className="line-clamp-2 text-sm font-medium leading-snug text-white">{product.name}</p>
         </div>
       </button>
@@ -94,7 +112,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         onClick={onOpen}
         aria-label={`View ${product.name}`}
         title="View"
-        className="absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        className={cn("absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
       >
         <Eye className="h-4 w-4" />
       </button>
@@ -102,7 +120,7 @@ export function GalleryTile({ item, onOpen, onHover, natural = false, className,
         href={`/product/${product.id}`}
         aria-label={`Details for ${product.name}`}
         title="Details"
-        className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        className={cn("absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-foreground opacity-0 pointer-events-none shadow-sm transition-opacity duration-200 hover:bg-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100", touchActive && "pointer-events-auto opacity-100")}
       >
         <Info className="h-4 w-4" />
       </Link>
